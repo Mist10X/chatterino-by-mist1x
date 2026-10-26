@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/settingspages/ModerationPage.hpp"
 
 #include "Application.hpp"
@@ -65,13 +66,12 @@ QString formatSize(qint64 size)
 
 QString fetchLogDirectorySize()
 {
-    QString logsDirectoryPath = getSettings()->logPath.getValue().isEmpty()
-                                    ? getApp()->getPaths().messageLogDirectory
-                                    : getSettings()->logPath;
+    QString logsDirectoryPath =
+        getApp()->getPaths().messageLogsIn(getSettings()->logPath.getValue());
 
     auto logsSize = dirSize(logsDirectoryPath);
 
-    return QString("Your logs currently take up %1 of space")
+    return uiText(QString("Your logs currently take up %1 of space"))
         .arg(formatSize(logsSize));
 }
 
@@ -82,28 +82,27 @@ ModerationPage::ModerationPage()
     auto tabs = layoutCreator.emplace<QTabWidget>();
     this->tabWidget_ = tabs.getElement();
 
-    auto logs = tabs.appendTab(new QVBoxLayout, "Logs");
+    auto logs = tabs.appendTab(new QVBoxLayout, uiText("Logs"));
     {
         QCheckBox *enableLogging = this->createCheckBox(
-            "Enable logging", getSettings()->enableLogging);
+            uiText("Enable logging"), getSettings()->enableLogging);
         logs.append(enableLogging);
 
         auto logsPathLabel = logs.emplace<QLabel>();
 
-        QString logExplanation =
+        QString logExplanation = uiText(
             "<span style=\"color:#bbb\"> They are saved as plain "
             "text files per channel, containing the messages with "
-            "timestamps.</span>";
+            "timestamps.</span>");
 
         getSettings()->logPath.connect(
             [logsPathLabel, logExplanation](const QString &logPath,
                                             auto) mutable {
                 QString pathOriginal =
-                    logPath.isEmpty() ? getApp()->getPaths().messageLogDirectory
-                                      : logPath;
+                    getApp()->getPaths().messageLogsIn(logPath);
 
                 QString pathShortened =
-                    "Logs are saved at <a href=\"file:///" + pathOriginal +
+                    uiText("Logs are saved at <a href=\"file:///") + pathOriginal +
                     R"("><span style="color: white;">)" +
                     shortenString(pathOriginal, 50) + ".</span></a>";
 
@@ -119,8 +118,8 @@ ModerationPage::ModerationPage()
 
         auto buttons = logs.emplace<QHBoxLayout>().withoutMargin();
 
-        auto selectDir = buttons.emplace<QPushButton>("Select log directory ");
-        auto resetDir = buttons.emplace<QPushButton>("Reset");
+        auto selectDir = buttons.emplace<QPushButton>(uiText("Select log directory "));
+        auto resetDir = buttons.emplace<QPushButton>(uiText("Reset"));
 
         getSettings()->logPath.connect(
             [element = resetDir.getElement()](const QString &path) {
@@ -163,37 +162,37 @@ ModerationPage::ModerationPage()
         auto logsTimestampFormatLabel =
             logsTimestampFormatLayout.emplace<QLabel>();
         logsTimestampFormatLabel->setText(
-            QString("Log file timestamp format: "));
+            uiText(QString("Log file timestamp format: ")));
 
         QComboBox *logTimestampFormat = this->createComboBox(
-            {"Disable", "h:mm", "hh:mm", "h:mm a", "hh:mm a", "h:mm:ss",
-             "hh:mm:ss", "h:mm:ss a", "hh:mm:ss a", "h:mm:ss.zzz",
-             "h:mm:ss.zzz a", "hh:mm:ss.zzz", "hh:mm:ss.zzz a"},
+            {uiText("Disable"), uiText("h:mm"), uiText("hh:mm"), uiText("h:mm a"), uiText("hh:mm a"), uiText("h:mm:ss"),
+             uiText("hh:mm:ss"), uiText("h:mm:ss a"), uiText("hh:mm:ss a"), uiText("h:mm:ss.zzz"),
+             uiText("h:mm:ss.zzz a"), uiText("hh:mm:ss.zzz"), uiText("hh:mm:ss.zzz a")},
             getSettings()->logTimestampFormat);
-        logTimestampFormat->setToolTip("a = am/pm, zzz = milliseconds");
+        logTimestampFormat->setToolTip(uiText("a = am/pm, zzz = milliseconds"));
         logsTimestampFormatLayout.append(logTimestampFormat);
 
-        SettingWidget::checkbox("Use Twitch's timestamps",
+        SettingWidget::checkbox(uiText("Use Twitch's timestamps"),
                                 getSettings()->tryUseTwitchTimestamps)
             ->setTooltip(
-                "Try to use Twitch's timestamp (the time when the message was "
+                uiText("Try to use Twitch's timestamp (the time when the message was "
                 "received by Twitch's chat server), rather than your "
                 "computer's local timestamp.\nNote that using this setting can "
                 "result in out-of-order timestamps in the log files, and that "
                 "if Twitch's timestamp was unavailable for a message, it will "
-                "fall back to your computer's local timestamp.")
+                "fall back to your computer's local timestamp."))
             ->conditionallyEnabledBy(getSettings()->enableLogging)
             ->addToLayout(logs->layout());
 
         QCheckBox *onlyLogListedChannels =
-            this->createCheckBox("Only log channels listed below",
+            this->createCheckBox(uiText("Only log channels listed below"),
                                  getSettings()->onlyLogListedChannels);
 
         onlyLogListedChannels->setEnabled(getSettings()->enableLogging);
         logs.append(onlyLogListedChannels);
 
         auto *separatelyStoreStreamLogs =
-            this->createCheckBox("Store live stream logs as separate files",
+            this->createCheckBox(uiText("Store live stream logs as separate files"),
                                  getSettings()->separatelyStoreStreamLogs);
 
         separatelyStoreStreamLogs->setEnabled(getSettings()->enableLogging);
@@ -214,7 +213,7 @@ ModerationPage::ModerationPage()
                         ->initialized(&getSettings()->loggedChannels))
                 .getElement();
 
-        view->setTitles({"Twitch channels"});
+        view->setTitles({uiText("Twitch channels")});
         view->getTableView()->horizontalHeader()->setSectionResizeMode(
             QHeaderView::Fixed);
         view->getTableView()->horizontalHeader()->setSectionResizeMode(
@@ -225,10 +224,10 @@ ModerationPage::ModerationPage()
         });
     }
 
-    auto modMode = tabs.appendTab(new QVBoxLayout, "Moderation buttons");
+    auto modMode = tabs.appendTab(new QVBoxLayout, uiText("Moderation buttons"));
     {
         auto label = modMode.emplace<QLabel>(
-            "Moderation mode is enabled by clicking <img width='18' "
+            uiText("Moderation mode is enabled by clicking <img width='18' "
             "height='18' src=':/buttons/moderationDisabledDarkMode18x18.png'> "
             "in a channel that you moderate.<br><br>"
             "Moderation buttons can be bound to chat commands such as \"/ban "
@@ -238,7 +237,7 @@ ModerationPage::ModerationPage()
             "For deleting messages use /delete {msg.id}.<br><br>"
             "More information can be found <a "
             "href='https://wiki.chatterino.com/Moderation/"
-            "#moderation-mode'>here</a>.");
+            "#moderation-mode'>here</a>."));
         label->setOpenExternalLinks(true);
         label->setWordWrap(true);
         label->setStyleSheet("color: #bbb");
@@ -250,7 +249,7 @@ ModerationPage::ModerationPage()
                         ->initialized(&getSettings()->moderationActions))
                 .getElement();
 
-        view->setTitles({"Action", "Icon"});
+        view->setTitles({uiText("Action"), uiText("Icon")});
         view->getTableView()->horizontalHeader()->setSectionResizeMode(
             QHeaderView::Fixed);
         view->getTableView()->horizontalHeader()->setSectionResizeMode(
@@ -263,7 +262,7 @@ ModerationPage::ModerationPage()
                 if (clicked.column() == ModerationActionModel::Column::Icon)
                 {
                     auto fileUrl = QFileDialog::getOpenFileUrl(
-                        this, "Open Image", QUrl(),
+                        this, uiText("Open Image"), QUrl(),
                         "Image Files (*.png *.jpg *.jpeg)");
                     view->getModel()->setData(clicked, fileUrl, Qt::UserRole);
                     view->getModel()->setData(clicked, fileUrl.fileName(),
@@ -300,7 +299,7 @@ ModerationPage::ModerationPage()
                 ModerationAction("/timeout {user.name} 300"));
         });
 
-        auto *addPin = new QPushButton("Add Pin");
+        auto *addPin = new QPushButton(uiText("Add Pin"));
         view->addCustomButton(addPin);
         QObject::connect(addPin, &QPushButton::clicked, [] {
             getSettings()->moderationActions.append(
@@ -316,19 +315,19 @@ ModerationPage::ModerationPage()
 void ModerationPage::addModerationButtonSettings(QTabWidget *tabs)
 {
     auto timeoutLayout =
-        LayoutCreator{tabs}.appendTab(new QVBoxLayout, "User Timeout Buttons");
+        LayoutCreator{tabs}.appendTab(new QVBoxLayout, uiText("User Timeout Buttons"));
     auto texts = timeoutLayout.emplace<QVBoxLayout>().withoutMargin();
     {
         auto infoLabel = texts.emplace<QLabel>();
         infoLabel->setText(
-            "Customize the timeout buttons in the user popup (accessible "
+            uiText("Customize the timeout buttons in the user popup (accessible "
             "through clicking a username).\nUse seconds (s), "
-            "minutes (m), hours (h), days (d) or weeks (w).");
+            "minutes (m), hours (h), days (d) or weeks (w)."));
 
         infoLabel->setAlignment(Qt::AlignCenter);
 
         auto maxLabel = texts.emplace<QLabel>();
-        maxLabel->setText("(maximum timeout duration = 2 w)");
+        maxLabel->setText(uiText("(maximum timeout duration = 2 w)"));
         maxLabel->setAlignment(Qt::AlignCenter);
     }
     texts->setContentsMargins(0, 0, 0, 15);
@@ -405,7 +404,7 @@ void ModerationPage::addModerationButtonSettings(QTabWidget *tabs)
         auto timeout = timeoutLayout.emplace<QHBoxLayout>().withoutMargin();
 
         auto buttonLabel = timeout.emplace<QLabel>();
-        buttonLabel->setText(QString("Button %1: ").arg(++i));
+        buttonLabel->setText(uiText(QString("Button %1: ")).arg(++i));
 
         auto *lineEditDurationInput = new QLineEdit();
         lineEditDurationInput->setObjectName(buttonNumber);
@@ -422,11 +421,11 @@ void ModerationPage::addModerationButtonSettings(QTabWidget *tabs)
         timeout.append(timeoutDurationUnit);
 
         auto reasonLabel = timeout.emplace<QLabel>();
-        reasonLabel->setText("Reason:");
+        reasonLabel->setText(uiText("Reason:"));
 
         auto *lineEditReasonInput = new QLineEdit();
         lineEditReasonInput->setObjectName(buttonNumber);
-        lineEditReasonInput->setPlaceholderText("optional timeout reason");
+        lineEditReasonInput->setPlaceholderText(uiText("optional timeout reason"));
         if (index < static_cast<int>(reasons.size()))
         {
             lineEditReasonInput->setText(reasons[index]);
@@ -457,10 +456,10 @@ void ModerationPage::addModerationButtonSettings(QTabWidget *tabs)
     auto banReason = timeoutLayout.emplace<QHBoxLayout>().withoutMargin();
     {
         auto label = banReason.emplace<QLabel>();
-        label->setText("Ban reason:");
+        label->setText(uiText("Ban reason:"));
 
         auto *input = new QLineEdit();
-        input->setPlaceholderText("optional ban reason");
+        input->setPlaceholderText(uiText("optional ban reason"));
         input->setText(getSettings()->timeoutBanReason.getValue());
         input->setMinimumWidth(220);
         input->setMaximumWidth(360);
@@ -479,13 +478,13 @@ void ModerationPage::addModerationButtonSettings(QTabWidget *tabs)
     {
         auto promptLabel = promptOptions.emplace<QLabel>();
         promptLabel->setText(
-            "Saved reasons are sent with normal timeout and ban clicks. Use "
-            "the reason prompt when you want to edit the reason first.");
+            uiText("Saved reasons are sent with normal timeout and ban clicks. Use "
+            "the reason prompt when you want to edit the reason first."));
         promptLabel->setWordWrap(true);
         promptLabel->setStyleSheet("color: #bbb");
 
         auto *rightClickPrompt = this->createCheckBox(
-            "Open the reason prompt on right-click",
+            uiText("Open the reason prompt on right-click"),
             getSettings()->timeoutReasonPromptOnRightClick,
             "Right-click a timeout or ban button in a usercard to edit the "
             "reason before sending.");
@@ -493,14 +492,14 @@ void ModerationPage::addModerationButtonSettings(QTabWidget *tabs)
 
         auto modifierRow = promptOptions.emplace<QHBoxLayout>().withoutMargin();
         auto *modifierPrompt = this->createCheckBox(
-            "Open the reason prompt while holding",
+            uiText("Open the reason prompt while holding"),
             getSettings()->timeoutReasonPromptOnModifier,
             "Hold this modifier while clicking a timeout or ban button to edit "
             "the reason before sending.");
         modifierRow.append(modifierPrompt);
 
         auto *modifierKey =
-            this->createComboBox({"Shift", "Ctrl", "Alt"},
+            this->createComboBox({uiText("Shift"), uiText("Ctrl"), uiText("Alt")},
                                  getSettings()->timeoutReasonPromptModifier);
         modifierKey->setMaximumWidth(120);
         modifierRow.append(modifierKey);
@@ -516,14 +515,14 @@ void ModerationPage::addModerationButtonSettings(QTabWidget *tabs)
         updateModifierEnabled();
 
         auto *showSendButton = this->createCheckBox(
-            "Show a Send button in the reason prompt",
+            uiText("Show a Send button in the reason prompt"),
             getSettings()->timeoutReasonPromptShowSendButton,
             "When this is off, press Enter to send the prompt. Esc or clicking "
             "away cancels it.");
         promptOptions.append(showSendButton);
 
         auto *prefillSavedReason = this->createCheckBox(
-            "Prefill the reason prompt with the saved reason",
+            uiText("Prefill the reason prompt with the saved reason"),
             getSettings()->timeoutReasonPromptPrefillSavedReason,
             "When this is on, right-click and modifier prompts start with the "
             "saved timeout or ban reason selected for quick editing.");

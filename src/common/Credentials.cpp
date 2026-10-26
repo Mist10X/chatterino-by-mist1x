@@ -45,20 +45,10 @@ QString formatName(const QString &provider, const QString &name)
 
 bool useKeyring()
 {
-#ifdef NO_QTKEYCHAIN
+    // Never the system keyring: its entries are named "chatterino:<provider>:..."
+    // and shared by every Chatterino client of this Windows user. Logins stay
+    // in Settings/credentials.json inside Leafyrino's own profile.
     return false;
-#endif
-    Modes modes(getApp()->getArgs());
-    if (modes.isPortable)
-    {
-        return false;
-    }
-
-#ifdef Q_OS_LINUX
-    return getSettings()->useKeyring;
-#else
-    return true;
-#endif
 }
 
 QString insecurePath()
@@ -260,6 +250,11 @@ void queueJob(Job &&job)
 }  // namespace
 
 namespace chatterino {
+
+bool Credentials::usesSystemKeyring()
+{
+    return useKeyring();
+}
 
 Credentials &Credentials::instance()
 {

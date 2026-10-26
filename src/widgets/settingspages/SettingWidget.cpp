@@ -5,6 +5,7 @@
 #include "widgets/settingspages/SettingWidget.hpp"
 
 #include "common/QLogging.hpp"
+#include "common/UiLanguage.hpp"
 #include "singletons/NativeMessaging.hpp"
 #include "singletons/Settings.hpp"  // IWYU pragma: keep
 #include "util/QMagicEnumTagged.hpp"
@@ -50,6 +51,7 @@ SettingWidget::SettingWidget(const QString &mainKeyword)
     this->vLayout->addLayout(this->hLayout);
 
     this->keywords.append(mainKeyword);
+    this->keywords.append(uiText(mainKeyword));
     this->tooltipIcon->setVisible(false);
 }
 
@@ -58,7 +60,7 @@ SettingWidget *SettingWidget::checkbox(const QString &label,
 {
     auto *widget = new SettingWidget(label);
 
-    auto *check = new SCheckBox(label);
+    auto *check = new SCheckBox(uiText(label));
 
     widget->hLayout->addWidget(check);
     widget->hLayout->addWidget(widget->tooltipIcon);
@@ -88,7 +90,7 @@ SettingWidget *SettingWidget::inverseCheckbox(const QString &label,
 {
     auto *widget = new SettingWidget(label);
 
-    auto *check = new SCheckBox(label);
+    auto *check = new SCheckBox(uiText(label));
 
     widget->hLayout->addWidget(check);
     widget->hLayout->addWidget(widget->tooltipIcon);
@@ -119,7 +121,7 @@ SettingWidget *SettingWidget::customCheckbox(
 {
     auto *widget = new SettingWidget(label);
 
-    auto *check = new SCheckBox(label);
+    auto *check = new SCheckBox(uiText(label));
 
     widget->hLayout->addWidget(check);
     widget->hLayout->addWidget(widget->tooltipIcon);
@@ -141,7 +143,7 @@ SettingWidget *SettingWidget::intInput(const QString &label,
 {
     auto *widget = new SettingWidget(label);
 
-    auto *lbl = new QLabel(label + ":");
+    auto *lbl = new QLabel(uiText(label) + ":");
 
     auto *input = new SpinBox;
     if (params.min.has_value())
@@ -191,13 +193,13 @@ SettingWidget *SettingWidget::dropdown(const QString &label,
 {
     auto *widget = new SettingWidget(label);
 
-    auto *lbl = new QLabel(label % ":");
+    auto *lbl = new QLabel(uiText(label) % ":");
     auto *combo = new ComboBox;
     combo->setFocusPolicy(Qt::StrongFocus);
 
     for (const auto value : magic_enum::enum_values<T>())
     {
-        combo->addItem(qmagicenum::enumDisplayNameString(value),
+        combo->addItem(uiText(qmagicenum::enumDisplayNameString(value)),
                        QVariant(static_cast<std::underlying_type_t<T>>(value)));
     }
 
@@ -256,6 +258,10 @@ template SettingWidget *SettingWidget::dropdown<RecentMessagesApi>(
     const QString &label, EnumStringSetting<RecentMessagesApi> &setting);
 template SettingWidget *SettingWidget::dropdown<TabStyle>(
     const QString &label, EnumStringSetting<TabStyle> &setting);
+template SettingWidget *SettingWidget::dropdown<TabAvatarStyle>(
+    const QString &label, EnumStringSetting<TabAvatarStyle> &setting);
+template SettingWidget *SettingWidget::dropdown<TimestampSize>(
+    const QString &label, EnumStringSetting<TimestampSize> &setting);
 template SettingWidget *SettingWidget::dropdown<ShowModerationState>(
     const QString &label, EnumStringSetting<ShowModerationState> &setting);
 template SettingWidget *SettingWidget::dropdown<EmojiStyle>(
@@ -277,13 +283,13 @@ SettingWidget *SettingWidget::dropdown(const QString &label,
 {
     auto *widget = new SettingWidget(label);
 
-    auto *lbl = new QLabel(label % ":");
+    auto *lbl = new QLabel(uiText(label) % ":");
     auto *combo = new ComboBox;
     combo->setFocusPolicy(Qt::StrongFocus);
 
     for (const auto value : magic_enum::enum_values<T>())
     {
-        combo->addItem(qmagicenum::enumDisplayNameString(value),
+        combo->addItem(uiText(qmagicenum::enumDisplayNameString(value)),
                        QVariant(static_cast<std::underlying_type_t<T>>(value)));
     }
 
@@ -357,13 +363,16 @@ SettingWidget *SettingWidget::dropdown(
 {
     auto *widget = new SettingWidget(label);
 
-    auto *lbl = new QLabel(label % ":");
+    auto *lbl = new QLabel(uiText(label) % ":");
     auto *combo = new ComboBox;
     combo->setFocusPolicy(Qt::StrongFocus);
 
     for (const auto &[itemText, itemData] : items)
     {
-        combo->addItem(itemText, itemData);
+        combo->addItem(itemData.toString() == QStringLiteral("System")
+                           ? uiText(itemText)
+                           : itemText,
+                       itemData);
     }
 
     // TODO: this can probably use some other size hint/size strategy
@@ -421,7 +430,7 @@ SettingWidget *SettingWidget::colorButton(const QString &label,
     QColor color(setting.getValue());
     auto *widget = new SettingWidget(label);
 
-    auto *lbl = new QLabel(label + ":");
+    auto *lbl = new QLabel(uiText(label) + ":");
 
     auto *colorButton = new ColorButton(color);
 
@@ -464,7 +473,7 @@ SettingWidget *SettingWidget::lineEdit(const QString &label,
 {
     auto *widget = new SettingWidget(label);
 
-    auto *lbl = new QLabel(label + ":");
+    auto *lbl = new QLabel(uiText(label) + ":");
 
     auto *edit = new QLineEdit;
     edit->setText(setting);
@@ -508,7 +517,7 @@ SettingWidget *SettingWidget::fontButton(const QString &label,
 {
     auto *widget = new SettingWidget(label);
 
-    auto *lbl = new QLabel(label + ":");
+    auto *lbl = new QLabel(uiText(label) + ":");
 
     auto *button = new SPushButton(currentFont().family());
 
@@ -544,6 +553,7 @@ SettingWidget *SettingWidget::fontButton(const QString &label,
 SettingWidget *SettingWidget::setTooltip(QString tooltip)
 {
     assert(!tooltip.isEmpty());
+    tooltip = uiText(tooltip);
 
     if (tooltip.length() > MAX_TOOLTIP_LINE_LENGTH)
     {
@@ -582,7 +592,7 @@ SettingWidget *SettingWidget::setTooltip(QString tooltip)
 
 SettingWidget *SettingWidget::setDescription(const QString &text)
 {
-    auto *lbl = new QLabel(text);
+    auto *lbl = new QLabel(uiText(text));
     lbl->setTextInteractionFlags(Qt::TextBrowserInteraction |
                                  Qt::LinksAccessibleByKeyboard);
     lbl->setOpenExternalLinks(true);

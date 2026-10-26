@@ -44,6 +44,7 @@ private:
     std::shared_ptr<NetworkData> data_;
     QNetworkReply *reply_{};
     QTimer *timer_{};
+    bool completed_ = false;
 
 private Q_SLOTS:
     void timeout();

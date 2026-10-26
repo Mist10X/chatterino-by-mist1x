@@ -425,6 +425,8 @@ CommandController::CommandController(const Paths &paths)
 
     this->registerCommand("/reply", &commands::sendReply);
 
+    this->registerCommand("/reconnect", &commands::reconnectChat);
+
 #ifndef NDEBUG
     this->registerCommand("/fakemsg", &commands::injectFakeMessage);
     this->registerCommand("/debug-update-to-no-stream",

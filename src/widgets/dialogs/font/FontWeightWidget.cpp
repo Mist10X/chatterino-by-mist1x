@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/font/FontWeightWidget.hpp"
 
 #include "widgets/dialogs/font/IntItem.hpp"
@@ -50,7 +51,7 @@ FontWeightWidget::FontWeightWidget(const QFont &startFont, QWidget *parent)
         this->list->setCurrentItem(item);
     }
 
-    layout->addWidget(new QLabel("Weight"));
+    layout->addWidget(new QLabel(uiText("Weight")));
     layout->addWidget(this->list);
     layout->setContentsMargins(0, 0, 0, 0);
 

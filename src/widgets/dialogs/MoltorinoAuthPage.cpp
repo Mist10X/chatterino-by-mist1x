@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/MoltorinoAuthPage.hpp"
 
 #include "common/network/NetworkRequest.hpp"
@@ -70,11 +71,22 @@ namespace chatterino {
 
 QString formatMoltorinoAuthSummary(const MoltorinoAuthSummary &summary)
 {
+    if (activeUiLanguage() == QStringLiteral("ru"))
+    {
+        QString text = summary.validAccountCount > 0
+            ? QStringLiteral("Аккаунтов: %1. Модерируемых каналов: %2.")
+                  .arg(summary.validAccountCount).arg(summary.moderatedChannelCount)
+            : QStringLiteral("Вход в аккаунты не выполнен.");
+        if (summary.invalidAccountCount > 0)
+            text += QStringLiteral(" Требуют обновления или повторного входа: %1.")
+                        .arg(summary.invalidAccountCount);
+        return text;
+    }
     QString text;
     if (summary.validAccountCount > 0)
     {
-        text = QString("Logged in to %1 %2. You have mod access "
-                       "in %3 %4.")
+        text = uiText(QString("Logged in to %1 %2. You have mod access "
+                       "in %3 %4."))
                    .arg(summary.validAccountCount)
                    .arg(summary.validAccountCount == 1 ? "account" : "accounts")
                    .arg(summary.moderatedChannelCount)
@@ -83,13 +95,13 @@ QString formatMoltorinoAuthSummary(const MoltorinoAuthSummary &summary)
     }
     else
     {
-        text = QStringLiteral("Not logged in to any accounts.");
+        text = uiText(QStringLiteral("Not logged in to any accounts."));
     }
 
     if (summary.invalidAccountCount > 0)
     {
         text +=
-            QString(" %1 saved %2 %3 refresh or re-auth.")
+            uiText(QString(" %1 saved %2 %3 refresh or re-auth."))
                 .arg(summary.invalidAccountCount)
                 .arg(summary.invalidAccountCount == 1 ? "account" : "accounts")
                 .arg(summary.invalidAccountCount == 1 ? "needs" : "need");
@@ -168,7 +180,7 @@ private:
             color = "#ff7b72";
         }
 
-        label->setText(text);
+        label->setText(uiText(text));
         label->setStyleSheet(QString("QLabel { color: %1; }").arg(color));
     }
 
@@ -211,15 +223,15 @@ private:
         layout->setSpacing(8);
 
         auto *description = new QLabel(
-            "Sign in with Device Login. Leafyrino will open Twitch Activate "
-            "and copy an 8-character code for you to paste there.",
+            uiText("Sign in with Device Login. Leafyrino will open Twitch Activate "
+            "and copy an 8-character code for you to paste there."),
             tab);
         description->setWordWrap(true);
         layout->addWidget(description);
 
-        this->startDeviceButton_ = new QPushButton("Start Device Login", tab);
+        this->startDeviceButton_ = new QPushButton(uiText("Start Device Login"), tab);
         this->startDeviceButton_->setToolTip(
-            "Open Twitch Activate and copy an 8-character code.");
+            uiText("Open Twitch Activate and copy an 8-character code."));
         QObject::connect(this->startDeviceButton_, &QPushButton::clicked, this,
                          [this] {
                              this->startDeviceLogin();
@@ -237,8 +249,8 @@ private:
             this->deviceCodeLabel_->fontMetrics().horizontalAdvance(
                 QString::fromLatin1(DEVICE_CODE_PLACEHOLDER)) +
             20);
-        this->copyCodeButton_ = new QPushButton("Copy Code", tab);
-        this->cancelDeviceButton_ = new QPushButton("Cancel", tab);
+        this->copyCodeButton_ = new QPushButton(uiText("Copy Code"), tab);
+        this->cancelDeviceButton_ = new QPushButton(uiText("Cancel"), tab);
         QObject::connect(
             this->copyCodeButton_, &QPushButton::clicked, this, [this] {
                 if (!this->deviceUserCode_.isEmpty())
@@ -246,7 +258,7 @@ private:
                     crossPlatformCopy(this->deviceUserCode_);
                     setLabelStatus(
                         this->deviceStatusLabel_,
-                        "Code copied. Paste it into Twitch Activate.");
+                        uiText("Code copied. Paste it into Twitch Activate."));
                 }
             });
         QObject::connect(this->cancelDeviceButton_, &QPushButton::clicked, this,
@@ -264,9 +276,9 @@ private:
         layout->addWidget(this->deviceStatusLabel_);
         layout->addStretch(1);
 
-        this->tabs_->addTab(tab, "Device Login");
+        this->tabs_->addTab(tab, uiText("Device Login"));
         setLabelStatus(this->deviceStatusLabel_,
-                       "Start Device Login when you are ready.");
+                       uiText("Start Device Login when you are ready."));
     }
 
     void buildLegacyTab()
@@ -277,17 +289,17 @@ private:
         layout->setSpacing(8);
 
         auto *description = new QLabel(
-            "Use Legacy Login only if Device Login fails. Copy the helper "
+            uiText("Use Legacy Login only if Device Login fails. Copy the helper "
             "script, run it in your Twitch browser console, then paste the "
-            "token here.",
+            "token here."),
             tab);
         description->setWordWrap(true);
         layout->addWidget(description);
 
         auto *buttons = new QHBoxLayout;
         buttons->setSpacing(8);
-        auto *copyScriptButton = new QPushButton("Copy Script", tab);
-        auto *pasteTokenButton = new QPushButton("Paste Token", tab);
+        auto *copyScriptButton = new QPushButton(uiText("Copy Script"), tab);
+        auto *pasteTokenButton = new QPushButton(uiText("Paste Token"), tab);
         QObject::connect(copyScriptButton, &QPushButton::clicked, this, [this] {
             this->copyTokenScriptAndOpenTwitch();
         });
@@ -304,10 +316,10 @@ private:
         layout->addWidget(this->legacyStatusLabel_);
         layout->addStretch(1);
 
-        this->tabs_->addTab(tab, "Legacy Login");
+        this->tabs_->addTab(tab, uiText("Legacy Login"));
         setLabelStatus(
             this->legacyStatusLabel_,
-            "Use this fallback only if Device Login cannot complete.");
+            uiText("Use this fallback only if Device Login cannot complete."));
     }
 
     void buildAccountsTab()
@@ -324,7 +336,7 @@ private:
         this->accountsTable_ = new QTableWidget(this->accountsTab_);
         this->accountsTable_->setColumnCount(4);
         this->accountsTable_->setHorizontalHeaderLabels(
-            {"Account", "Mod channels", "Status", "Remove"});
+            {uiText("Account"), uiText("Mod channels"), uiText("Status"), uiText("Remove")});
         this->accountsTable_->verticalHeader()->hide();
         this->accountsTable_->setSelectionMode(QAbstractItemView::NoSelection);
         this->accountsTable_->setEditTriggers(
@@ -340,7 +352,7 @@ private:
             3, QHeaderView::ResizeToContents);
         layout->addWidget(this->accountsTable_);
 
-        this->tabs_->addTab(this->accountsTab_, "Accounts");
+        this->tabs_->addTab(this->accountsTab_, uiText("Accounts"));
     }
 
     void refreshAccountsList()
@@ -355,12 +367,12 @@ private:
         else if (summary.hasLegacyToken)
         {
             this->accountsSummaryLabel_->setText(
-                "Legacy login found. Existing features will keep working. "
-                "Refresh accounts from settings to show account details.");
+                uiText("Legacy login found. Existing features will keep working. "
+                "Refresh accounts from settings to show account details."));
         }
         else
         {
-            this->accountsSummaryLabel_->setText("No accounts saved yet.");
+            this->accountsSummaryLabel_->setText(uiText("No accounts saved yet."));
         }
 
         this->accountsTable_->setRowCount(static_cast<int>(accounts.size()));
@@ -373,7 +385,7 @@ private:
                 row, 1, readOnlyItem(QString::number(modAccessCount(account))));
 
             auto status = account.valid ? QString("Valid")
-                                        : QString("Needs refresh or re-auth");
+                                        : uiText(QString("Needs refresh or re-auth"));
             if (!account.lastError.trimmed().isEmpty())
             {
                 status = account.lastError;
@@ -383,7 +395,7 @@ private:
             this->accountsTable_->setItem(row, 2, statusItem);
 
             auto *removeButton =
-                new QPushButton("Remove", this->accountsTable_);
+                new QPushButton(uiText("Remove"), this->accountsTable_);
             const auto userId = account.userId;
             const auto token = account.token;
             const auto name = accountName(account);
@@ -391,8 +403,8 @@ private:
                 removeButton, &QPushButton::clicked, this,
                 [this, userId, token, name] {
                     const auto result = QMessageBox::question(
-                        this, "Remove account",
-                        QString("Remove %1 from saved accounts?").arg(name));
+                        this, uiText("Remove account"),
+                        uiText(QString("Remove %1 from saved accounts?")).arg(name));
                     if (result != QMessageBox::Yes)
                     {
                         return;
@@ -409,7 +421,7 @@ private:
         const auto trimmed = token.trimmed();
         if (trimmed.isEmpty())
         {
-            setLabelStatus(statusLabel, "No token was provided.", true);
+            setLabelStatus(statusLabel, uiText("No token was provided."), true);
             return;
         }
 
@@ -417,7 +429,7 @@ private:
         this->authValidationInFlight_ = true;
         QPointer<MoltorinoAuthPage> guard(this);
         QPointer<QLabel> guardedStatus(statusLabel);
-        setLabelStatus(statusLabel, "Checking login...");
+        setLabelStatus(statusLabel, uiText("Checking login..."));
         this->updateDeviceUi();
 
         MoltorinoAuth::addOrUpdateToken(
@@ -436,7 +448,7 @@ private:
                     const auto accessCount = modAccessCount(account);
                     setLabelStatus(
                         guardedStatus,
-                        QString("Added %1. You have mod access in %2 %3.")
+                        uiText(QString("Added %1. You have mod access in %2 %3."))
                             .arg(name)
                             .arg(accessCount)
                             .arg(accessCount == 1 ? "channel" : "channels"),
@@ -445,7 +457,7 @@ private:
                 else
                 {
                     setLabelStatus(guardedStatus,
-                                   QString("Added %1, but %2")
+                                   uiText(QString("Added %1, but %2"))
                                        .arg(name, account.lastError),
                                    true);
                 }
@@ -463,7 +475,7 @@ private:
                 guard->authValidationInFlight_ = false;
                 setLabelStatus(
                     guardedStatus,
-                    QString("Login validation failed: %1").arg(error), true);
+                    uiText(QString("Login validation failed: %1")).arg(error), true);
                 guard->updateDeviceUi();
             });
     }
@@ -477,20 +489,20 @@ private:
 
         QMessageBox box(this);
         box.setWindowFlags(box.windowFlags() | Qt::WindowStaysOnTopHint);
-        box.setWindowTitle("Legacy Login Helper");
+        box.setWindowTitle(uiText("Legacy Login Helper"));
         box.setIcon(QMessageBox::Information);
         box.setText(
-            "The legacy helper command was copied to your clipboard.\n\n"
+            uiText("The legacy helper command was copied to your clipboard.\n\n"
             "1. Twitch was opened in your browser.\n"
             "2. Press F12 and open the Console tab.\n"
             "3. Paste the copied command and press Enter.\n"
-            "4. Come back here and click Paste Token.");
+            "4. Come back here and click Paste Token."));
 
         if (!opened)
         {
             box.setInformativeText(
-                "Leafyrino could not open Twitch automatically. Open "
-                "https://www.twitch.tv/ yourself, then follow the same steps.");
+                uiText("Leafyrino could not open Twitch automatically. Open "
+                "https://www.twitch.tv/ yourself, then follow the same steps."));
         }
         box.exec();
     }
@@ -502,8 +514,8 @@ private:
         {
             setLabelStatus(
                 this->legacyStatusLabel_,
-                "Clipboard is empty. Use Device Login first, or Legacy Login "
-                "if Device Login does not work.",
+                uiText("Clipboard is empty. Use Device Login first, or Legacy Login "
+                "if Device Login does not work."),
                 true);
             return;
         }
@@ -531,7 +543,7 @@ private:
         this->deviceCodeLabel_->setText(DEVICE_CODE_PLACEHOLDER);
         this->updateDeviceUi();
         setLabelStatus(this->deviceStatusLabel_,
-                       "Requesting a Twitch device activation code...");
+                       uiText("Requesting a Twitch device activation code..."));
 
         QUrlQuery body;
         body.addQueryItem("client_id", TWITCH_TV_CLIENT_ID);
@@ -591,20 +603,20 @@ private:
                     QDesktopServices::openUrl(QUrl(verificationUri));
                 setLabelStatus(
                     guard->deviceStatusLabel_,
-                    "Twitch Activate is open and the code is already copied. "
-                    "Paste it there, then approve access.");
+                    uiText("Twitch Activate is open and the code is already copied. "
+                    "Paste it there, then approve access."));
 
                 if (!opened)
                 {
                     QMessageBox box(guard);
                     box.setWindowFlags(box.windowFlags() |
                                        Qt::WindowStaysOnTopHint);
-                    box.setWindowTitle("Browser Error");
+                    box.setWindowTitle(uiText("Browser Error"));
                     box.setIcon(QMessageBox::Warning);
                     box.setText(
-                        "Leafyrino could not open your browser automatically.");
-                    box.setInformativeText("Please go to " + verificationUri +
-                                           " and enter the code displayed.");
+                        uiText("Leafyrino could not open your browser automatically."));
+                    box.setInformativeText(uiText("Please go to ") + verificationUri +
+                                           uiText(" and enter the code displayed."));
                     box.exec();
                 }
 
@@ -623,7 +635,7 @@ private:
                     body.isEmpty()
                         ? "Device login setup failed. Twitch did not return "
                           "an activation code."
-                        : QString("Device login setup failed: %1")
+                        : uiText(QString("Device login setup failed: %1"))
                               .arg(body.left(200)));
             })
             .execute();
@@ -697,7 +709,7 @@ private:
             this->deviceCodeLabel_->setText(DEVICE_CODE_PLACEHOLDER);
             setLabelStatus(
                 this->deviceStatusLabel_,
-                "Twitch approval received. Checking the new token...");
+                uiText("Twitch approval received. Checking the new token..."));
             this->addOrUpdateToken(accessToken, this->deviceStatusLabel_);
             return;
         }
@@ -716,8 +728,8 @@ private:
         {
             this->devicePollIntervalMs_ += 5000;
             setLabelStatus(this->deviceStatusLabel_,
-                           "Twitch asked Leafyrino to poll more slowly. "
-                           "Still waiting for approval...");
+                           uiText("Twitch asked Leafyrino to poll more slowly. "
+                           "Still waiting for approval..."));
             this->devicePollTimer_->start(this->devicePollIntervalMs_);
             return;
         }
@@ -756,7 +768,7 @@ private:
 
         setLabelStatus(
             this->deviceStatusLabel_,
-            statusMessage.isEmpty() ? "Device Login canceled." : statusMessage,
+            statusMessage.isEmpty() ? uiText("Device Login canceled.") : statusMessage,
             !statusMessage.isEmpty());
     }
 

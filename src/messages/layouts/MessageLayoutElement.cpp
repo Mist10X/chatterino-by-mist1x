@@ -12,7 +12,10 @@
 #include "messages/MessageElement.hpp"
 #include "providers/seventv/paints/PaintDropShadow.hpp"
 #include "providers/seventv/SeventvPaints.hpp"
+#include "providers/twitch/ClipPreview.hpp"
 #include "providers/twitch/TwitchEmotes.hpp"
+#include "common/UiLanguage.hpp"
+#include "singletons/Fonts.hpp"
 #include "singletons/helper/GifTimer.hpp"
 #include "singletons/Settings.hpp"
 #include "util/DebugCount.hpp"
@@ -1474,6 +1477,161 @@ qreal TextIconLayoutElement::getXFromIndex(size_t index)
     {
         return this->getRect().right();
     }
+}
+
+ClipCardLayoutElement::ClipCardLayoutElement(
+    MessageElement &creator, std::shared_ptr<const ClipPreviewInfo> info,
+    QSizeF size, float scale)
+    : MessageLayoutElement(creator, size)
+    , info_(std::move(info))
+    , scale_(scale)
+{
+    this->trailingSpace = false;
+}
+
+void ClipCardLayoutElement::paint(QPainter &painter,
+                                  const MessageColors &messageColors)
+{
+    const auto s = this->scale_;
+    const auto &info = *this->info_;
+    const QRectF card = QRectF(this->getRect()).adjusted(0, 3 * s, 0, -2 * s);
+
+    painter.save();
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
+
+    const bool light = messageColors.regularBg.lightnessF() > 0.5;
+    painter.setPen(
+        QPen(light ? QColor(0, 0, 0, 45) : QColor(255, 255, 255, 38), 1));
+    painter.setBrush(light ? QColor(0, 0, 0, 8) : QColor(255, 255, 255, 10));
+    painter.drawRoundedRect(card.adjusted(0.5, 0.5, -0.5, -0.5), 6 * s, 6 * s);
+
+    // thumbnail, 16:9, cropped to fill
+    const qreal pad = 5 * s;
+    const qreal thumbH = card.height() - 2 * pad;
+    const QRectF thumb(card.left() + pad, card.top() + pad, thumbH * 16 / 9,
+                       thumbH);
+    QPainterPath rounded;
+    rounded.addRoundedRect(thumb, 4 * s, 4 * s);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(0, 0, 0, 90));
+    painter.drawPath(rounded);
+    if (info.thumbnail)
+    {
+        if (auto pixmap = info.thumbnail->pixmapOrLoad())
+        {
+            QRectF source(pixmap->rect());
+            const qreal want = thumb.width() / thumb.height();
+            if (source.width() / source.height() > want)
+            {
+                const qreal w = source.height() * want;
+                source.adjust((source.width() - w) / 2, 0,
+                              -(source.width() - w) / 2, 0);
+            }
+            else
+            {
+                const qreal h = source.width() / want;
+                source.adjust(0, (source.height() - h) / 2, 0,
+                              -(source.height() - h) / 2);
+            }
+            painter.setClipPath(rounded);
+            painter.drawPixmap(thumb, *pixmap, source);
+            painter.setClipping(false);
+        }
+    }
+
+    auto *fonts = getApp()->getFonts();
+    // duration badge in the thumbnail's corner
+    const auto duration = clippreview::formatDuration(info.durationSeconds);
+    const auto smallFont = fonts->getFont(FontStyle::ChatSmall, s);
+    const QFontMetricsF smallMetrics(smallFont);
+    const QSizeF badgeSize(smallMetrics.horizontalAdvance(duration) + 6 * s,
+                           smallMetrics.height() + 1 * s);
+    const QRectF badge(thumb.right() - badgeSize.width() - 3 * s,
+                       thumb.bottom() - badgeSize.height() - 3 * s,
+                       badgeSize.width(), badgeSize.height());
+    painter.setBrush(QColor(0, 0, 0, 190));
+    painter.drawRoundedRect(badge, 3 * s, 3 * s);
+    painter.setFont(smallFont);
+    painter.setPen(Qt::white);
+    painter.drawText(badge, Qt::AlignCenter, duration);
+
+    // up to three lines of text next to it
+    const qreal x = thumb.right() + 10 * s;
+    const qreal width = card.right() - pad - x;
+    if (width > 20 * s)
+    {
+        QStringList meta;
+        if (!info.creator.isEmpty())
+        {
+            meta.append(info.creator);
+        }
+        meta.append(clippreview::formatViews(info.views));
+        const auto age = clippreview::formatAge(
+            info.createdAt, QDateTime::currentDateTimeUtc());
+        if (!age.isEmpty())
+        {
+            meta.append(age);
+        }
+        struct Line {
+            QString text;
+            FontStyle style;
+            QColor color;
+        };
+        std::vector<Line> lines{{info.broadcaster, FontStyle::ChatMediumBold,
+                                 messageColors.regularText}};
+        if (!info.gameName.isEmpty())
+        {
+            lines.push_back({uiText("playing %1").arg(info.gameName),
+                             FontStyle::ChatMediumSmall,
+                             messageColors.systemText});
+        }
+        lines.push_back({meta.join(QStringLiteral(" · ")),
+                         FontStyle::ChatMediumSmall, messageColors.systemText});
+
+        const qreal step = thumbH / 3;
+        qreal y = thumb.top() + (thumbH - step * qreal(lines.size())) / 2;
+        for (const auto &line : lines)
+        {
+            const auto font = fonts->getFont(line.style, s);
+            const QFontMetricsF metrics(font);
+            painter.setFont(font);
+            painter.setPen(line.color);
+            painter.drawText(
+                QRectF(x, y, width, step), Qt::AlignLeft | Qt::AlignVCenter,
+                metrics.elidedText(line.text, Qt::ElideRight, width));
+            y += step;
+        }
+    }
+    painter.restore();
+}
+
+QRegion ClipCardLayoutElement::paintAnimated(QPainter & /*painter*/,
+                                             qreal /*yOffset*/)
+{
+    return {};
+}
+
+int ClipCardLayoutElement::getMouseOverIndex(QPointF abs) const
+{
+    return abs.x() >= this->getRect().center().x() ? 1 : 0;
+}
+
+qreal ClipCardLayoutElement::getXFromIndex(size_t index)
+{
+    return index == 0 ? this->getRect().left() : this->getRect().right();
+}
+
+void ClipCardLayoutElement::addCopyTextToString(QString & /*str*/,
+                                                uint32_t /*from*/,
+                                                uint32_t /*to*/) const
+{
+    // the link itself is already part of the message text
+}
+
+size_t ClipCardLayoutElement::getSelectionIndexCount() const
+{
+    return 1;
 }
 
 ReplyCurveLayoutElement::ReplyCurveLayoutElement(MessageElement &creator,

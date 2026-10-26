@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/ColorPickerDialog.hpp"
 
 #include "providers/colors/ColorProvider.hpp"
@@ -70,26 +71,26 @@ ColorPickerDialog::ColorPickerDialog(QColor color, QWidget *parent)
           parent)
     , color_(color)
 {
-    this->setWindowTitle(u"Leafyrino - Color picker"_s);
+    this->setWindowTitle(uiText(u"Leafyrino - Color picker"_s));
     this->setAttribute(Qt::WA_DeleteOnClose);
 
     auto *dialogContents = new QHBoxLayout;
     dialogContents->setContentsMargins(10, 10, 10, 10);
     {
         auto *buttons = new QVBoxLayout;
-        buttons->addWidget(new QLabel(u"Recently used"_s));
+        buttons->addWidget(new QLabel(uiText(u"Recently used"_s)));
         buttons->addLayout(makeColorGrid(
             ColorProvider::instance().recentColors(), this, MAX_RECENT_COLORS));
 
         buttons->addSpacing(10);
 
-        buttons->addWidget(new QLabel(u"Default colors"_s));
+        buttons->addWidget(new QLabel(uiText(u"Default colors"_s)));
         buttons->addLayout(
             makeColorGrid(ColorProvider::instance().defaultColors(), this,
                           MAX_DEFAULT_COLORS));
 
         buttons->addStretch(1);
-        buttons->addWidget(new QLabel(u"Selected"_s));
+        buttons->addWidget(new QLabel(uiText(u"Selected"_s)));
         auto *display = new ColorButton(this->color());
         QObject::connect(this, &ColorPickerDialog::colorChanged, display,
                          &ColorButton::setColor);

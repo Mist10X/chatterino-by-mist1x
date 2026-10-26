@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/ChannelFilterEditorDialog.hpp"
 
 #include "controllers/filters/lang/Tokenizer.hpp"
@@ -27,15 +28,15 @@ ChannelFilterEditorDialog::ChannelFilterEditorDialog(QWidget *parent)
     auto *vbox = new QVBoxLayout(this);
     auto *filterVbox = new QVBoxLayout;
     auto *buttonBox = new QHBoxLayout;
-    auto *okButton = new QPushButton("Ok");
-    auto *cancelButton = new QPushButton("Cancel");
+    auto *okButton = new QPushButton(uiText("Ok"));
+    auto *cancelButton = new QPushButton(uiText("Cancel"));
 
     okButton->setDefault(true);
     cancelButton->setDefault(false);
 
     auto *helpLabel =
-        new QLabel(QString("<a href='%1'><span "
-                           "style='color:#99f'>variable help</span></a>")
+        new QLabel(uiText(QString("<a href='%1'><span "
+                           "style='color:#99f'>variable help</span></a>"))
                        .arg("https://wiki.chatterino.com/Filters/#variables"));
     helpLabel->setOpenExternalLinks(true);
 
@@ -56,11 +57,11 @@ ChannelFilterEditorDialog::ChannelFilterEditorDialog(QWidget *parent)
     this->setWindowFlags(
         (this->windowFlags() & ~(Qt::WindowContextHelpButtonHint)) |
         Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
-    this->setWindowTitle("Channel Filter Creator");
+    this->setWindowTitle(uiText("Channel Filter Creator"));
 
     auto *titleInput = new QLineEdit;
-    titleInput->setPlaceholderText("Filter name");
-    titleInput->setText("My filter");
+    titleInput->setPlaceholderText(uiText("Filter name"));
+    titleInput->setText(uiText("My filter"));
 
     this->titleInput_ = titleInput;
     filterVbox->addWidget(titleInput);
@@ -99,10 +100,15 @@ ChannelFilterEditorDialog::ValueSpecifier::ValueSpecifier()
     this->valueInput_ = new QLineEdit;
     this->layout_ = new QHBoxLayout;
 
-    this->typeCombo_->insertItems(
-        0, {"Constant Text", "Constant Number", "Variable"});
+    for (const auto &type : {QString("Constant Text"), QString("Constant Number"), QString("Variable")})
+    {
+        this->typeCombo_->addItem(uiText(type), type);
+    }
 
-    this->varCombo_->insertItems(0, filters::VALID_IDENTIFIERS_MAP.values());
+    for (const auto &description : filters::VALID_IDENTIFIERS_MAP)
+    {
+        this->varCombo_->addItem(uiText(description), description);
+    }
 
     this->layout_->addWidget(this->typeCombo_);
     this->layout_->addWidget(this->varCombo_, 1);
@@ -136,15 +142,17 @@ void ChannelFilterEditorDialog::ValueSpecifier::setEnabled(bool enabled)
 
 void ChannelFilterEditorDialog::ValueSpecifier::setType(const QString &type)
 {
-    this->typeCombo_->setCurrentText(type);
+    const auto index = this->typeCombo_->findData(type);
+    if (index >= 0)this->typeCombo_->setCurrentIndex(index);
 }
 
 void ChannelFilterEditorDialog::ValueSpecifier::setValue(const QString &value)
 {
     if (this->typeCombo_->currentIndex() == 2)
     {
-        this->varCombo_->setCurrentText(
+        const auto index = this->varCombo_->findData(
             filters::VALID_IDENTIFIERS_MAP.value(value));
+        if (index >= 0)this->varCombo_->setCurrentIndex(index);
     }
     else
     {
@@ -168,7 +176,7 @@ QString ChannelFilterEditorDialog::ValueSpecifier::expressionText()
             return this->valueInput_->text();
         case 2:
             return filters::VALID_IDENTIFIERS_MAP.key(
-                this->varCombo_->currentText());
+                this->varCombo_->currentData().toString());
         default:
             return "";
     }
@@ -182,7 +190,10 @@ ChannelFilterEditorDialog::BinaryOperationSpecifier::BinaryOperationSpecifier(
     this->opCombo_ = new QComboBox;
     this->layout_ = new QVBoxLayout;
 
-    this->opCombo_->insertItems(0, friendlyBinaryOps);
+    for (const auto &op : friendlyBinaryOps)
+    {
+        this->opCombo_->addItem(uiText(op), op);
+    }
 
     this->layout_->addLayout(this->left_->layout());
     this->layout_->addWidget(this->opCombo_);
@@ -207,7 +218,8 @@ void ChannelFilterEditorDialog::BinaryOperationSpecifier::setEnabled(
 void ChannelFilterEditorDialog::BinaryOperationSpecifier::setOperation(
     const QString &op)
 {
-    this->opCombo_->setCurrentText(op);
+    const auto index = this->opCombo_->findData(op);
+    if (index >= 0)this->opCombo_->setCurrentIndex(index);
 }
 
 QLayout *ChannelFilterEditorDialog::BinaryOperationSpecifier::layout() const

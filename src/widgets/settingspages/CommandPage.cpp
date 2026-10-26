@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/settingspages/CommandPage.hpp"
 
 #include "Application.hpp"
@@ -32,7 +33,8 @@ inline const QString HELP_TEXT =
 
 QString c1settingsPath()
 {
-    return combinePath(qgetenv("appdata"), "Chatterino\\Custom\\Commands.txt");
+    // No import from %APPDATA%\Chatterino: that is another client's profile.
+    return {};
 }
 
 void checkCommandDuplicates(EditableModelView *view, QLabel *duplicateWarning)
@@ -93,7 +95,7 @@ CommandPage::CommandPage()
                          getApp()->getCommands()->createModel(nullptr))
                      .getElement();
 
-    this->view->setTitles({"Trigger", "Command", "Show In\nMessage Menu"});
+    this->view->setTitles({uiText("Trigger"), uiText("Command"), uiText("Show In\nMessage Menu")});
     this->view->getTableView()->horizontalHeader()->setSectionResizeMode(
         1, QHeaderView::Stretch);
 
@@ -104,7 +106,7 @@ CommandPage::CommandPage()
 
     if (QFile(c1settingsPath()).exists())
     {
-        auto *button = new QPushButton("Import commands from Chatterino 1");
+        auto *button = new QPushButton(uiText("Import commands from Chatterino 1"));
         this->view->addCustomButton(button);
 
         QObject::connect(button, &QPushButton::clicked, this, [this] {
@@ -112,8 +114,8 @@ CommandPage::CommandPage()
             if (!c1settings.open(QIODevice::ReadOnly))
             {
                 QMessageBox::warning(
-                    this, "Chatterino 1 Importer",
-                    "Failed to read settings: " + c1settings.errorString());
+                    this, uiText("Chatterino 1 Importer"),
+                    uiText("Failed to read settings: ") + c1settings.errorString());
                 return;
             }
             for (const auto &line :
@@ -129,15 +131,15 @@ CommandPage::CommandPage()
         });
     }
 
-    QLabel *text = layout.emplace<QLabel>(HELP_TEXT).getElement();
+    QLabel *text = layout.emplace<QLabel>(uiText(HELP_TEXT)).getElement();
     text->setWordWrap(true);
     text->setStyleSheet("color: #bbb");
     text->setOpenExternalLinks(true);
 
     auto *duplicateWarning =
         layout
-            .emplace<QLabel>("Multiple commands with the same trigger found. "
-                             "Only one of the commands will work.")
+            .emplace<QLabel>(uiText("Multiple commands with the same trigger found. "
+                             "Only one of the commands will work."))
             .getElement();
     duplicateWarning->setStyleSheet("color: yellow");
 

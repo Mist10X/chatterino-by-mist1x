@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/font/FontDialog.hpp"
 
 #include "widgets/dialogs/font/FontFamilyWidget.hpp"
@@ -27,16 +28,16 @@ FontDialog::FontDialog(const QFont &startFont, QWidget *parent)
     auto *choiceSideLayout = new QVBoxLayout;
     auto *buttonLayout = new QHBoxLayout;
 
-    auto *applyButton = new QPushButton("Apply");
-    auto *acceptButton = new QPushButton("Ok");
-    auto *rejectButton = new QPushButton("Cancel");
+    auto *applyButton = new QPushButton(uiText("Apply"));
+    auto *acceptButton = new QPushButton(uiText("Ok"));
+    auto *rejectButton = new QPushButton(uiText("Cancel"));
 
-    this->setWindowTitle("Pick Font");
+    this->setWindowTitle(uiText("Pick Font"));
     this->setLayout(layout);
     this->resize(450, 450);
 
     layout->addLayout(choiceLayout, 5);
-    layout->addWidget(new QLabel("Preview"));
+    layout->addWidget(new QLabel(uiText("Preview")));
     layout->addWidget(this->preview, 1);
     layout->addLayout(buttonLayout);
 

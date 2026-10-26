@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/LastRunCrashDialog.hpp"
 
 #include "common/Args.hpp"
@@ -36,8 +37,8 @@ const std::initializer_list<QString> MESSAGES = {
 
 QString randomMessage()
 {
-    return *(MESSAGES.begin() +
-             (QRandomGenerator::global()->generate64() % MESSAGES.size()));
+    return chatterino::uiText(*(MESSAGES.begin() +
+             (QRandomGenerator::global()->generate64() % MESSAGES.size())));
 }
 
 }  // namespace
@@ -47,25 +48,25 @@ namespace chatterino {
 LastRunCrashDialog::LastRunCrashDialog(const Args &args, const Paths &paths)
 {
     this->setWindowFlag(Qt::WindowContextHelpButtonHint, false);
-    this->setWindowTitle(u"Leafyrino - " % randomMessage());
+    this->setWindowTitle(uiText(u"Leafyrino - ") % randomMessage());
 
     auto layout =
         LayoutCreator<LastRunCrashDialog>(this).setLayoutType<QVBoxLayout>();
 
-    QString text =
+    QString text = uiText(
         u"Chatterino unexpectedly crashed and restarted. "_s
-        "<i>You can disable automatic restarts in the settings.</i><br><br>";
+        "<i>You can disable automatic restarts in the settings.</i><br><br>");
 
 #ifdef CHATTERINO_WITH_CRASHPAD
     auto reportsDir = QDir(paths.crashdumpDirectory).filePath(u"reports"_s);
-    text += QStringLiteral("A <b>crash report</b> has been saved to "
-                           "<a href=\"file:///") %
+    text += uiText(QStringLiteral("A <b>crash report</b> has been saved to "
+                           "<a href=\"file:///")) %
             reportsDir % QStringLiteral("\">") % reportsDir %
             QStringLiteral("</a>.<br>");
 
     if (args.exceptionCode)
     {
-        text += QStringLiteral("The last run crashed with code <code>0x") %
+        text += uiText(QStringLiteral("The last run crashed with code <code>0x")) %
                 QString::number(*args.exceptionCode, 16) % u"</code>";
 
         if (args.exceptionMessage)
@@ -78,19 +79,19 @@ LastRunCrashDialog::LastRunCrashDialog(const Args &args, const Paths &paths)
     }
 
     text +=
-        "Crash reports are <b>only stored locally</b> and never uploaded.<br>"
+        uiText("Crash reports are <b>only stored locally</b> and never uploaded.<br>"
         "<br>Please <a "
         "href=\"https://github.com/Chatterino/chatterino2/issues/new\">report "
         "the crash</a> "
-        u"so it can be prevented in the future."_s;
+        u"so it can be prevented in the future."_s);
 
     if (Version::instance().isNightly())
     {
-        text += u" Make sure you're using the latest nightly version!"_s;
+        text += uiText(u" Make sure you're using the latest nightly version!"_s);
     }
 
     text +=
-        u"<br>For more information, <a href=\"https://wiki.chatterino.com/Crash%20Analysis/\">consult the wiki</a>."_s;
+        uiText(u"<br>For more information, <a href=\"https://wiki.chatterino.com/Crash%20Analysis/\">consult the wiki</a>."_s);
 #endif
 
     auto label = layout.emplace<QLabel>(text);
@@ -102,7 +103,7 @@ LastRunCrashDialog::LastRunCrashDialog(const Args &args, const Paths &paths)
 
     auto buttons = layout.emplace<QDialogButtonBox>();
 
-    auto *okButton = buttons->addButton(u"Ok"_s, QDialogButtonBox::AcceptRole);
+    auto *okButton = buttons->addButton(uiText(u"Ok"_s), QDialogButtonBox::AcceptRole);
     QObject::connect(okButton, &QPushButton::clicked, [this] {
         this->accept();
     });

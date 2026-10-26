@@ -352,10 +352,45 @@ public:
     void refreshPollIfStale(bool force = false);
     void tryEmitPollCreatedSystemMessage(const PollEvent &poll);
     qint64 channelPointBalance() const;
+    /// The channel's own points icon; empty for Twitch's default one.
+    const QString &channelPointsIconUrl() const;
     bool isChannelPointsFetchInFlight() const;
     bool shouldShowChannelPoints() const;
     void setChannelPointBalance(qint64 balance);
     void handleChatWarningPubSub(const QJsonObject &payload);
+
+    /// The signed-in user's own timeout or ban in this channel.
+    struct OwnRestriction {
+        enum class Kind : uint8_t { None, TimedOut, Banned, Lifted };
+        Kind kind = Kind::None;
+        QDateTime until;         ///< end of the timeout (TimedOut)
+        bool liftedBan = false;  ///< Lifted after a ban, not a timeout
+        /// When Twitch last said so (ms since epoch).
+        qint64 confirmedAtMs = 0;
+    };
+    /// The restriction of the account that is signed in now. Each of the
+    /// user's accounts has its own (switching accounts switches the input).
+    const OwnRestriction &ownRestriction() const;
+    const OwnRestriction &ownRestrictionOf(const QString &userId) const;
+    /// An empty user ID means the current account.
+    void setOwnTimedOut(const QDateTime &until, const QString &userId = {});
+    void setOwnBanned(const QString &userId = {});
+    /// Ask Twitch whether the current account is banned here (after a
+    /// restart nothing else tells; Twitch then hides the chat from it).
+    void checkOwnBan();
+    /// The timeout ran out or was removed, or the ban was lifted.
+    void liftOwnRestriction(const QString &userId = {});
+    /// The first message after a lifted restriction: back to normal.
+    void acknowledgeOwnRestrictionLifted();
+    /// A message was sent while restricted. If Twitch does not answer with
+    /// "timed out" / "banned" within a few seconds, it was accepted: the
+    /// restriction is over even if its end was missed (another account was
+    /// signed in, PubSub was down).
+    void noteSendWhileRestricted();
+    /// chatrooms-user-v1 timeout / untimeout / ban / unban of the own user.
+    void handleOwnModerationPubSub(const QJsonObject &data);
+    /// One of the Twitch accounts signed in to this client.
+    static bool isOwnAccountId(const QString &userId);
     void handleChatWarningNotice();
     void refreshChatWarningIfStale(bool force = false,
                                    bool notifyOnError = false);
@@ -515,6 +550,17 @@ public:
     pajlada::Signals::NoArgSignal destroyed;
 
     pajlada::Signals::Signal<const QString &> sendWaitUpdate;
+
+    /// ownRestriction() changed.
+    pajlada::Signals::NoArgSignal ownRestrictionChanged;
+
+    /// A live raid into this channel: raider login, display name, viewers.
+    pajlada::Signals::Signal<const QString &, const QString &, int>
+        incomingRaid;
+    /// Live mass gifted subs in this channel: gifter login, display name,
+    /// number of subs.
+    pajlada::Signals::Signal<const QString &, const QString &, int>
+        massGiftSubs;
 
     pajlada::Signals::Signal<const std::vector<HelixMinimalUser> &>
         sharedChatStatusChanged;
@@ -731,6 +777,7 @@ private:
     QDateTime lastChannelPointsRefreshAt_;
     QDateTime lastChannelPointsUpdateAt_;
     QString lastChannelPointsError_;
+    QString channelPointsIconUrl_;
     bool disconnected_{};
     std::optional<std::chrono::time_point<std::chrono::system_clock>>
         lastConnectedAt_{};
@@ -874,6 +921,11 @@ private:
     QTimer sendWaitTimer_;
     // Timepoint at which the user can send messages again
     std::optional<std::chrono::steady_clock::time_point> sendWaitEnd_;
+    /// Twitch user ID => restriction, for each of the user's own accounts.
+    std::unordered_map<QString, OwnRestriction> ownRestrictions_;
+    QTimer ownRestrictionProbe_;
+    QString ownRestrictionProbeUser_;
+    qint64 ownRestrictionProbeAtMs_ = 0;
 };
 
 }  // namespace chatterino

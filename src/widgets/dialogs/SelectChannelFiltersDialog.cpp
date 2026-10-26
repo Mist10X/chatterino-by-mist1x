@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/SelectChannelFiltersDialog.hpp"
 
 #include "controllers/filters/FilterRecord.hpp"
@@ -22,8 +23,8 @@ SelectChannelFiltersDialog::SelectChannelFiltersDialog(
     auto *vbox = new QVBoxLayout(this);
     auto *itemVbox = new QVBoxLayout;
     auto *buttonBox = new QHBoxLayout;
-    auto *okButton = new QPushButton("Ok");
-    auto *cancelButton = new QPushButton("Cancel");
+    auto *okButton = new QPushButton(uiText("Ok"));
+    auto *cancelButton = new QPushButton(uiText("Cancel"));
 
     auto *scrollAreaContent = new QWidget;
     scrollAreaContent->setLayout(itemVbox);
@@ -57,7 +58,7 @@ SelectChannelFiltersDialog::SelectChannelFiltersDialog(
 
     if (availableFilters->size() == 0)
     {
-        auto *text = new QLabel("No filters defined");
+        auto *text = new QLabel(uiText("No filters defined"));
         itemVbox->addWidget(text);
     }
     else

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/helper/DebugPopup.hpp"
 
 #include "common/Literals.hpp"
@@ -23,7 +24,7 @@ DebugPopup::DebugPopup()
     auto *layout = new QVBoxLayout(this);
     auto *text = new QLabel(this);
     auto *timer = new QTimer(this);
-    auto *copyButton = new QPushButton(u"&Copy"_s);
+    auto *copyButton = new QPushButton(uiText(u"&Copy"_s));
 
     QObject::connect(timer, &QTimer::timeout, [text] {
         text->setText(DebugCount::getDebugText());

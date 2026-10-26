@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/font/FontFamilyWidget.hpp"
 
 #include <QBoxLayout>
@@ -46,10 +47,10 @@ FontFamilyWidget::FontFamilyWidget(const QFont &startFont, QWidget *parent)
     layout->addWidget(this->list);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    header->addWidget(new QLabel("Font"));
+    header->addWidget(new QLabel(uiText("Font")));
     header->addWidget(search);
 
-    search->setPlaceholderText("Search...");
+    search->setPlaceholderText(uiText("Search..."));
 
     QObject::connect(search, &QLineEdit::textChanged, this->proxy,
                      &QSortFilterProxyModel::setFilterFixedString);

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/SettingsDialog.hpp"
 
 #include "Application.hpp"
@@ -52,13 +53,14 @@ SettingsDialog::SettingsDialog(QWidget *parent)
           parent)
 {
     this->setObjectName("SettingsDialog");
-    this->setWindowTitle("Leafyrino Settings");
+    this->setWindowTitle(uiText("Leafyrino Settings"));
     this->setWindowRole(u"chatterino.settings"_s);
     // Disable the ? button in the titlebar until we decide to use it
     this->setWindowFlags(this->windowFlags() &
                          ~Qt::WindowContextHelpButtonHint);
 
-    this->resize(915, 600);
+    // Russian captions need more room; keep the established font and scale.
+    this->resize(activeUiLanguage() == "ru" ? 1200 : 915, 600);
 
     this->initUi();
     this->addTabs();
@@ -102,7 +104,7 @@ void SettingsDialog::setSearchPlaceholderText()
             "(" + searchSeq.toString(QKeySequence::SequenceFormat::NativeText) +
             ")";
     }
-    this->ui_.search->setPlaceholderText("Find in settings... " + searchHotkey);
+    this->ui_.search->setPlaceholderText(uiText("Find in settings... ") + searchHotkey);
 }
 
 void SettingsDialog::initUi()
@@ -153,9 +155,9 @@ void SettingsDialog::initUi()
     auto buttons = outerBox.emplace<QDialogButtonBox>(Qt::Horizontal);
     {
         this->ui_.okButton =
-            buttons->addButton("Ok", QDialogButtonBox::YesRole);
+            buttons->addButton(uiText("Ok"), QDialogButtonBox::YesRole);
         this->ui_.cancelButton =
-            buttons->addButton("Cancel", QDialogButtonBox::NoRole);
+            buttons->addButton(uiText("Cancel"), QDialogButtonBox::NoRole);
     }
 
     // ---- misc
@@ -252,28 +254,28 @@ void SettingsDialog::addTabs()
     // Constructors are wrapped in std::function to remove some strain from first time loading.
 
     // clang-format off
-    this->addTab([]{return new GeneralPage;},          "General",        ":/settings/about.svg", SettingsTabId::General);
-    this->addTab([]{return new LeafyrinoPage;},        "Leafyrino",      ":/settings/leafyrino.png", SettingsTabId::Leafyrino);
-    this->addTab([]{return new MoltorinoPage;},        "Moltorino",      ":/settings/moltorino.svg", SettingsTabId::Moltorino);
-    this->addTab([]{return new TechnorinoPage;},       "Technorino",     technorinoIconPath, SettingsTabId::Technorino);
+    this->addTab([]{return new GeneralPage;},          uiText("General"),        ":/settings/about.svg", SettingsTabId::General);
+    this->addTab([]{return new LeafyrinoPage;},        uiText("Leafyrino"),      ":/settings/leafyrino.png", SettingsTabId::Leafyrino);
+    this->addTab([]{return new MoltorinoPage;},        uiText("Moltorino"),      ":/settings/moltorino.svg", SettingsTabId::Moltorino);
+    this->addTab([]{return new TechnorinoPage;},       uiText("Technorino"),     technorinoIconPath, SettingsTabId::Technorino);
     this->ui_.tabContainer->addSpacing(16);
-    this->addTab([]{return new AccountsPage;},         "Accounts",       ":/settings/accounts.svg", SettingsTabId::Accounts);
-    this->addTab([]{return new NicknamesPage;},        "Nicknames",      ":/settings/accounts.svg");
+    this->addTab([]{return new AccountsPage;},         uiText("Accounts"),       ":/settings/accounts.svg", SettingsTabId::Accounts);
+    this->addTab([]{return new NicknamesPage;},        uiText("Nicknames"),      ":/settings/accounts.svg");
     this->ui_.tabContainer->addSpacing(16);
-    this->addTab([]{return new CommandPage;},          "Commands",       ":/settings/commands.svg");
-    this->addTab([]{return new HighlightingPage;},     "Highlights",     ":/settings/notifications.svg");
-    this->addTab([]{return new IgnoresPage;},          "Ignores",        ":/settings/ignore.svg");
-    this->addTab([]{return new FiltersPage;},          "Filters",        ":/settings/filters.svg");
+    this->addTab([]{return new CommandPage;},          uiText("Commands"),       ":/settings/commands.svg");
+    this->addTab([]{return new HighlightingPage;},     uiText("Highlights"),     ":/settings/notifications.svg");
+    this->addTab([]{return new IgnoresPage;},          uiText("Ignores"),        ":/settings/ignore.svg");
+    this->addTab([]{return new FiltersPage;},          uiText("Filters"),        ":/settings/filters.svg");
     this->ui_.tabContainer->addSpacing(16);
-    this->addTab([]{return new KeyboardSettingsPage;}, "Hotkeys",        ":/settings/keybinds.svg");
-    this->addTab([]{return new ModerationPage;},       "Moderation",     ":/settings/moderation.svg", SettingsTabId::Moderation);
-    this->addTab([]{return new NotificationPage;},     "Live Notifications",  ":/settings/notification2.svg");
-    this->addTab([]{return new ExternalToolsPage;},    "External tools", ":/settings/externaltools.svg");
+    this->addTab([]{return new KeyboardSettingsPage;}, uiText("Hotkeys"),        ":/settings/keybinds.svg");
+    this->addTab([]{return new ModerationPage;},       uiText("Moderation"),     ":/settings/moderation.svg", SettingsTabId::Moderation);
+    this->addTab([]{return new NotificationPage;},     uiText("Live Notifications"),  ":/settings/notification2.svg");
+    this->addTab([]{return new ExternalToolsPage;},    uiText("External tools"), ":/settings/externaltools.svg");
 #ifdef CHATTERINO_HAVE_PLUGINS
-    this->addTab([]{return new PluginsPage;},          "Plugins",        ":/settings/plugins.svg");
+    this->addTab([]{return new PluginsPage;},          uiText("Plugins"),        ":/settings/plugins.svg");
 #endif
     this->ui_.tabContainer->addStretch(1);
-    this->addTab([]{return new AboutPage;},            "About",          ":/settings/about.svg", SettingsTabId::About, Qt::AlignBottom);
+    this->addTab([]{return new AboutPage;},            uiText("About"),          ":/settings/about.svg", SettingsTabId::About, Qt::AlignBottom);
     // clang-format on
 }
 
@@ -287,6 +289,14 @@ void SettingsDialog::addTab(std::function<SettingsPage *()> page,
 
     this->ui_.tabContainer->addWidget(tab, 0, alignment);
     this->tabs_.push_back(tab);
+
+    int tabWidth = static_cast<int>(150 * this->dpi_);
+    for (const auto *entry : this->tabs_)
+    {
+        tabWidth = std::max(tabWidth,
+                            entry->fontMetrics().horizontalAdvance(entry->name()) + 52);
+    }
+    this->ui_.tabContainerContainer->setFixedWidth(tabWidth);
 
     if (this->tabs_.size() == 1)
     {
@@ -448,7 +458,13 @@ void SettingsDialog::scaleChangedEvent(float newScale)
 
     if (this->ui_.tabContainerContainer)
     {
-        this->ui_.tabContainerContainer->setFixedWidth(150);
+        int tabWidth = 150;
+        for (const auto *entry : this->tabs_)
+        {
+            tabWidth = std::max(tabWidth,
+                                entry->fontMetrics().horizontalAdvance(entry->name()) + 52);
+        }
+        this->ui_.tabContainerContainer->setFixedWidth(tabWidth);
     }
 }
 

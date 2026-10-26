@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/CrossBanDialog.hpp"
 
 #include "common/Channel.hpp"
@@ -48,13 +49,13 @@ QString channelLabel(const MoltorinoAuthChannel &channel)
     {
         return channel.login.trimmed();
     }
-    return QStringLiteral("Channel %1").arg(channel.id.right(6));
+    return uiText(QStringLiteral("Channel %1")).arg(channel.id.right(6));
 }
 
 QString channelCount(int count)
 {
-    return count == 1 ? QStringLiteral("1 channel")
-                      : QStringLiteral("%1 channels").arg(count);
+    return count == 1 ? uiText(QStringLiteral("1 channel"))
+                      : uiText(QStringLiteral("%1 channels")).arg(count);
 }
 
 }  // namespace
@@ -82,7 +83,7 @@ CrossBanDialog::CrossBanDialog(CrossChannelAction action, QString targetId,
             this->updateActionState();
         },
         this->authConnections_, false);
-    this->setWindowTitle(QStringLiteral("Cross %1 %2")
+    this->setWindowTitle(uiText(QStringLiteral("Cross %1 %2"))
                              .arg(this->actionVerb(true), targetLogin_));
     this->setMinimumSize(420, 330);
     this->resize(460, action_ == CrossChannelAction::Ban ? 380 : 350);
@@ -94,7 +95,7 @@ CrossBanDialog::CrossBanDialog(CrossChannelAction action, QString targetId,
     const auto displayName =
         targetDisplayName_.isEmpty() ? targetLogin_ : targetDisplayName_;
     auto *account =
-        new QLabel(QStringLiteral("%1 <b>%2</b> as %3")
+        new QLabel(uiText(QStringLiteral("%1 <b>%2</b> as %3"))
                        .arg(this->actionVerb(true), displayName.toHtmlEscaped(),
                             actingLogin_.toHtmlEscaped()),
                    this);
@@ -103,10 +104,10 @@ CrossBanDialog::CrossBanDialog(CrossChannelAction action, QString targetId,
     auto *tools = new QHBoxLayout;
     tools->setSpacing(6);
     this->search_ = new QLineEdit(this);
-    this->search_->setPlaceholderText("Find a channel");
+    this->search_->setPlaceholderText(uiText("Find a channel"));
     this->search_->setClearButtonEnabled(true);
-    this->selectAll_ = new QPushButton("Select all", this);
-    this->clear_ = new QPushButton("Clear", this);
+    this->selectAll_ = new QPushButton(uiText("Select all"), this);
+    this->clear_ = new QPushButton(uiText("Clear"), this);
     tools->addWidget(this->search_, 1);
     tools->addWidget(this->selectAll_);
     tools->addWidget(this->clear_);
@@ -114,7 +115,7 @@ CrossBanDialog::CrossBanDialog(CrossChannelAction action, QString targetId,
 
     this->channels_ = new QTreeWidget(this);
     this->channels_->setColumnCount(2);
-    this->channels_->setHeaderLabels({"Channel", "Status"});
+    this->channels_->setHeaderLabels({uiText("Channel"), uiText("Status")});
     this->channels_->setRootIsDecorated(false);
     this->channels_->setAlternatingRowColors(true);
     this->channels_->setUniformRowHeights(true);
@@ -158,7 +159,7 @@ CrossBanDialog::CrossBanDialog(CrossChannelAction action, QString targetId,
         const bool isCurrent = channel.id == currentChannelId;
         item->setToolTip(
             0, isCurrent
-                   ? QStringLiteral("#%1\nCurrent channel").arg(channel.login)
+                   ? uiText(QStringLiteral("#%1\nCurrent channel")).arg(channel.login)
                    : QStringLiteral("#%1").arg(channel.login));
         if (isCurrent)
         {
@@ -174,10 +175,10 @@ CrossBanDialog::CrossBanDialog(CrossChannelAction action, QString targetId,
     {
         auto *reasonRow = new QHBoxLayout;
         reasonRow->setSpacing(7);
-        reasonRow->addWidget(new QLabel("Reason:", this));
+        reasonRow->addWidget(new QLabel(uiText("Reason:"), this));
         this->reason_ = new QLineEdit(this);
         this->reason_->setPlaceholderText(
-            "Optional reason shown to the user and other mods");
+            uiText("Optional reason shown to the user and other mods"));
         this->reason_->setMaxLength(500);
         reasonRow->addWidget(this->reason_, 1);
         root->addLayout(reasonRow);
@@ -185,7 +186,7 @@ CrossBanDialog::CrossBanDialog(CrossChannelAction action, QString targetId,
 
     auto *footer = new QHBoxLayout;
     footer->setSpacing(6);
-    this->selectionStatus_ = new QLabel("0 selected", this);
+    this->selectionStatus_ = new QLabel(uiText("0 selected"), this);
     this->selectionStatus_->setMinimumWidth(76);
     footer->addWidget(this->selectionStatus_, 1);
 
@@ -198,7 +199,7 @@ CrossBanDialog::CrossBanDialog(CrossChannelAction action, QString targetId,
     this->cancel_ = buttons->button(QDialogButtonBox::Cancel);
     this->cancel_->setMinimumWidth(70);
     this->actionButton_ = buttons->addButton(
-        action_ == CrossChannelAction::Ban ? "Ban selected" : "Unban selected",
+        action_ == CrossChannelAction::Ban ? uiText("Ban selected") : uiText("Unban selected"),
         action_ == CrossChannelAction::Ban ? QDialogButtonBox::DestructiveRole
                                            : QDialogButtonBox::AcceptRole);
     this->actionButton_->setMinimumWidth(122);
@@ -334,7 +335,7 @@ void CrossBanDialog::updateActionState()
     if (this->actionInFlight_)
     {
         this->selectionStatus_->setText(
-            QStringLiteral("%1 queued").arg(this->actionTotal_));
+            uiText(QStringLiteral("%1 queued")).arg(this->actionTotal_));
         this->actionButton_->setEnabled(false);
         this->selectAll_->setEnabled(false);
         this->clear_->setEnabled(false);
@@ -343,7 +344,7 @@ void CrossBanDialog::updateActionState()
         {
             this->reason_->setEnabled(false);
         }
-        this->cancel_->setText(this->stopRequested_ ? "Stopping..." : "Stop");
+        this->cancel_->setText(this->stopRequested_ ? uiText("Stopping...") : uiText("Stop"));
         this->cancel_->setEnabled(!this->stopRequested_);
         return;
     }
@@ -368,12 +369,12 @@ void CrossBanDialog::updateActionState()
     }
 
     this->selectionStatus_->setText(
-        QStringLiteral("%1 selected").arg(selected));
+        uiText(QStringLiteral("%1 selected")).arg(selected));
 
     if (selected > 0 && selectedFailures == selected)
     {
         this->actionButton_->setText(
-            QStringLiteral("Retry %1").arg(channelCount(selected)));
+            uiText(QStringLiteral("Retry %1")).arg(channelCount(selected)));
     }
     else if (selected > 0)
     {
@@ -383,8 +384,8 @@ void CrossBanDialog::updateActionState()
     else
     {
         this->actionButton_->setText(this->action_ == CrossChannelAction::Ban
-                                         ? "Ban selected"
-                                         : "Unban selected");
+                                         ? uiText("Ban selected")
+                                         : uiText("Unban selected"));
     }
 
     const bool ready =
@@ -398,7 +399,7 @@ void CrossBanDialog::updateActionState()
         this->reason_->setEnabled(true);
     }
 
-    this->cancel_->setText("Cancel");
+    this->cancel_->setText(uiText("Cancel"));
     this->cancel_->setEnabled(true);
 }
 
@@ -412,7 +413,7 @@ void CrossBanDialog::beginStatusCheck()
     this->progress_->setValue(0);
     this->progress_->setFormat("Checking %m channels");
     this->progress_->setToolTip(
-        "Checking whether this user is banned in each channel");
+        uiText("Checking whether this user is banned in each channel"));
     this->updateActionState();
     this->processNextStatusBatch();
 }
@@ -515,11 +516,11 @@ void CrossBanDialog::applyStatusResult(const QVector<QString> &channelIds,
                                  : "Login required");
             const auto detail =
                 error.isEmpty()
-                    ? QStringLiteral("Twitch did not return a ban status")
+                    ? uiText(QStringLiteral("Twitch did not return a ban status"))
                     : error;
             item->setToolTip(
                 1,
-                QStringLiteral("Could not check ban status: %1").arg(detail));
+                uiText(QStringLiteral("Could not check ban status: %1")).arg(detail));
             this->statusCheckFailures_++;
         }
         else
@@ -549,14 +550,14 @@ void CrossBanDialog::finishStatusCheck()
     else if (this->statusCheckFailures_ > 0)
     {
         this->progress_->setToolTip(
-            QStringLiteral("%1 channel status%2 could not be checked. You can "
-                           "still try the action in those channels.")
+            uiText(QStringLiteral("%1 channel status%2 could not be checked. You can "
+                           "still try the action in those channels."))
                 .arg(this->statusCheckFailures_)
                 .arg(this->statusCheckFailures_ == 1 ? QString() : "es"));
     }
     else
     {
-        this->progress_->setToolTip("Ban status is up to date");
+        this->progress_->setToolTip(uiText("Ban status is up to date"));
     }
     this->updateActionState();
 }
@@ -627,7 +628,7 @@ void CrossBanDialog::beginAction()
     const QPointer<CrossBanDialog> self(this);
     QPointer<QMessageBox> confirmation = new QMessageBox(
         QMessageBox::Warning,
-        QStringLiteral("Confirm cross %1").arg(this->actionVerb()),
+        uiText(QStringLiteral("Confirm cross %1")).arg(this->actionVerb()),
         QStringLiteral("%1 %2 in %3?")
             .arg(this->actionVerb(true), targetLogin_, countText),
         QMessageBox::Cancel, this);
@@ -642,14 +643,14 @@ void CrossBanDialog::beginAction()
         const auto reason = this->reason_->text().trimmed();
         confirmation->setInformativeText(
             reason.isEmpty()
-                ? QStringLiteral(
+                ? uiText(QStringLiteral(
                       "No reason is set. Other moderators will not see why "
-                      "this ban was made.")
-                : QStringLiteral("Reason: %1").arg(reason));
+                      "this ban was made."))
+                : uiText(QStringLiteral("Reason: %1")).arg(reason));
         if (reason.isEmpty())
         {
             confirm->setText(
-                QStringLiteral("Ban %1 without reason").arg(countText));
+                uiText(QStringLiteral("Ban %1 without reason")).arg(countText));
         }
     }
     confirmation->setDefaultButton(QMessageBox::Cancel);
@@ -679,8 +680,8 @@ void CrossBanDialog::beginAction()
     this->progress_->setFormat(this->action_ == CrossChannelAction::Ban
                                    ? "Banning %m channels"
                                    : "Unbanning %m channels");
-    this->progress_->setToolTip("Select Stop to finish the current request and "
-                                "leave the rest selected");
+    this->progress_->setToolTip(uiText("Select Stop to finish the current request and "
+                                "leave the rest selected"));
     this->updateActionState();
     this->processNextChannel();
 }
@@ -725,7 +726,7 @@ void CrossBanDialog::processNextChannel()
             return;
         }
         const auto normalized = MoltorinoAuth::normalizeAuthError(
-            QStringLiteral("running a cross %1").arg(self->actionVerb()),
+            uiText(QStringLiteral("running a cross %1")).arg(self->actionVerb()),
             error);
         self->failed_++;
         item->setText(1, "Failed");
@@ -799,7 +800,7 @@ void CrossBanDialog::finishAction(bool stopped)
     }
     else if (stopped)
     {
-        this->progress_->setFormat(QStringLiteral("Stopped: %1 / %2")
+        this->progress_->setFormat(uiText(QStringLiteral("Stopped: %1 / %2"))
                                        .arg(this->completed_ + this->failed_)
                                        .arg(this->actionTotal_));
     }
@@ -811,27 +812,27 @@ void CrossBanDialog::finishAction(bool stopped)
     }
     else
     {
-        this->progress_->setFormat(QStringLiteral("%1 done, %2 failed")
+        this->progress_->setFormat(uiText(QStringLiteral("%1 done, %2 failed"))
                                        .arg(this->completed_)
                                        .arg(this->failed_));
     }
     this->progress_->setToolTip(
         !this->authenticationError_.isEmpty() ? this->authenticationError_
         : this->failed_ > 0
-            ? QStringLiteral("Hover a failed channel status for details")
+            ? uiText(QStringLiteral("Hover a failed channel status for details"))
             : QString());
     this->pendingItems_.clear();
     this->updateActionState();
 
     const auto featureName = this->action_ == CrossChannelAction::Ban
-                                 ? QStringLiteral("Cross ban")
-                                 : QStringLiteral("Cross unban");
+                                 ? uiText(QStringLiteral("Cross ban"))
+                                 : uiText(QStringLiteral("Cross unban"));
     QString result;
     if (!this->authenticationError_.isEmpty())
     {
         result =
-            QStringLiteral("%1 for %2 stopped: %3 succeeded, %4 failed, %5 not "
-                           "tried. %6")
+            uiText(QStringLiteral("%1 for %2 stopped: %3 succeeded, %4 failed, %5 not "
+                           "tried. %6"))
                 .arg(featureName, targetLogin_)
                 .arg(this->completed_)
                 .arg(this->failed_)
@@ -841,8 +842,8 @@ void CrossBanDialog::finishAction(bool stopped)
     else if (stopped)
     {
         result =
-            QStringLiteral("%1 for %2 stopped: %3 succeeded, %4 failed, %5 not "
-                           "tried.")
+            uiText(QStringLiteral("%1 for %2 stopped: %3 succeeded, %4 failed, %5 not "
+                           "tried."))
                 .arg(featureName, targetLogin_)
                 .arg(this->completed_)
                 .arg(this->failed_)
@@ -856,7 +857,7 @@ void CrossBanDialog::finishAction(bool stopped)
     }
     else
     {
-        result = QStringLiteral("%1 for %2: %3 succeeded, %4 failed.")
+        result = uiText(QStringLiteral("%1 for %2: %3 succeeded, %4 failed."))
                      .arg(featureName, targetLogin_)
                      .arg(this->completed_)
                      .arg(this->failed_);
@@ -872,8 +873,8 @@ void CrossBanDialog::requestStop()
     }
     this->stopRequested_ = true;
     this->progress_->setFormat("Stopping...");
-    this->progress_->setToolTip("The current request will finish. Remaining "
-                                "channels will stay selected.");
+    this->progress_->setToolTip(uiText("The current request will finish. Remaining "
+                                "channels will stay selected."));
     this->updateActionState();
 }
 
@@ -889,19 +890,19 @@ QString CrossBanDialog::actionVerb(bool capitalized) const
 {
     if (this->action_ == CrossChannelAction::Ban)
     {
-        return capitalized ? QStringLiteral("Ban") : QStringLiteral("ban");
+        return capitalized ? uiText(QStringLiteral("Ban")) : QStringLiteral("ban");
     }
-    return capitalized ? QStringLiteral("Unban") : QStringLiteral("unban");
+    return capitalized ? uiText(QStringLiteral("Unban")) : QStringLiteral("unban");
 }
 
 QString CrossBanDialog::pastActionVerb(bool capitalized) const
 {
     if (this->action_ == CrossChannelAction::Ban)
     {
-        return capitalized ? QStringLiteral("Banned")
+        return capitalized ? uiText(QStringLiteral("Banned"))
                            : QStringLiteral("banned");
     }
-    return capitalized ? QStringLiteral("Unbanned")
+    return capitalized ? uiText(QStringLiteral("Unbanned"))
                        : QStringLiteral("unbanned");
 }
 

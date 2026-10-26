@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/LoginDialog.hpp"
 
 #include "Application.hpp"
@@ -56,7 +57,7 @@ bool logInWithCredentials(QWidget *parent, const QString &userID,
     if (errors.length() > 0)
     {
         QMessageBox messageBox(parent);
-        messageBox.setWindowTitle("Invalid account credentials");
+        messageBox.setWindowTitle(uiText("Invalid account credentials"));
         messageBox.setIcon(QMessageBox::Critical);
         messageBox.setText(errors.join("<br>"));
         messageBox.exec();
@@ -83,22 +84,22 @@ BasicLoginWidget::BasicLoginWidget()
     const QString logInLink = "https://chatterino.com/client_login";
     this->setLayout(&this->ui_.layout);
 
-    this->ui_.loginButton.setText("Log in (Opens in browser)");
-    this->ui_.pasteCodeButton.setText("Paste login info");
+    this->ui_.loginButton.setText(uiText("Log in (Opens in browser)"));
+    this->ui_.pasteCodeButton.setText(uiText("Paste login info"));
     this->ui_.unableToOpenBrowserHelper.setWindowTitle(
-        "Leafyrino - unable to open in browser");
+        uiText("Leafyrino - unable to open in browser"));
     this->ui_.unableToOpenBrowserHelper.setWordWrap(true);
     this->ui_.unableToOpenBrowserHelper.hide();
     this->ui_.unableToOpenBrowserHelper.setText(
-        QString("An error occurred while attempting to open <a href=\"%1\">the "
+        uiText(QString("An error occurred while attempting to open <a href=\"%1\">the "
                 "log in link (%1)</a> - open it manually in your browser and "
-                "proceed from there.")
+                "proceed from there."))
             .arg(logInLink));
     this->ui_.unableToOpenBrowserHelper.setOpenExternalLinks(true);
 
     this->ui_.channelPointsHint.setText(
-        "The Moltorino tab enables channel points, pinned messages, and "
-        "other mod features. The usual login below is enough for chat.");
+        uiText("The Moltorino tab enables channel points, pinned messages, and "
+        "other mod features. The usual login below is enough for chat."));
     this->ui_.channelPointsHint.setWordWrap(true);
     this->ui_.channelPointsHint.setAlignment(Qt::AlignLeft | Qt::AlignTop);
     this->ui_.layout.addWidget(&this->ui_.channelPointsHint);
@@ -172,11 +173,11 @@ AdvancedLoginWidget::AdvancedLoginWidget()
 {
     this->setLayout(&this->ui_.layout);
 
-    this->ui_.instructionsLabel.setText("1. Fill in your username"
+    this->ui_.instructionsLabel.setText(uiText("1. Fill in your username"
                                         "\n2. Fill in your user ID"
                                         "\n3. Fill in your client ID"
                                         "\n4. Fill in your OAuth token"
-                                        "\n5. Press Add user");
+                                        "\n5. Press Add user"));
     this->ui_.instructionsLabel.setWordWrap(true);
 
     this->ui_.layout.addWidget(&this->ui_.instructionsLabel);
@@ -205,8 +206,8 @@ AdvancedLoginWidget::AdvancedLoginWidget()
         this->refreshButtons();
     });
 
-    this->ui_.buttonUpperRow.addUserButton.setText("Add user");
-    this->ui_.buttonUpperRow.clearFieldsButton.setText("Clear fields");
+    this->ui_.buttonUpperRow.addUserButton.setText(uiText("Add user"));
+    this->ui_.buttonUpperRow.clearFieldsButton.setText(uiText("Clear fields"));
 
     this->ui_.buttonUpperRow.layout.addWidget(
         &this->ui_.buttonUpperRow.addUserButton);
@@ -256,15 +257,15 @@ LoginDialog::LoginDialog(QWidget *parent)
         (this->windowFlags() & ~(Qt::WindowContextHelpButtonHint)) |
         Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
 
-    this->setWindowTitle("Add new account");
+    this->setWindowTitle(uiText("Add new account"));
 
     this->setLayout(&this->ui_.mainLayout);
     this->ui_.mainLayout.addWidget(&this->ui_.tabWidget);
 
-    this->ui_.tabWidget.addTab(&this->ui_.basic, "Basic");
-    this->ui_.tabWidget.addTab(createMoltorinoAuthLoginPage(this), "Moltorino");
-    this->ui_.tabWidget.addTab(&this->ui_.advanced, "Advanced");
-    this->ui_.tabWidget.addTab(&this->ui_.kick, "Kick");
+    this->ui_.tabWidget.addTab(&this->ui_.basic, uiText("Basic"));
+    this->ui_.tabWidget.addTab(createMoltorinoAuthLoginPage(this), uiText("Moltorino"));
+    this->ui_.tabWidget.addTab(&this->ui_.advanced, uiText("Advanced"));
+    this->ui_.tabWidget.addTab(&this->ui_.kick, uiText("Kick"));
 
     this->ui_.buttonBox.setStandardButtons(QDialogButtonBox::Close);
 

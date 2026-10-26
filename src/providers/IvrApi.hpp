@@ -29,6 +29,8 @@ struct IvrSubage {
     const QString subType;
     const QString giftGifterDisplayName;
     const QString giftGifterLogin;
+    /// ISO time the user followed the channel; empty when not following.
+    const QString followedAt;
 
     IvrSubage(const QJsonObject &root)
         : isSubHidden(root.value("statusHidden").toBool())
@@ -54,6 +56,7 @@ struct IvrSubage {
                               .toObject()
                               .value("login")
                               .toString())
+        , followedAt(root.value("followedAt").toString())
     {
     }
 

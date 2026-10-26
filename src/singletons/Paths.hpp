@@ -44,6 +44,10 @@ public:
 
     QString cacheFilePath(const QString &fileName) const;
 
+    /// Where message logs go: `configured` (the /logging/path setting) when it
+    /// lies inside this profile, otherwise the profile's Logs folder.
+    QString messageLogsIn(const QString &configured) const;
+
 private:
     void initAppFilePathHash();
     void initRootDirectory(const Args &args, const Modes &modes);

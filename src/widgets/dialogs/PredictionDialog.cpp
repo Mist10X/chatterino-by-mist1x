@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/PredictionDialog.hpp"
 
 #include "Application.hpp"
@@ -315,7 +316,7 @@ void updatePredictionBalanceLabel(QWidget *root, TwitchChannel *channel)
     }
 
     const qint64 balance = channel->channelPointBalance();
-    balLabel->setText(QString("Bal: %1").arg(
+    balLabel->setText(uiText(QString("Bal: %1")).arg(
         balance >= 0 ? formatChannelPoints(balance) : "..."));
 }
 
@@ -324,7 +325,7 @@ QString formatBetSummaryHtml(const TwitchChannel::PredictionEvent &prediction)
     const auto *betOutcome =
         findPredictionOutcome(prediction, prediction.selfOutcomeId);
     const QString outcomeTitle =
-        betOutcome != nullptr ? betOutcome->title : QString("an outcome");
+        betOutcome != nullptr ? betOutcome->title : uiText(QString("an outcome"));
 
     int outcomeIndex = 0;
     if (betOutcome != nullptr)
@@ -343,8 +344,8 @@ QString formatBetSummaryHtml(const TwitchChannel::PredictionEvent &prediction)
         betOutcome != nullptr ? outcomeColor(outcomeIndex, betOutcome->color)
                               : QColor("#64748b");
 
-    return QString("Your prediction: %1 on "
-                   "<span style=\"color:%2; font-weight:700;\">%3</span>")
+    return uiText(QString("Your prediction: %1 on "
+                   "<span style=\"color:%2; font-weight:700;\">%3</span>"))
         .arg(formatChannelPoints(prediction.selfPoints),
              outcomeColorValue.name(), outcomeTitle.toHtmlEscaped());
 }
@@ -380,7 +381,7 @@ QString formatBetPayoutSummaryText(
     const qlonglong potentialReturn = static_cast<qlonglong>(
         std::llround(prediction.selfPoints * multiplier));
 
-    return QString("Potential return: %1")
+    return uiText(QString("Potential return: %1"))
         .arg(formatChannelPoints(potentialReturn));
 }
 
@@ -658,7 +659,7 @@ PredictionDialog::PredictionDialog(TwitchChannel *channel, QWidget *parent)
 {
     this->setAttribute(Qt::WA_DeleteOnClose);
     this->setObjectName("PredictionDialog");
-    this->setWindowTitle("Prediction");
+    this->setWindowTitle(uiText("Prediction"));
     this->setScaleIndependentSize(DEFAULT_DIALOG_SIZE);
 
     this->ensureCreateDraft();
@@ -715,7 +716,7 @@ PredictionDialog::PredictionDialog(TwitchChannel *channel, QWidget *parent)
     headerLayout->addWidget(this->modToggleButton_);
 
     this->pinButton_ = this->createPinButton();
-    this->pinButton_->setToolTip("Pin Prediction Popup");
+    this->pinButton_->setToolTip(uiText("Pin Prediction Popup"));
     this->pinButton_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     if (!getSettings()->predictionCloseOnFocusLoss)
     {
@@ -730,7 +731,7 @@ PredictionDialog::PredictionDialog(TwitchChannel *channel, QWidget *parent)
         },
         this, QSize(3, 3));
     this->closeButton_->setScaleIndependentSize(18, 18);
-    this->closeButton_->setToolTip("Close");
+    this->closeButton_->setToolTip(uiText("Close"));
     this->closeButton_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     QObject::connect(this->closeButton_, &Button::leftClicked, this, [this] {
         this->close();
@@ -934,7 +935,7 @@ void PredictionDialog::updateInPlace()
         if (statsLabel)
         {
             statsLabel->setText(
-                QString("%1 pts · %2 users · %3")
+                uiText(QString("%1 pts · %2 users · %3"))
                     .arg(formatChannelPoints(outcome.totalPoints))
                     .arg(locale.toString(outcome.totalUsers))
                     .arg(QString::number(pct) + "%"));
@@ -1441,7 +1442,7 @@ void PredictionDialog::refreshHeader()
     if (!hasOpenPrediction(this->currentPrediction_) &&
         this->channel_->hasModRights())
     {
-        this->headerTitleLabel_->setText("Start a Prediction");
+        this->headerTitleLabel_->setText(uiText("Start a Prediction"));
         this->headerSubtitleLabel_->setText(
             QString("#%1").arg(this->channel_->getName()));
         this->modToggleButton_->hide();
@@ -1450,11 +1451,11 @@ void PredictionDialog::refreshHeader()
 
     if (this->currentPrediction_)
     {
-        this->headerTitleLabel_->setText("Prediction");
+        this->headerTitleLabel_->setText(uiText("Prediction"));
         this->headerSubtitleLabel_->setText(
-            QString("<span style=\"font-weight:400;\">#%1</span>"
+            uiText(QString("<span style=\"font-weight:400;\">#%1</span>"
                     " <span style=\"font-weight:400;\">•</span> "
-                    "<span style=\"font-weight:700; color:%2;\">%3</span>")
+                    "<span style=\"font-weight:700; color:%2;\">%3</span>"))
                 .arg(this->channel_->getName().toHtmlEscaped(),
                      statusColor(this->currentPrediction_->status).name(),
                      formatStatus(this->currentPrediction_->status)
@@ -1473,11 +1474,11 @@ void PredictionDialog::refreshHeader()
             {
                 this->modToggleButton_->setText(
                     this->modBettingView_
-                        ? "Manage"
+                        ? uiText("Manage")
                         : (broadcasterView ? "Overview" : "Bet"));
                 this->modToggleButton_->setToolTip(
                     this->modBettingView_
-                        ? "Switch to manage view (lock/resolve/cancel)"
+                        ? uiText("Switch to manage view (lock/resolve/cancel)")
                         : (broadcasterView ? "Switch to prediction overview"
                                            : "Switch to betting view"));
                 this->modToggleButton_->show();
@@ -1490,9 +1491,9 @@ void PredictionDialog::refreshHeader()
         return;
     }
 
-    this->headerTitleLabel_->setText("Prediction");
+    this->headerTitleLabel_->setText(uiText("Prediction"));
     this->headerSubtitleLabel_->setText(
-        QString("#%1 • no active prediction").arg(this->channel_->getName()));
+        uiText(QString("#%1 • no active prediction")).arg(this->channel_->getName()));
     this->modToggleButton_->hide();
 }
 
@@ -1566,7 +1567,7 @@ void PredictionDialog::updateUI()
             card->setObjectName("PredictionCard");
             auto *cardLayout = new QVBoxLayout(card);
             auto *label =
-                new QLabel("No active prediction in this channel.", card);
+                new QLabel(uiText("No active prediction in this channel."), card);
             label->setObjectName("PredictionInfoLabel");
             label->setWordWrap(true);
             label->setAlignment(Qt::AlignCenter);
@@ -1745,10 +1746,10 @@ void PredictionDialog::buildCreateUI()
     titleInput->setFont(uiFont);
     titleInput->setFixedHeight(titleInputHeight);
     titleInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    titleInput->setToolTip("Open to reuse one of the last 5 predictions.");
+    titleInput->setToolTip(uiText("Open to reuse one of the last 5 predictions."));
     titleInput->lineEdit()->setMaxLength(TITLE_LIMIT);
     titleInput->lineEdit()->setPlaceholderText(
-        QString("Prediction title (%1 chars)").arg(TITLE_LIMIT));
+        uiText(QString("Prediction title (%1 chars)")).arg(TITLE_LIMIT));
     titleInput->setText(this->draftTitle_);
     titleInput->beforeShowPopup = [this, titleInput] {
         this->ensurePinned();
@@ -1797,7 +1798,7 @@ void PredictionDialog::buildCreateUI()
     {
         auto *headerRow = new QHBoxLayout();
         headerRow->setSpacing(rowSpacing);
-        auto *label = new QLabel("Outcomes");
+        auto *label = new QLabel(uiText("Outcomes"));
         label->setObjectName("PredictionSectionTitle");
         label->setFont(buttonFont);
         headerRow->addWidget(label);
@@ -1863,7 +1864,7 @@ void PredictionDialog::buildCreateUI()
         auto *input = new QLineEdit(rowWidget);
         input->setObjectName("PredictionOptionInput");
         input->setMaxLength(OUTCOME_LIMIT);
-        input->setPlaceholderText(QString("Option %1").arg(i + 1));
+        input->setPlaceholderText(uiText(QString("Option %1")).arg(i + 1));
         input->setText(this->draftOutcomes_.at(i));
         input->setFont(uiFont);
         input->setFixedHeight(outcomeRowHeight);
@@ -1901,7 +1902,7 @@ void PredictionDialog::buildCreateUI()
         auto *outcomeActions = new QHBoxLayout();
         outcomeActions->setSpacing(sectionSpacing);
 
-        auto *addBtn = new QPushButton("Add Outcome", this->activeWidget_);
+        auto *addBtn = new QPushButton(uiText("Add Outcome"), this->activeWidget_);
         addBtn->setObjectName("PredictionCreateAddOptionButton");
         addBtn->setFont(buttonFont);
         addBtn->setFixedHeight(compactControlHeight);
@@ -1922,7 +1923,7 @@ void PredictionDialog::buildCreateUI()
         linkTabOrder(addBtn);
 
         auto *removeBtn =
-            new QPushButton("Remove Outcome", this->activeWidget_);
+            new QPushButton(uiText("Remove Outcome"), this->activeWidget_);
         removeBtn->setObjectName("PredictionCreateRemoveOptionButton");
         removeBtn->setFont(buttonFont);
         removeBtn->setFixedHeight(compactControlHeight);
@@ -1972,7 +1973,7 @@ void PredictionDialog::buildCreateUI()
         auto *durationRow = new QHBoxLayout();
         durationRow->setSpacing(rowSpacing);
 
-        auto *durationLabel = new QLabel("Duration");
+        auto *durationLabel = new QLabel(uiText("Duration"));
         durationLabel->setObjectName("PredictionSectionTitle");
         durationLabel->setFont(buttonFont);
         durationRow->addWidget(durationLabel);
@@ -2013,7 +2014,7 @@ void PredictionDialog::buildCreateUI()
         actions->setSpacing(rowSpacing);
 
         auto *startBtn = new QPushButton(
-            this->createInFlight_ ? "Starting..." : "Start Prediction",
+            this->createInFlight_ ? uiText("Starting...") : uiText("Start Prediction"),
             bottomBar);
         startBtn->setObjectName("PredictionCreateStartButton");
         startBtn->setFont(buttonFont);
@@ -2053,11 +2054,11 @@ bool PredictionDialog::populatePredictionTemplates(
 
         if (!this->predictionTemplatesError_.isEmpty())
         {
-            picker->setStatusText("Could not load previous predictions");
+            picker->setStatusText(uiText("Could not load previous predictions"));
         }
         else if (this->predictionTemplates_.isEmpty())
         {
-            picker->setStatusText("No previous predictions found");
+            picker->setStatusText(uiText("No previous predictions found"));
         }
         else
         {
@@ -2072,7 +2073,7 @@ bool PredictionDialog::populatePredictionTemplates(
         return true;
     }
 
-    picker->setStatusText("Loading previous predictions...");
+    picker->setStatusText(uiText("Loading previous predictions..."));
     if (!this->predictionTemplatesFetchInFlight_)
     {
         this->fetchPredictionTemplates(picker);
@@ -2177,7 +2178,7 @@ void PredictionDialog::startPrediction()
     if (choices.size() > MAX_OUTCOMES)
     {
         this->channel_->addSystemMessage(
-            QString("Predictions can have at most %1 options.")
+            uiText(QString("Predictions can have at most %1 options."))
                 .arg(MAX_OUTCOMES));
         return;
     }
@@ -2283,7 +2284,7 @@ void PredictionDialog::buildManageUI()
     {
         auto *headerRow = new QHBoxLayout();
         headerRow->setSpacing(rowSpacing);
-        auto *label = new QLabel("Outcomes");
+        auto *label = new QLabel(uiText("Outcomes"));
         label->setObjectName("PredictionSectionTitle");
         label->setFont(buttonFont);
         headerRow->addWidget(label);
@@ -2441,7 +2442,7 @@ void PredictionDialog::buildManageUI()
     const auto predictionId = prediction.id;
     auto makeCancelButton = [this, predictionId, compactControlHeight,
                              buttonFont, bottomBar]() {
-        auto *cancelButton = new QPushButton("Delete", bottomBar);
+        auto *cancelButton = new QPushButton(uiText("Delete"), bottomBar);
         cancelButton->setObjectName("PredictionManageDangerButton");
         cancelButton->setFont(buttonFont);
         cancelButton->setFixedHeight(compactControlHeight);
@@ -2463,7 +2464,7 @@ void PredictionDialog::buildManageUI()
                 }
 
                 cancelButton->setEnabled(false);
-                cancelButton->setText("Deleting...");
+                cancelButton->setText(uiText("Deleting..."));
 
                 QPointer<PredictionDialog> self = this;
                 QPointer<QPushButton> button = cancelButton;
@@ -2492,7 +2493,7 @@ void PredictionDialog::buildManageUI()
                         if (button)
                         {
                             button->setEnabled(true);
-                            button->setText("Delete");
+                            button->setText(uiText("Delete"));
                         }
                     });
             });
@@ -2501,7 +2502,7 @@ void PredictionDialog::buildManageUI()
 
     if (prediction.status == "ACTIVE")
     {
-        auto *lockButton = new QPushButton("Lock Submissions", bottomBar);
+        auto *lockButton = new QPushButton(uiText("Lock Submissions"), bottomBar);
         lockButton->setObjectName("PredictionManagePrimaryButton");
         lockButton->setFont(buttonFont);
         lockButton->setFixedHeight(compactControlHeight);
@@ -2523,7 +2524,7 @@ void PredictionDialog::buildManageUI()
                 }
 
                 lockButton->setEnabled(false);
-                lockButton->setText("Locking...");
+                lockButton->setText(uiText("Locking..."));
 
                 QPointer<PredictionDialog> self = this;
                 QPointer<QPushButton> button = lockButton;
@@ -2547,7 +2548,7 @@ void PredictionDialog::buildManageUI()
                         if (button)
                         {
                             button->setEnabled(true);
-                            button->setText("Lock Submissions");
+                            button->setText(uiText("Lock Submissions"));
                         }
                     });
             });
@@ -2585,7 +2586,7 @@ void PredictionDialog::buildManageUI()
                          });
         bottomLayout->addWidget(resolveCombo);
 
-        auto *resolveButton = new QPushButton("Complete", bottomBar);
+        auto *resolveButton = new QPushButton(uiText("Complete"), bottomBar);
         resolveButton->setObjectName("PredictionManagePrimaryButton");
         resolveButton->setFont(buttonFont);
         resolveButton->setFixedHeight(compactControlHeight);
@@ -2615,7 +2616,7 @@ void PredictionDialog::buildManageUI()
                 }
 
                 resolveButton->setEnabled(false);
-                resolveButton->setText("Resolving...");
+                resolveButton->setText(uiText("Resolving..."));
 
                 QPointer<PredictionDialog> self = this;
                 QPointer<QPushButton> button = resolveButton;
@@ -2646,7 +2647,7 @@ void PredictionDialog::buildManageUI()
                         if (button)
                         {
                             button->setEnabled(true);
-                            button->setText("Complete");
+                            button->setText(uiText("Complete"));
                         }
                     });
             });
@@ -2767,12 +2768,12 @@ void PredictionDialog::buildBettingUI()
                 const int remaining = std::max(0, windowSecs - elapsed);
                 if (remaining > 0)
                 {
-                    labelPtr->setText(QString("Closing in %1")
+                    labelPtr->setText(uiText(QString("Closing in %1"))
                                           .arg(formatRemainingTime(remaining)));
                 }
                 else
                 {
-                    labelPtr->setText("Submissions closing...");
+                    labelPtr->setText(uiText("Submissions closing..."));
                 }
             };
             updateCountdown();
@@ -2785,7 +2786,7 @@ void PredictionDialog::buildBettingUI()
         }
         else if (prediction.status == "LOCKED")
         {
-            statusLabel->setText("Submissions locked");
+            statusLabel->setText(uiText("Submissions locked"));
         }
         else
         {
@@ -3141,7 +3142,7 @@ void PredictionDialog::buildBettingUI()
                 installSelectionTarget(returnValue);
                 metaLayout->addWidget(returnValue, 0, Qt::AlignVCenter);
 
-                auto *returnLabel = new QLabel("RETURN", metaWidget);
+                auto *returnLabel = new QLabel(uiText("RETURN"), metaWidget);
                 returnLabel->setObjectName("PredictionOutcomeStats");
                 returnLabel->setFont(compactMetaFont);
                 returnLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -3266,7 +3267,7 @@ void PredictionDialog::buildBettingUI()
                 navButton->setFlat(true);
                 navButton->setIcon(navIcon);
                 navButton->setIconSize(QSize(navIconSize, navIconSize));
-                navButton->setToolTip("Back to all options");
+                navButton->setToolTip(uiText("Back to all options"));
                 navButton->setCursor(Qt::PointingHandCursor);
                 navButton->setSizePolicy(QSizePolicy::Fixed,
                                          QSizePolicy::Fixed);
@@ -3463,14 +3464,14 @@ void PredictionDialog::buildBettingUI()
                 auto *wagerRow = new QHBoxLayout();
                 wagerRow->setSpacing(rowSpacing);
 
-                auto *wagerLabel = new QLabel("Wager", bottomCard);
+                auto *wagerLabel = new QLabel(uiText("Wager"), bottomCard);
                 wagerLabel->setObjectName("PredictionSectionTitle");
                 wagerLabel->setFont(buttonFont);
                 wagerRow->addWidget(wagerLabel);
                 wagerRow->addStretch(1);
 
                 auto *balLabel = new QLabel(
-                    QString("Bal: %1").arg(
+                    uiText(QString("Bal: %1")).arg(
                         balance >= 0 ? formatChannelPoints(balance) : "..."),
                     bottomCard);
                 balLabel->setObjectName("PredictionBalanceLabel");
@@ -3489,7 +3490,7 @@ void PredictionDialog::buildBettingUI()
                 amountInput->setObjectName("PredictionWagerInput");
                 amountInput->setFont(uiFont);
                 amountInput->setFixedHeight(compactControlHeight);
-                amountInput->setPlaceholderText("Amount");
+                amountInput->setPlaceholderText(uiText("Amount"));
                 amountInput->setValidator(
                     new QIntValidator(1, maxBet, amountInput));
                 if (this->bettingWagerAmount_ > 0)
@@ -3533,7 +3534,7 @@ void PredictionDialog::buildBettingUI()
                     inputRow->addWidget(btn);
                 }
 
-                auto *maxBtn = new QPushButton("MAX", bottomCard);
+                auto *maxBtn = new QPushButton(uiText("MAX"), bottomCard);
                 maxBtn->setObjectName("PredictionWagerQuickButton");
                 maxBtn->setFont(statFont);
                 maxBtn->setFixedHeight(compactControlHeight);
@@ -3584,7 +3585,7 @@ void PredictionDialog::buildBettingUI()
                         const auto outcomeId = outcome.id;
                         const QColor btnColor = outcomeColor(i, outcome.color);
 
-                        auto *voteBtn = new QPushButton("Vote", bottomCard);
+                        auto *voteBtn = new QPushButton(uiText("Vote"), bottomCard);
                         voteBtn->setObjectName("PredictionVoteButtonDynamic");
                         voteBtn->setFont(buttonFont);
                         voteBtn->setFixedHeight(compactControlHeight);
@@ -3641,7 +3642,7 @@ void PredictionDialog::buildBettingUI()
                                 }
 
                                 voteBtn->setEnabled(false);
-                                voteBtn->setText("Betting...");
+                                voteBtn->setText(uiText("Betting..."));
 
                                 QPointer<PredictionDialog> self = this;
                                 QPointer<QPushButton> btn = voteBtn;
@@ -3739,7 +3740,7 @@ void PredictionDialog::buildBettingUI()
                                         if (btn)
                                         {
                                             btn->setEnabled(true);
-                                            btn->setText("Vote");
+                                            btn->setText(uiText("Vote"));
                                         }
                                     });
                             });
@@ -3759,7 +3760,7 @@ void PredictionDialog::buildBettingUI()
                         std::max(14, int(20 * effectiveScale));
                     const auto selectedOutcomeId = selectedOutcome->id;
                     const auto selectedOutcomeTitle = selectedOutcome->title;
-                    auto *voteBtn = new QPushButton("Vote", bottomCard);
+                    auto *voteBtn = new QPushButton(uiText("Vote"), bottomCard);
                     voteBtn->setFont(buttonFont);
                     voteBtn->setFixedHeight(compactControlHeight);
                     voteBtn->setSizePolicy(QSizePolicy::Expanding,
@@ -3802,7 +3803,7 @@ void PredictionDialog::buildBettingUI()
                             }
 
                             voteBtn->setEnabled(false);
-                            voteBtn->setText("Betting...");
+                            voteBtn->setText(uiText("Betting..."));
 
                             QPointer<PredictionDialog> self = this;
                             QPointer<QPushButton> btn = voteBtn;
@@ -3881,7 +3882,7 @@ void PredictionDialog::buildBettingUI()
                                     if (btn)
                                     {
                                         btn->setEnabled(true);
-                                        btn->setText("Vote");
+                                        btn->setText(uiText("Vote"));
                                     }
                                 });
                         });

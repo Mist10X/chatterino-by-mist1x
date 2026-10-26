@@ -98,6 +98,20 @@ enum class TabStyle : std::uint8_t {
     Compact,
 };
 
+/// Size of the time next to a message, against the chat font.
+enum class TimestampSize : std::uint8_t {
+    SameAsText,
+    Small,
+    Smaller,
+};
+
+/// Channel avatars on notebook tabs.
+enum class TabAvatarStyle : std::uint8_t {
+    Off,
+    AvatarAndName,
+    AvatarOnly,
+};
+
 enum class EmoteTooltipScale : std::uint8_t {
     Small,
     Medium,
@@ -182,6 +196,36 @@ constexpr std::optional<std::string_view> qmagicenumDisplayName(
             return "5 seconds";
         case SplitMpsWindow::Seconds10:
             return "10 seconds";
+    }
+    return {};
+}
+
+constexpr std::optional<std::string_view> qmagicenumDisplayName(
+    TimestampSize value) noexcept
+{
+    switch (value)
+    {
+        case TimestampSize::SameAsText:
+            return "Same as the text";
+        case TimestampSize::Small:
+            return "Small (80%)";
+        case TimestampSize::Smaller:
+            return "Smaller (70%)";
+    }
+    return {};
+}
+
+constexpr std::optional<std::string_view> qmagicenumDisplayName(
+    TabAvatarStyle value) noexcept
+{
+    switch (value)
+    {
+        case TabAvatarStyle::Off:
+            return "Off";
+        case TabAvatarStyle::AvatarAndName:
+            return "Avatar and name";
+        case TabAvatarStyle::AvatarOnly:
+            return "Avatar only, name on the selected tab";
     }
     return {};
 }
@@ -274,6 +318,8 @@ public:
     bool shouldSendHelixChat() const;
 
     FloatSetting uiScale = {"/appearance/uiScale2", 1};
+    // Stable language codes; never localized option captions in settings.json.
+    QStringSetting uiLanguage = {"/appearance/uiLanguage", "ru"};
     /// Match pre–high-DPI-default scaling (Qt::AA_Use96Dpi). Restart to apply.
     BoolSetting useLegacyScaling = {"/appearance/useLegacyScaling", false};
     BoolSetting windowTopMost = {"/appearance/windowAlwaysOnTop", false};
@@ -297,6 +343,11 @@ public:
     float getClampedUiScale() const;
     void setClampedUiScale(float value);
 
+    // Local Archive bridge. Empty by default: never discover a production
+    // dataset or borrow another client's session implicitly.
+    QStringSetting archiveSocketName = {"/archive/socketName", ""};
+    QStringSetting archiveDatasetId = {"/archive/datasetId", ""};
+
     /// Appearance
     BoolSetting showTimestamps = {"/appearance/messages/showTimestamps", true};
     BoolSetting showHeaderTimestamps = {
@@ -319,6 +370,10 @@ public:
         "/appearance/enableAnimationsWhenFocused", false};
     BoolSetting hideMessageTimestampsWhenLive = {
         "/appearance/messages/hideMessageTimestampsWhenLive", false};
+    EnumStringSetting<TimestampSize> timestampSize = {
+        "/appearance/messages/timestampSize",
+        TimestampSize::Small,
+    };
     QStringSetting timestampFormat = {"/appearance/messages/timestampFormat",
                                       "h:mm"};
     BoolSetting showLastMessageIndicator = {
@@ -415,6 +470,10 @@ public:
     EnumStringSetting<TabStyle> tabStyle = {
         "/appearance/tabStyle",
         TabStyle::Normal,
+    };
+    EnumStringSetting<TabAvatarStyle> tabAvatarStyle = {
+        "/appearance/tabAvatarStyle",
+        TabAvatarStyle::AvatarOnly,
     };
     BoolSetting hidePreferencesButton = {"/appearance/hidePreferencesButton",
                                          false};
@@ -686,7 +745,8 @@ public:
     BoolSetting enableSevenTVEventAPI = {"/emotes/seventv/eventapi", true};
     BoolSetting sendSevenTVActivity = {"/emotes/seventv/sendActivity", true};
 
-    BoolSetting allowAvifImages = {"/emotes/allowAvif", true};
+    // WEBP like Chatterino+: AVIF decodes several times slower (libaom)
+    BoolSetting allowAvifImages = {"/emotes/allowAvif", false};
 
     ChatterinoSetting<QStringList> favouriteEmotes = {
         "/emotes/favouriteEmotes",
@@ -700,6 +760,10 @@ public:
     /// Links
     BoolSetting linksDoubleClickOnly = {"/links/doubleClickToOpen", false};
     BoolSetting linkInfoTooltip = {"/links/linkInfoTooltip", false};
+    /// Show "Page title (domain)" in chat instead of the raw link.
+    BoolSetting showLinkTitles = {"/links/showTitleInsteadOfUrl", true};
+    /// Card with thumbnail, channel, game and views under Twitch clip links.
+    BoolSetting showClipCards = {"/links/showClipCards", true};
     IntSetting thumbnailSize = {"/appearance/thumbnailSize", 0};
     IntSetting thumbnailSizeStream = {"/appearance/thumbnailSizeStream", 2};
     BoolSetting unshortLinks = {"/links/unshortLinks", false};
@@ -1324,6 +1388,26 @@ public:
         "/moltorino/moderation/defaultCommercialDuration", 30};
     BoolSetting showRaidStatusAboveInput{
         "/moltorino/moderation/raid/showStatusAboveInput", true};
+    BoolSetting showIncomingRaidBanner{"/moltorino/banners/incomingRaid", true};
+    BoolSetting showEmotesInInput{"/moltorino/input/showEmotes", true};
+    /// A card at the top of the window for taskbar-flashing highlights elsewhere.
+    BoolSetting showHighlightToasts{"/moltorino/highlights/showToast", true};
+    /// Read a channel's chat through Twitch's anonymous (guest) connection while
+    /// the current account is banned there (Twitch hides it from that account).
+    BoolSetting readChatWhileBanned{"/moltorino/chat/readWhileBanned", true};
+    /// Older messages in the usercard straight from the public chat logs.
+    BoolSetting usercardPublicLogs{"/moltorino/usercard/publicLogs", true};
+    /// Size of the reply thread popup the user last chose (logical px; 0 = default).
+    IntSetting replyThreadPopupWidth{"/moltorino/replyThread/width", 0};
+    IntSetting replyThreadPopupHeight{"/moltorino/replyThread/height", 0};
+    /// Red input with a countdown while timed out, green once it is over.
+    BoolSetting showOwnTimeoutInInput{"/moltorino/input/showOwnTimeout", true};
+    IntSetting incomingRaidBannerSeconds{
+        "/moltorino/banners/incomingRaidSeconds", 40};
+    BoolSetting showMassGiftBanner{"/moltorino/banners/massGifts", true};
+    IntSetting massGiftBannerMinimum{"/moltorino/banners/massGiftsMinimum", 5};
+    IntSetting massGiftBannerSeconds{"/moltorino/banners/massGiftsSeconds",
+                                     40};
 
     /// Client
     BoolSetting showTranslateMessageContextAction{

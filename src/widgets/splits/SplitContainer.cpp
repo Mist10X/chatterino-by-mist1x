@@ -9,6 +9,7 @@
 #include "common/QLogging.hpp"
 #include "common/WindowDescriptors.hpp"
 #include "debug/AssertInGuiThread.hpp"
+#include "providers/kick/KickChannel.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "singletons/Fonts.hpp"
 #include "singletons/Theme.hpp"
@@ -969,6 +970,7 @@ void SplitContainer::refreshTabTitle()
     }
 
     QString newTitle = "";
+    QString avatarLogin;
     bool first = true;
 
     for (const auto &chatWidget : this->splits_)
@@ -977,9 +979,21 @@ void SplitContainer::refreshTabTitle()
         if (auto *twitchChannel =
                 dynamic_cast<TwitchChannel *>(chatWidget->getChannel().get()))
         {
+            if (avatarLogin.isEmpty())
+            {
+                avatarLogin = twitchChannel->getName().toLower();
+            }
             if (twitchChannel->isAnonymous() && !channelName.isEmpty())
             {
                 channelName += " (anonymous)";
+            }
+        }
+        else if (auto *kickChannel = dynamic_cast<KickChannel *>(
+                     chatWidget->getChannel().get()))
+        {
+            if (avatarLogin.isEmpty() && !kickChannel->slug().isEmpty())
+            {
+                avatarLogin = QStringLiteral("kick:") + kickChannel->slug().toLower();
             }
         }
         if (channelName.isEmpty())
@@ -1002,6 +1016,7 @@ void SplitContainer::refreshTabTitle()
     }
 
     this->tab_->setDefaultTitle(newTitle);
+    this->tab_->setAvatarLogin(avatarLogin);
 }
 
 void SplitContainer::refreshTabLiveStatus()

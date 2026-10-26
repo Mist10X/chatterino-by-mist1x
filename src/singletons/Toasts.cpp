@@ -7,6 +7,7 @@
 #include "Application.hpp"
 #include "common/Common.hpp"
 #include "common/Literals.hpp"
+#include "common/network/NetworkProxy.hpp"
 #include "common/QLogging.hpp"
 #include "common/Version.hpp"
 #include "controllers/notifications/NotificationController.hpp"
@@ -31,8 +32,10 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
+#include <QImage>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <QSaveFile>
 #include <QStringBuilder>
 #include <QUrl>
 
@@ -52,7 +55,8 @@ QString avatarFilePath(const QString &channelName)
 bool hasAvatarForChannel(const QString &channelName)
 {
     QFileInfo avatarFile(avatarFilePath(channelName));
-    return avatarFile.exists() && avatarFile.isFile();
+    return avatarFile.exists() && avatarFile.isFile() &&
+           !QImage(avatarFile.absoluteFilePath()).isNull();
 }
 
 #ifdef Q_OS_WIN
@@ -92,7 +96,7 @@ public:
 
 private:
     QNetworkAccessManager manager_;
-    QFile file_;
+    QSaveFile file_;
     QNetworkReply *reply_{};
 
 Q_SIGNALS:
@@ -420,7 +424,7 @@ void Toasts::ensureInitialized()
     this->initialized_ = true;
 
     auto *instance = WinToast::instance();
-    instance->setAppName(L"Leafyrino");
+    instance->setAppName(L"Chatterino by Mist1X");
     instance->setAppUserModelId(Version::instance().appUserModelID());
     if (isRunningFromBuildTree() || !getSettings()->createShortcutForToasts)
     {
@@ -552,7 +556,7 @@ void Toasts::ensureInitialized()
     {
         return;
     }
-    auto result = notify_init("Leafyrino");
+    auto result = notify_init("Chatterino by Mist1X");
 
     if (result == 0)
     {
@@ -690,27 +694,31 @@ AvatarDownloader::AvatarDownloader(const QString &avatarURL,
                                    const QString &channelName)
     : file_(avatarFilePath(channelName))
 {
-    if (!this->file_.open(QFile::WriteOnly | QFile::Truncate))
-    {
-        qCWarning(chatterinoNotification)
-            << "Failed to open avatar file" << this->file_.errorString();
-    }
-
+    configureNetworkAccessManager(this->manager_);
     this->reply_ = this->manager_.get(QNetworkRequest(avatarURL));
+    setNetworkReplyTimeout(this->reply_, 15000);
 
-    connect(this->reply_, &QNetworkReply::readyRead, this, [this] {
-        this->file_.write(this->reply_->readAll());
-    });
     connect(this->reply_, &QNetworkReply::finished, this, [this] {
         if (this->reply_->error() != QNetworkReply::NoError)
         {
             qCWarning(chatterinoNotification)
                 << "Failed to download avatar" << this->reply_->errorString();
         }
-
-        if (this->file_.isOpen())
+        else
         {
-            this->file_.close();
+            const auto data = this->reply_->readAll();
+            if (QImage::fromData(data).isNull())
+            {
+                qCWarning(chatterinoNotification)
+                    << "Downloaded avatar was not a valid image";
+            }
+            else if (!this->file_.open(QIODevice::WriteOnly) ||
+                     this->file_.write(data) != data.size() ||
+                     !this->file_.commit())
+            {
+                qCWarning(chatterinoNotification)
+                    << "Failed to save avatar" << this->file_.errorString();
+            }
         }
         this->downloadComplete();
         this->deleteLater();

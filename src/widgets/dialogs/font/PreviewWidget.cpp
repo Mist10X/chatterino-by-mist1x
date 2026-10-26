@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/font/PreviewWidget.hpp"
 
 #include <QPainter>
@@ -24,7 +25,7 @@ void PreviewWidget::paintEvent(QPaintEvent *)
     painter.drawText(
         this->rect().adjusted(3, 3, -3, -3),
         Qt::AlignCenter | Qt::TextSingleLine,
-        QStringLiteral("The quick brown fox jumps over the lazy dog"));
+        uiText(QStringLiteral("The quick brown fox jumps over the lazy dog")));
 }
 
 void PreviewWidget::setFont(const QFont &font)

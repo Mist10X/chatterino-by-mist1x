@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/settingspages/KeyboardSettingsPage.hpp"
 
 #include "Application.hpp"
@@ -62,7 +63,7 @@ KeyboardSettingsPage::KeyboardSettingsPage()
         layout.emplace<EditableModelView>(model).getElement();
     this->view_ = view;
 
-    view->setTitles({"Hotkey name", "Keybinding"});
+    view->setTitles({uiText("Hotkey name"), uiText("Keybinding")});
     view->getTableView()->horizontalHeader()->setVisible(true);
     view->getTableView()->horizontalHeader()->setStretchLastSection(false);
     view->getTableView()->horizontalHeader()->setSectionResizeMode(
@@ -92,7 +93,7 @@ KeyboardSettingsPage::KeyboardSettingsPage()
 #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
     keySequenceInput->setClearButtonEnabled(true);
 #endif
-    auto *searchText = new QLabel("Search keybind:", this);
+    auto *searchText = new QLabel(uiText("Search keybind:"), this);
 
     QObject::connect(keySequenceInput, &QKeySequenceEdit::keySequenceChanged,
                      this,
@@ -108,11 +109,11 @@ KeyboardSettingsPage::KeyboardSettingsPage()
     view->addCustomButton(searchText);
     view->addCustomButton(keySequenceInput);
 
-    auto *resetEverything = new QPushButton("Reset to defaults");
+    auto *resetEverything = new QPushButton(uiText("Reset to defaults"));
     QObject::connect(resetEverything, &QPushButton::clicked, [this]() {
         auto reply = QMessageBox::question(
-            this, "Reset hotkeys",
-            "Are you sure you want to reset hotkeys to defaults?",
+            this, uiText("Reset hotkeys"),
+            uiText("Are you sure you want to reset hotkeys to defaults?"),
             QMessageBox::Yes | QMessageBox::Cancel);
 
         if (reply == QMessageBox::Yes)
@@ -150,8 +151,8 @@ KeyboardSettingsPage::KeyboardSettingsPage()
         deprecatedWarning->setStyleSheet("color: yellow");
         deprecatedWarning->setWordWrap(true);
         auto deprecatedWarning2 = layout.emplace<QLabel>(
-            "You can ignore this warning after you have removed or edited the "
-            "above-mentioned hotkeys.");
+            uiText("You can ignore this warning after you have removed or edited the "
+            "above-mentioned hotkeys."));
         deprecatedWarning2->setStyleSheet("color: yellow");
     }
 }

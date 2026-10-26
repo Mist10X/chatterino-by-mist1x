@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/EditHotkeyDialog.hpp"
 
 #include "Application.hpp"
@@ -45,7 +46,7 @@ EditHotkeyDialog::EditHotkeyDialog(const std::shared_ptr<Hotkey> hotkey,
 
     for (const auto &[_, hotkeyCategory] : hotkeyCategories())
     {
-        this->ui_->categoryPicker->addItem(hotkeyCategory.displayName,
+        this->ui_->categoryPicker->addItem(uiText(hotkeyCategory.displayName),
                                            hotkeyCategory.name);
     }
 
@@ -57,7 +58,7 @@ EditHotkeyDialog::EditHotkeyDialog(const std::shared_ptr<Hotkey> hotkey,
     }
     else
     {
-        this->setWindowTitle("Add hotkey");
+        this->setWindowTitle(uiText("Add hotkey"));
         this->ui_->categoryPicker->setCurrentIndex(
             size_t(HotkeyCategory::SplitInput));
         this->ui_->argumentsEdit->setPlainText("");
@@ -67,8 +68,8 @@ void EditHotkeyDialog::setFromHotkey(std::shared_ptr<Hotkey> hotkey)
 {
     if (!hotkey->validAction())
     {
-        this->showEditError("Invalid action, make sure you select the "
-                            "correct action before saving.");
+        this->showEditError(uiText("Invalid action, make sure you select the "
+                            "correct action before saving."));
     }
 
     this->ui_->categoryPicker->setCurrentIndex(size_t(hotkey->category()));
@@ -89,13 +90,13 @@ void EditHotkeyDialog::setFromHotkey(std::shared_ptr<Hotkey> hotkey)
         this->ui_->argumentsDescription->setVisible(false);
 
         this->ui_->easyArgsPicker->clear();
-        this->ui_->easyArgsLabel->setText(def->argumentsPrompt);
-        this->ui_->easyArgsLabel->setToolTip(def->argumentsPromptHover);
+        this->ui_->easyArgsLabel->setText(uiText(def->argumentsPrompt));
+        this->ui_->easyArgsLabel->setToolTip(uiText(def->argumentsPromptHover));
         int matchIdx = -1;
         for (size_t i = 0; i < def->possibleArguments.size(); i++)
         {
             const auto &[displayText, argData] = def->possibleArguments.at(i);
-            this->ui_->easyArgsPicker->addItem(displayText);
+            this->ui_->easyArgsPicker->addItem(uiText(displayText));
 
             if (argData.size() != hotkey->arguments().size())
             {
@@ -124,8 +125,8 @@ void EditHotkeyDialog::setFromHotkey(std::shared_ptr<Hotkey> hotkey)
         qCDebug(chatterinoHotkeys)
             << "Did not match hotkey arguments for " << hotkey->toString()
             << "using text edit instead of easy picker";
-        this->showEditError("Arguments do not match what's expected. The "
-                            "argument picker is not available.");
+        this->showEditError(uiText("Arguments do not match what's expected. The "
+                            "argument picker is not available."));
         this->ui_->easyArgsLabel->setVisible(false);
         this->ui_->easyArgsPicker->setVisible(false);
 
@@ -169,7 +170,7 @@ void EditHotkeyDialog::afterEdit()
         this->ui_->categoryPicker->currentData().toString());
     if (!category)
     {
-        this->showEditError("Invalid Hotkey Category.");
+        this->showEditError(uiText("Invalid Hotkey Category."));
 
         return;
     }
@@ -183,23 +184,23 @@ void EditHotkeyDialog::afterEdit()
         }
         else
         {
-            this->showEditError("Hotkey with this name already exists.");
+            this->showEditError(uiText("Hotkey with this name already exists."));
             return;
         }
     }
     if (nameText.isEmpty())
     {
-        this->showEditError("Hotkey name is missing");
+        this->showEditError(uiText("Hotkey name is missing"));
         return;
     }
     if (this->ui_->keyComboEdit->keySequence().count() == 0)
     {
-        this->showEditError("Key Sequence is missing");
+        this->showEditError(uiText("Key Sequence is missing"));
         return;
     }
     if (this->ui_->actionPicker->currentText().isEmpty())
     {
-        this->showEditError("Action name cannot be empty");
+        this->showEditError(uiText("Action name cannot be empty"));
         return;
     }
 
@@ -213,9 +214,9 @@ void EditHotkeyDialog::afterEdit()
     if (!isKeyExcempt && !hasModifier && !this->shownSingleKeyWarning)
     {
         this->showEditError(
-            "Warning: using keybindings without modifiers can lead to not "
+            uiText("Warning: using keybindings without modifiers can lead to not "
             "being\nable to use the key for the normal purpose.\nPress the "
-            "submit button again to do it anyway.");
+            "submit button again to do it anyway."));
         this->shownSingleKeyWarning = true;
         return;
     }
@@ -251,7 +252,7 @@ void EditHotkeyDialog::afterEdit()
                                                     this->data()->name()))
             {
                 this->showEditError(
-                    "Keybinding needs to be unique in the category.");
+                    uiText("Keybinding needs to be unique in the category."));
                 return;
             }
         }
@@ -261,7 +262,7 @@ void EditHotkeyDialog::afterEdit()
         if (getApp()->getHotkeys()->isDuplicate(hotkey, QString()))
         {
             this->showEditError(
-                "Keybinding needs to be unique in the category.");
+                uiText("Keybinding needs to be unique in the category."));
             return;
         }
     }
@@ -277,7 +278,7 @@ void EditHotkeyDialog::updatePossibleActions()
         this->ui_->categoryPicker->currentData().toString());
     if (!category)
     {
-        this->showEditError("Invalid Hotkey Category.");
+        this->showEditError(uiText("Invalid Hotkey Category."));
 
         return;
     }
@@ -296,7 +297,7 @@ void EditHotkeyDialog::updatePossibleActions()
         int indexToSet = -1;
         for (const auto &action : actions->second)
         {
-            this->ui_->actionPicker->addItem(action.second.displayName,
+            this->ui_->actionPicker->addItem(uiText(action.second.displayName),
                                              action.first);
             if (action.first == currentText)
             {
@@ -327,7 +328,7 @@ void EditHotkeyDialog::updateArgumentsInput()
         this->ui_->categoryPicker->currentData().toString());
     if (!category)
     {
-        this->showEditError("Invalid Hotkey category.");
+        this->showEditError(uiText("Invalid Hotkey category."));
 
         return;
     }
@@ -338,8 +339,8 @@ void EditHotkeyDialog::updateArgumentsInput()
         auto definition = actionsMap.find(currentText);
         if (definition == actionsMap.end())
         {
-            auto text = QString("Newline separated arguments for the action\n"
-                                " - Unable to find action named \"%1\"")
+            auto text = uiText(QString("Newline separated arguments for the action\n"
+                                " - Unable to find action named \"%1\""))
                             .arg(currentText);
             this->ui_->argumentsEdit->setPlaceholderText(text);
             return;
@@ -361,7 +362,7 @@ void EditHotkeyDialog::updateArgumentsInput()
         if (!def.argumentDescription.isEmpty())
         {
             this->ui_->argumentsDescription->setVisible(true);
-            this->ui_->argumentsDescription->setText(def.argumentDescription);
+            this->ui_->argumentsDescription->setText(uiText(def.argumentDescription));
         }
         else
         {
@@ -371,7 +372,7 @@ void EditHotkeyDialog::updateArgumentsInput()
         QString text = "Arguments wrapped in <> are required.";
         if (def.maxCountArguments != def.minCountArguments)
         {
-            text += QString("\nArguments wrapped in [] are optional.");
+            text += uiText(QString("\nArguments wrapped in [] are optional."));
         }
 
         text += "\nArguments are separated by a newline.";
@@ -403,17 +404,17 @@ void EditHotkeyDialog::updateArgumentsInput()
         this->ui_->easyArgsPicker->clear();
         for (const auto &[displayText, _] : def.possibleArguments)
         {
-            this->ui_->easyArgsPicker->addItem(displayText);
+            this->ui_->easyArgsPicker->addItem(uiText(displayText));
         }
         this->ui_->easyArgsPicker->setCurrentIndex(0);
-        this->ui_->easyArgsLabel->setText(def.argumentsPrompt);
-        this->ui_->easyArgsLabel->setToolTip(def.argumentsPromptHover);
+        this->ui_->easyArgsLabel->setText(uiText(def.argumentsPrompt));
+        this->ui_->easyArgsLabel->setToolTip(uiText(def.argumentsPromptHover));
     }
 }
 
 void EditHotkeyDialog::showEditError(QString errorText)
 {
-    this->ui_->warningLabel->setText(errorText);
+    this->ui_->warningLabel->setText(uiText(errorText));
     this->ui_->warningLabel->show();
 }
 

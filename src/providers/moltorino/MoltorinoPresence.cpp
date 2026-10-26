@@ -3,6 +3,7 @@
 #include "providers/moltorino/MoltorinoPresence.hpp"
 
 #include "Application.hpp"
+#include "common/network/NetworkProxy.hpp"
 #include "common/network/NetworkRequest.hpp"
 #include "common/network/NetworkResult.hpp"
 #include "common/QLogging.hpp"
@@ -13,6 +14,7 @@
 #include "singletons/Paths.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/WindowManager.hpp"
+#include "util/CombinePath.hpp"
 #include "util/PostToThread.hpp"
 #include "widgets/Window.hpp"
 
@@ -103,8 +105,10 @@ bool badgeSocketConfigured()
 
 QString savedClientId()
 {
-    QSettings settings(QStringLiteral("Leafyrino"),
-                       QStringLiteral("Leafyrino"));
+    // Kept in the profile, not in HKCU\Software\Leafyrino.
+    QSettings settings(
+        combinePath(getApp()->getPaths().settingsDirectory, "presence.ini"),
+        QSettings::IniFormat);
     auto id = settings.value(QStringLiteral("presence/clientInstanceId"))
                   .toString()
                   .trimmed();
@@ -120,8 +124,10 @@ QString savedClientId()
 
 bool activityHeartbeatsEnabled()
 {
-    const auto *settings = getSettings();
-    return settings->transmitPresence && settings->sendActivityHeartbeats;
+    // Off in this build: API_BASE is the placeholder presence.example.com, so
+    // heartbeats would send the account name to a host nobody here runs, and
+    // their replies are what offers installer updates.
+    return false;
 }
 
 bool heartbeatAccountHidden()
@@ -365,6 +371,7 @@ private:
 MoltorinoPresence::MoltorinoPresence()
 //    : clientInstanceId_(savedClientId())
 {
+    configureNetworkAccessManager(this->updateNetwork_);
     // this->heartbeatTimer_.setInterval(HEARTBEAT_INTERVAL_MS);
     // this->heartbeatTimer_.setTimerType(Qt::VeryCoarseTimer);
 
@@ -535,8 +542,10 @@ void MoltorinoPresence::sendHeartbeat(bool force)
 
 void MoltorinoPresence::handleServerReply(const QJsonObject &root)
 {
-    const auto updateChanged = this->setAvailableUpdate(
-        this->parseUpdate(root.value(QStringLiteral("update")).toObject()));
+    // Updates from the presence server are never offered: they would replace
+    // this isolated build with a stock one.
+    (void)root;
+    const auto updateChanged = this->setAvailableUpdate(std::nullopt);
 
     if (updateChanged && this->availableUpdate_)
     {

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/settingspages/AboutPage.hpp"
 
 #include "Application.hpp"
@@ -43,18 +44,23 @@ AboutPage::AboutPage()
     auto layout = widget.setLayoutType<QVBoxLayout>();
     {
         QPixmap pixmap;
-        pixmap.load(":/settings/aboutlogo.png");
+        pixmap.load(":/icon.png");
 
         auto logo = layout.emplace<QLabel>().assign(&this->logo_);
         logo->setPixmap(pixmap);
         if (pixmap.width() != 0)
         {
-            logo->setFixedSize(PIXMAP_WIDTH,
-                               PIXMAP_WIDTH * pixmap.height() / pixmap.width());
+            logo->setFixedSize(96, 96);
         }
         logo->setScaledContents(true);
 
-        auto versionInfo = layout.emplace<QGroupBox>("Version");
+        auto brand = layout.emplace<QLabel>(QStringLiteral("<h1>Chatterino by Mist1X</h1>"));
+        brand->setObjectName("BrandDisplayName");
+        auto attribution = layout.emplace<QLabel>(uiText("Personal modified build based on Chatterino / Leafyrino."));
+        attribution->setWordWrap(true);
+        attribution->setObjectName("BrandAttribution");
+
+        auto versionInfo = layout.emplace<QGroupBox>(uiText("Version"));
         {
             auto vbox = versionInfo.emplace<QVBoxLayout>();
             const auto &version = Version::instance();
@@ -68,7 +74,7 @@ AboutPage::AboutPage()
             }
 
             string +=
-                "<br><br>Your settings directory is located at <a href=\"";
+                uiText("<br><br>Your settings directory is located at <a href=\"");
             string +=
                 QUrl::fromLocalFile(getApp()->getPaths().settingsDirectory)
                     .toString(QUrl::FullyEncoded);
@@ -82,23 +88,26 @@ AboutPage::AboutPage()
             label->setTextInteractionFlags(Qt::TextBrowserInteraction);
         }
 
-        auto aboutChatterino = layout.emplace<QGroupBox>("About Chatterino...");
+        auto aboutChatterino = layout.emplace<QGroupBox>(uiText("About Chatterino..."));
         {
             auto l = aboutChatterino.emplace<QVBoxLayout>();
 
             // clang-format off
-            l.emplace<QLabel>("Chatterino Wiki can be found <a href=\"" % LINK_CHATTERINO_WIKI % "\">here</a>")->setOpenExternalLinks(true);
-            l.emplace<QLabel>("All about Chatterino's <a href=\"" % LINK_CHATTERINO_FEATURES % "\">features</a>")->setOpenExternalLinks(true);
-            l.emplace<QLabel>("Join the official Chatterino <a href=\"" % LINK_CHATTERINO_DISCORD % "\">Discord</a>")->setOpenExternalLinks(true);
-            l.emplace<QLabel>("Join the official 7TV <a href=\"" % LINK_SEVENTV_DISCORD % "\">Discord</a>")->setOpenExternalLinks(true);
+            l.emplace<QLabel>(uiText("Chatterino Wiki can be found <a href=\"") % LINK_CHATTERINO_WIKI % uiText("\">here</a>"))->setOpenExternalLinks(true);
+            l.emplace<QLabel>(uiText("All about Chatterino's <a href=\"") % LINK_CHATTERINO_FEATURES % uiText("\">features</a>"))->setOpenExternalLinks(true);
+            l.emplace<QLabel>(uiText("Join the official Chatterino <a href=\"") % LINK_CHATTERINO_DISCORD % uiText("\">Discord</a>"))->setOpenExternalLinks(true);
+            l.emplace<QLabel>(uiText("Join the official 7TV <a href=\"") % LINK_SEVENTV_DISCORD % uiText("\">Discord</a>"))->setOpenExternalLinks(true);
             // clang-format on
         }
 
         auto licenses =
-            layout.emplace<QGroupBox>("Open source software used...");
+            layout.emplace<QGroupBox>(uiText("Open source software used..."));
         {
             auto form = licenses.emplace<QFormLayout>();
 
+            addLicense(form.getElement(), "Montserrat / Archive Montserrat",
+                       "https://github.com/google/fonts/tree/main/ofl/montserrat",
+                       ":/licenses/montserrat-OFL.txt");
             addLicense(form.getElement(), "Qt Framework", "https://www.qt.io",
                        ":/licenses/qt_lgpl-3.0.txt");
             addLicense(form.getElement(), "Boost", "https://www.boost.org/",
@@ -170,37 +179,37 @@ AboutPage::AboutPage()
 #endif
         }
 
-        auto attributions = layout.emplace<QGroupBox>("Attributions...");
+        auto attributions = layout.emplace<QGroupBox>(uiText("Attributions..."));
         {
             auto l = attributions.emplace<QVBoxLayout>();
 
-            l.emplace<QLabel>("Twemoji emojis provided by <a "
+            l.emplace<QLabel>(uiText("Twemoji emojis provided by <a "
                               "href=\"https://github.com/twitter/"
-                              "twemoji\">Twitter's Twemoji</a>")
+                              "twemoji\">Twitter's Twemoji</a>"))
                 ->setOpenExternalLinks(true);
-            l.emplace<QLabel>("Facebook emojis provided by <a "
-                              "href=\"https://facebook.com\">Facebook</a>")
+            l.emplace<QLabel>(uiText("Facebook emojis provided by <a "
+                              "href=\"https://facebook.com\">Facebook</a>"))
                 ->setOpenExternalLinks(true);
-            l.emplace<QLabel>("Apple emojis provided by <a "
-                              "href=\"https://apple.com\">Apple</a>")
+            l.emplace<QLabel>(uiText("Apple emojis provided by <a "
+                              "href=\"https://apple.com\">Apple</a>"))
                 ->setOpenExternalLinks(true);
-            l.emplace<QLabel>("Google emojis provided by <a "
-                              "href=\"https://google.com\">Google</a>")
+            l.emplace<QLabel>(uiText("Google emojis provided by <a "
+                              "href=\"https://google.com\">Google</a>"))
                 ->setOpenExternalLinks(true);
             l.emplace<QLabel>(
-                 "Emoji datasource provided by <a "
+                 uiText("Emoji datasource provided by <a "
                  "href=\"https://www.iamcal.com/\">Cal Henderson</a> "
                  "(<a "
                  "href=\"https://github.com/iamcal/emoji-data/blob/master/"
-                 "LICENSE\">show license</a>)")
+                 "LICENSE\">show license</a>)"))
                 ->setOpenExternalLinks(true);
-            l.emplace<QLabel>("Twitch emote data provided by <a "
-                              "href=\"https://chatvau.lt/\">Chat Vault</a>")
+            l.emplace<QLabel>(uiText("Twitch emote data provided by <a "
+                              "href=\"https://chatvau.lt/\">Chat Vault</a>"))
                 ->setOpenExternalLinks(true);
             // clang-format on
         }
 
-        auto contributors = layout.emplace<QGroupBox>("People");
+        auto contributors = layout.emplace<QGroupBox>(uiText("People"));
         {
             auto l = contributors.emplace<FlowLayout>();
 
@@ -234,7 +243,7 @@ AboutPage::AboutPage()
                         l->addLinebreak(20);
                     }
                     auto *label = new QLabel(QStringLiteral("<h1>%1</h1>")
-                                                 .arg(line.mid(8).trimmed()));
+                                                 .arg(uiText(line.mid(8).trimmed())));
                     l->addWidget(label);
                     l->addLinebreak(8);
                     continue;
@@ -254,7 +263,7 @@ AboutPage::AboutPage()
                 QString avatarUrl = contributorParts[2].trimmed();
 
                 auto *usernameLabel =
-                    new QLabel("<a href=\"" + url + "\">" + username + "</a>");
+                    new QLabel(uiText("<a href=\"") + url + "\">" + username + "</a>");
                 usernameLabel->setOpenExternalLinks(true);
                 usernameLabel->setToolTip(url);
 
@@ -297,9 +306,9 @@ AboutPage::AboutPage()
 void AboutPage::addLicense(QFormLayout *form, const QString &name,
                            const QString &website, const QString &licenseLink)
 {
-    auto *a = new QLabel("<a href=\"" + website + "\">" + name + "</a>");
+    auto *a = new QLabel(uiText("<a href=\"") + website + "\">" + name + "</a>");
     a->setOpenExternalLinks(true);
-    auto *b = new QLabel("<a href=\"" + licenseLink + "\">show license</a>");
+    auto *b = new QLabel(uiText("<a href=\"") + licenseLink + uiText("\">show license</a>"));
     QObject::connect(
         b, &QLabel::linkActivated, [parent = this, name, licenseLink] {
             auto *window = new BasePopup(
@@ -309,7 +318,7 @@ void AboutPage::addLicense(QFormLayout *form, const QString &name,
                     BaseWindow::BoundsCheckOnShow,
                 },
                 parent);
-            window->setWindowTitle("Leafyrino - License for " + name);
+            window->setWindowTitle(uiText("Leafyrino - License for ") + name);
             window->setAttribute(Qt::WA_DeleteOnClose);
             auto *layout = new QVBoxLayout();
             auto *edit = new QTextEdit;

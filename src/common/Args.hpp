@@ -50,6 +50,8 @@ public:
 
     bool portableEnable{};
     std::optional<QString> portableDirectory;
+    /// --isolation-report <file>: see writeIsolationReport (main.cpp)
+    std::optional<QString> isolationReport;
 
     bool useOldScaling = false;
 

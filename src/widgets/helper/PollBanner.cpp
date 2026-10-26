@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "widgets/helper/PollBanner.hpp"
 
 #include "Application.hpp"
@@ -95,22 +96,22 @@ QString formatPollAge(const QDateTime &dateTime)
         std::max<qint64>(0, dateTime.secsTo(QDateTime::currentDateTimeUtc()));
     if (seconds < 60)
     {
-        return QString("%1s ago").arg(seconds);
+        return uiText(QString("%1s ago")).arg(seconds);
     }
 
     const qint64 minutes = seconds / 60;
     if (minutes < 60)
     {
-        return QString("%1m ago").arg(minutes);
+        return uiText(QString("%1m ago")).arg(minutes);
     }
 
     const qint64 hours = minutes / 60;
     if (hours < 24)
     {
-        return QString("%1h ago").arg(hours);
+        return uiText(QString("%1h ago")).arg(hours);
     }
 
-    return QString("%1d ago").arg(hours / 24);
+    return uiText(QString("%1d ago")).arg(hours / 24);
 }
 
 int outcomePercent(int value, int total, int outcomeCount)
@@ -243,7 +244,7 @@ PollBanner::PollBanner(Split *split, QWidget *parent)
             .light = ":/buttons/switchDark.svg",
         },
         this, QSize(2, 2));
-    this->toggleButton_->setToolTip("Switch banner");
+    this->toggleButton_->setToolTip(uiText("Switch banner"));
     this->toggleButton_->setFixedSize(BASE_ICON_SIZE, BASE_ICON_SIZE);
     this->toggleButton_->setCursor(Qt::PointingHandCursor);
     auto *toggleOpacity = new QGraphicsOpacityEffect(this);
@@ -258,7 +259,7 @@ PollBanner::PollBanner(Split *split, QWidget *parent)
             .light = ":/buttons/cancelDark.svg",
         },
         this, QSize(2, 2));
-    this->closeButton_->setToolTip("Dismiss Poll");
+    this->closeButton_->setToolTip(uiText("Dismiss Poll"));
     this->closeButton_->setFixedSize(BASE_ICON_SIZE, BASE_ICON_SIZE);
     this->topLayout_->addWidget(this->closeButton_, 0, Qt::AlignBottom);
 
@@ -664,7 +665,7 @@ void PollBanner::updateTimer()
 
         if (remainingSeconds <= 0)
         {
-            this->timerLabel_->setText("ENDED");
+            this->timerLabel_->setText(uiText("ENDED"));
             this->timerLabel_->setStyleSheet(
                 QString("font-size: %1px; color: #9ca3af; font-weight: 700;")
                     .arg(this->headerFontSize_));
@@ -675,7 +676,7 @@ void PollBanner::updateTimer()
         }
 
         this->timerLabel_->setText(
-            QString("%1 left").arg(formatRemainingPollTime(remainingSeconds)));
+            uiText(QString("%1 left")).arg(formatRemainingPollTime(remainingSeconds)));
         this->timerLabel_->setStyleSheet(
             QString("font-size: %1px; color: #a855f7; font-weight: 700;")
                 .arg(this->headerFontSize_));
@@ -683,7 +684,7 @@ void PollBanner::updateTimer()
         return;
     }
 
-    this->timerLabel_->setText("ENDED");
+    this->timerLabel_->setText(uiText("ENDED"));
     this->timerLabel_->setStyleSheet(
         QString("font-size: %1px; color: #9ca3af; font-weight: 700;")
             .arg(this->headerFontSize_));
@@ -729,19 +730,19 @@ void PollBanner::updateLayout()
     const auto status = this->poll_->status.toUpper();
     if (status == "TERMINATED" && !this->poll_->endedByName.isEmpty())
     {
-        metadata = QString("Ended early by %1").arg(this->poll_->endedByName);
+        metadata = uiText(QString("Ended early by %1")).arg(this->poll_->endedByName);
     }
     else if (status == "ARCHIVED" && !this->poll_->endedByName.isEmpty())
     {
-        metadata = QString("Archived by %1").arg(this->poll_->endedByName);
+        metadata = uiText(QString("Archived by %1")).arg(this->poll_->endedByName);
     }
     else if (status == "COMPLETED" || !pollIsActive(*this->poll_))
     {
-        metadata = QStringLiteral("Poll ended");
+        metadata = uiText(QStringLiteral("Poll ended"));
     }
     else if (!this->poll_->createdByName.isEmpty())
     {
-        metadata = QString("Poll by %1").arg(this->poll_->createdByName);
+        metadata = uiText(QString("Poll by %1")).arg(this->poll_->createdByName);
     }
     else
     {
@@ -786,7 +787,7 @@ void PollBanner::updateLayout()
     if (this->poll_->totalVotes <= 0)
     {
         this->summaryLabel_->setText(
-            QString("<span style=\"color:%1;\">%2</span>")
+            uiText(QString("<span style=\"color:%1;\">%2</span>"))
                 .arg(dimTextColor.name(QColor::HexArgb),
                      votingEnded ? "Voting ended: no votes" : "No votes yet"));
         this->distributionBar_->show();
@@ -823,9 +824,9 @@ void PollBanner::updateLayout()
     }
 
     this->summaryLabel_->setText(
-        QString("<span style=\"color:%1;\">%2</span> "
+        uiText(QString("<span style=\"color:%1;\">%2</span> "
                 "<span style=\"color:%3;font-weight:700;\">%4</span> "
-                "<span style=\"color:%1;\">%5% (%6 votes)</span>")
+                "<span style=\"color:%1;\">%5% (%6 votes)</span>"))
             .arg(dimTextColor.name(QColor::HexArgb), resultLabel, tone.name(),
                  resultTitle.toHtmlEscaped())
             .arg(percent)

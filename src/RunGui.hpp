@@ -5,6 +5,7 @@
 #pragma once
 
 class QApplication;
+class QString;
 
 namespace chatterino {
 
@@ -15,6 +16,10 @@ class Updates;
 class Modes;
 
 bool activateExistingGuiInstance(const Paths &paths);
+
+/// Local socket that a second start of this same profile uses to bring the
+/// running window forward; unique per profile folder.
+QString guiActivationServerName(const Paths &paths);
 
 void runGui(QApplication &a, const Modes &modes, const Paths &paths,
             Settings &settings, const Args &args, Updates &updates);

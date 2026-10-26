@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/settingspages/FiltersPage.hpp"
 
 #include "Application.hpp"
@@ -28,8 +29,8 @@ FiltersPage::FiltersPage()
     auto layout = layoutCreator.setLayoutType<QVBoxLayout>();
 
     layout.emplace<QLabel>(
-        "Selectively display messages in Splits using channel filters. Set "
-        "filters under a Split menu.");
+        uiText("Selectively display messages in Splits using channel filters. Set "
+        "filters under a Split menu."));
     EditableModelView *view =
         layout
             .emplace<EditableModelView>(
@@ -38,7 +39,7 @@ FiltersPage::FiltersPage()
             .getElement();
     this->view_ = view;
 
-    view->setTitles({"Name", "Filter", "Valid"});
+    view->setTitles({uiText("Name"), uiText("Filter"), uiText("Valid")});
     view->getTableView()->horizontalHeader()->setSectionResizeMode(
         QHeaderView::Interactive);
     view->getTableView()->horizontalHeader()->setSectionResizeMode(
@@ -59,7 +60,7 @@ FiltersPage::FiltersPage()
         }
     });
 
-    auto *quickAddButton = new QPushButton("Quick Add");
+    auto *quickAddButton = new QPushButton(uiText("Quick Add"));
     QObject::connect(quickAddButton, &QPushButton::pressed, [] {
         getSettings()->filterRecords.append(std::make_shared<FilterRecord>(
             "My filter", "message.content contains \"hello\""));
@@ -72,14 +73,14 @@ FiltersPage::FiltersPage()
                      });
 
     auto *filterHelpLabel =
-        new QLabel(QStringView(u"<a href='%1'><span "
-                               "style='color:#99f'>filter info</span></a>")
+        new QLabel(uiText(QStringView(u"<a href='%1'><span "
+                               "style='color:#99f'>filter info</span></a>"))
                        .arg(FILTERS_DOCUMENTATION));
     filterHelpLabel->setOpenExternalLinks(true);
     view->addCustomButton(filterHelpLabel);
 
     layout.append(
-        this->createCheckBox("Do not filter my own messages",
+        this->createCheckBox(uiText("Do not filter my own messages"),
                              getSettings()->excludeUserMessagesFromFilter));
 }
 
@@ -105,18 +106,18 @@ void FiltersPage::tableCellClicked(const QModelIndex &clicked,
             if (f.returnType() == filters::Type::Bool)
             {
                 popup.setIcon(QMessageBox::Icon::Information);
-                popup.setWindowTitle("Valid filter");
-                popup.setText("Filter is valid");
+                popup.setWindowTitle(uiText("Valid filter"));
+                popup.setText(uiText("Filter is valid"));
                 popup.setInformativeText(
-                    QString("Parsed as:\n%1").arg(f.filterString()));
+                    uiText(QString("Parsed as:\n%1")).arg(f.filterString()));
             }
             else
             {
                 popup.setIcon(QMessageBox::Icon::Warning);
-                popup.setWindowTitle("Invalid filter");
-                popup.setText(QString("Unexpected filter return type"));
+                popup.setWindowTitle(uiText("Invalid filter"));
+                popup.setText(uiText(QString("Unexpected filter return type")));
                 popup.setInformativeText(
-                    QString("Expected %1 but got %2")
+                    uiText(QString("Expected %1 but got %2"))
                         .arg(filters::typeToString(filters::Type::Bool))
                         .arg(filters::typeToString(f.returnType())));
             }
@@ -125,8 +126,8 @@ void FiltersPage::tableCellClicked(const QModelIndex &clicked,
         {
             auto err = std::move(std::get<filters::FilterError>(filterResult));
             popup.setIcon(QMessageBox::Icon::Warning);
-            popup.setWindowTitle("Invalid filter");
-            popup.setText(QString("Parsing errors occurred:"));
+            popup.setWindowTitle(uiText("Invalid filter"));
+            popup.setText(uiText(QString("Parsing errors occurred:")));
             popup.setInformativeText(err.message);
         }
 

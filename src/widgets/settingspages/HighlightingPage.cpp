@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/settingspages/HighlightingPage.hpp"
 
 #include "Application.hpp"
@@ -55,13 +56,13 @@ HighlightingPage::HighlightingPage()
     {
         auto tabs = layout.emplace<QTabWidget>();
         {
-            auto highlights = tabs.appendTab(new QVBoxLayout, "Messages");
+            auto highlights = tabs.appendTab(new QVBoxLayout, uiText("Messages"));
             {
                 highlights.emplace<QLabel>(
-                    "Play notification sounds and highlight messages based on "
+                    uiText("Play notification sounds and highlight messages based on "
                     "certain patterns.\n"
                     "Message highlights are prioritized over badge highlights "
-                    "and user highlights.");
+                    "and user highlights."));
 
                 auto *view =
                     highlights
@@ -71,10 +72,10 @@ HighlightingPage::HighlightingPage()
                                     &getSettings()->highlightedMessages))
                         .getElement();
                 view->addRegexHelpLink();
-                view->setTitles({"Pattern", "Show in\nMentions",
-                                 "Flash\ntaskbar", "Enable\nregex",
-                                 "Case-\nsensitive", "Play\nsound",
-                                 "Custom\nsound", "Color"});
+                view->setTitles({uiText("Pattern"), uiText("Show in\nMentions"),
+                                 uiText("Flash\ntaskbar"), uiText("Enable\nregex"),
+                                 uiText("Case-\nsensitive"), uiText("Play\nsound"),
+                                 uiText("Custom\nsound"), uiText("Color")});
                 view->getTableView()->horizontalHeader()->setSectionResizeMode(
                     QHeaderView::Fixed);
                 view->getTableView()->horizontalHeader()->setSectionResizeMode(
@@ -101,13 +102,13 @@ HighlightingPage::HighlightingPage()
                                  });
             }
 
-            auto pingUsers = tabs.appendTab(new QVBoxLayout, "Users");
+            auto pingUsers = tabs.appendTab(new QVBoxLayout, uiText("Users"));
             {
                 pingUsers.emplace<QLabel>(
-                    "Play notification sounds and highlight messages from "
+                    uiText("Play notification sounds and highlight messages from "
                     "certain users.\n"
                     "User highlights are prioritized over badge highlights, "
-                    "but under message highlights.");
+                    "but under message highlights."));
                 EditableModelView *view =
                     pingUsers
                         .emplace<EditableModelView>(
@@ -121,10 +122,10 @@ HighlightingPage::HighlightingPage()
                 view->getTableView()->horizontalHeader()->hideSection(
                     HighlightModel::Column::CaseSensitive);
 
-                view->setTitles({"Username", "Show in\nMentions",
-                                 "Flash\ntaskbar", "Enable\nregex",
-                                 "Case-\nsensitive", "Play\nsound",
-                                 "Custom\nsound", "Color"});
+                view->setTitles({uiText("Username"), uiText("Show in\nMentions"),
+                                 uiText("Flash\ntaskbar"), uiText("Enable\nregex"),
+                                 uiText("Case-\nsensitive"), uiText("Play\nsound"),
+                                 uiText("Custom\nsound"), uiText("Color")});
                 view->getTableView()->horizontalHeader()->setSectionResizeMode(
                     QHeaderView::Fixed);
                 view->getTableView()->horizontalHeader()->setSectionResizeMode(
@@ -152,21 +153,21 @@ HighlightingPage::HighlightingPage()
                                  });
             }
 
-            auto badgeHighlights = tabs.appendTab(new QVBoxLayout, "Badges");
+            auto badgeHighlights = tabs.appendTab(new QVBoxLayout, uiText("Badges"));
             {
                 badgeHighlights.emplace<QLabel>(
-                    "Play notification sounds and highlight messages based on "
+                    uiText("Play notification sounds and highlight messages based on "
                     "user badges.\n"
                     "Badge highlights are prioritized under user and message "
-                    "highlights.");
+                    "highlights."));
                 auto *view = badgeHighlights
                                  .emplace<EditableModelView>(
                                      (new BadgeHighlightModel(nullptr))
                                          ->initialized(
                                              &getSettings()->highlightedBadges))
                                  .getElement();
-                view->setTitles({"Name", "Show In\nMentions", "Flash\ntaskbar",
-                                 "Play\nsound", "Custom\nsound", "Color"});
+                view->setTitles({uiText("Name"), uiText("Show In\nMentions"), uiText("Flash\ntaskbar"),
+                                 uiText("Play\nsound"), uiText("Custom\nsound"), uiText("Color")});
                 view->getTableView()->horizontalHeader()->setSectionResizeMode(
                     QHeaderView::Fixed);
                 view->getTableView()->horizontalHeader()->setSectionResizeMode(
@@ -184,7 +185,7 @@ HighlightingPage::HighlightingPage()
                     auto d = std::make_shared<BadgePickerDialog>(
                         availableBadges, this);
 
-                    d->setWindowTitle("Choose badge");
+                    d->setWindowTitle(uiText("Choose badge"));
                     if (d->exec() == QDialog::Accepted)
                     {
                         auto s = d->getSelection();
@@ -208,11 +209,11 @@ HighlightingPage::HighlightingPage()
             }
 
             auto disabledUsers =
-                tabs.appendTab(new QVBoxLayout, "Blacklisted Users");
+                tabs.appendTab(new QVBoxLayout, uiText("Blacklisted Users"));
             {
                 disabledUsers.emplace<QLabel>(
-                    "Disable notification sounds and highlights from certain "
-                    "users (e.g. bots).");
+                    uiText("Disable notification sounds and highlights from certain "
+                    "users (e.g. bots)."));
                 EditableModelView *view =
                     disabledUsers
                         .emplace<EditableModelView>(
@@ -221,7 +222,7 @@ HighlightingPage::HighlightingPage()
                         .getElement();
 
                 view->addRegexHelpLink();
-                view->setTitles({"Username", "Enable\nregex"});
+                view->setTitles({uiText("Username"), uiText("Enable\nregex")});
                 view->getTableView()->horizontalHeader()->setSectionResizeMode(
                     QHeaderView::Fixed);
                 view->getTableView()->horizontalHeader()->setSectionResizeMode(
@@ -245,27 +246,27 @@ HighlightingPage::HighlightingPage()
                 [](const auto &value) {
                     if (value.isEmpty())
                     {
-                        return QString("Default sound: Chatterino Ping");
+                        return uiText(QString("Default sound: Chatterino Ping"));
                     }
 
                     auto url = QUrl::fromLocalFile(value);
-                    return QString("Default sound: <a href=\"%1\"><span "
-                                   "style=\"color: white\">%2</span></a>")
+                    return uiText(QString("Default sound: <a href=\"%1\"><span "
+                                   "style=\"color: white\">%2</span></a>"))
                         .arg(url.toString(QUrl::FullyEncoded),
                              shortenString(url.fileName(), 50));
                 },
                 getSettings()->pathHighlightSound));
             label->setToolTip(
-                "This sound will play for all highlight phrases that have "
-                "sound enabled and don't have a custom sound set.");
+                uiText("This sound will play for all highlight phrases that have "
+                "sound enabled and don't have a custom sound set."));
             label->setTextFormat(Qt::RichText);
             label->setTextInteractionFlags(Qt::TextBrowserInteraction |
                                            Qt::LinksAccessibleByKeyboard);
             label->setOpenExternalLinks(true);
             customSound->setStretchFactor(label.getElement(), 1);
 
-            auto clearSound = customSound.emplace<QPushButton>("Clear");
-            auto selectFile = customSound.emplace<QPushButton>("Change...");
+            auto clearSound = customSound.emplace<QPushButton>(uiText("Clear"));
+            auto selectFile = customSound.emplace<QPushButton>(uiText("Change..."));
 
             QObject::connect(selectFile.getElement(), &QPushButton::clicked,
                              this, [this]() mutable {
@@ -295,10 +296,10 @@ HighlightingPage::HighlightingPage()
         }
 
         layout.append(createCheckBox(
-            "Play highlight sound even when Chatterino is focused",
+            uiText("Play highlight sound even when Chatterino is focused"),
             getSettings()->highlightAlwaysPlaySound));
         layout.append(createCheckBox(
-            "Flash taskbar only stops highlighting when Chatterino is focused",
+            uiText("Flash taskbar only stops highlighting when Chatterino is focused"),
             getSettings()->longAlerts));
     }
 

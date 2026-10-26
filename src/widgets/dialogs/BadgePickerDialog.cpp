@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "widgets/dialogs/BadgePickerDialog.hpp"
+#include "common/UiLanguage.hpp"
 
 #include "Application.hpp"
 #include "providers/twitch/TwitchBadges.hpp"
@@ -43,7 +44,7 @@ BadgePickerDialog::BadgePickerDialog(QList<DisplayBadge> badges,
 
     for (const auto &item : badges)
     {
-        this->dropdown_->addItem(item.displayName(), item.badgeName());
+        this->dropdown_->addItem(uiText(item.displayName()), item.badgeName());
     }
 
     const auto updateBadge = [=, this](int index) {

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/WelcomeDialog.hpp"
 
 namespace chatterino {
@@ -9,7 +10,7 @@ namespace chatterino {
 WelcomeDialog::WelcomeDialog()
     : BaseWindow({BaseWindow::EnableCustomFrame, BaseWindow::DisableLayoutSave})
 {
-    this->setWindowTitle("Chatterino quick setup");
+    this->setWindowTitle(uiText("Chatterino quick setup"));
 }
 
 }  // namespace chatterino

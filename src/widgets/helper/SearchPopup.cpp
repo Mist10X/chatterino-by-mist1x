@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/helper/SearchPopup.hpp"
 
 #include "Application.hpp"
@@ -172,8 +173,8 @@ void SearchPopup::updateWindowTitle()
 
     if (this->searchChannels_.size() > 1)
     {
-        this->setWindowTitle("Searching all open tabs");
-        this->searchInput_->setPlaceholderText("Search all open tabs");
+        this->setWindowTitle(uiText("Searching all open tabs"));
+        this->searchInput_->setPlaceholderText(uiText("Search all open tabs"));
         return;
     }
     else if (this->channelName_ == "/automod")
@@ -196,8 +197,8 @@ void SearchPopup::updateWindowTitle()
     {
         historyName = QString("%1's").arg(this->channelName_);
     }
-    this->setWindowTitle("Searching in " + historyName + " history");
-    this->searchInput_->setPlaceholderText("Type to search");
+    this->setWindowTitle(uiText("Searching in ") + historyName + uiText(" history"));
+    this->searchInput_->setPlaceholderText(uiText("Type to search"));
 }
 
 void SearchPopup::showEvent(QShowEvent *e)
@@ -272,14 +273,14 @@ void SearchPopup::updateResultCount(size_t matches, size_t total)
     {
         this->resultCountLabel_->setText(QString::number(total));
         this->resultCountLabel_->setToolTip(
-            QString("%1 messages in history").arg(total));
+            uiText(QString("%1 messages in history")).arg(total));
     }
     else
     {
         this->resultCountLabel_->setText(
             QString("%1/%2").arg(matches).arg(total));
         this->resultCountLabel_->setToolTip(
-            QString("%1 matching messages out of %2 total")
+            uiText(QString("%1 matching messages out of %2 total"))
                 .arg(matches)
                 .arg(total));
     }
@@ -375,7 +376,7 @@ void SearchPopup::initLayout()
                 this->resultCountLabel_->raise();
                 this->updateResultCountLabelStyle();
 
-                this->searchInput_->setPlaceholderText("Type to search");
+                this->searchInput_->setPlaceholderText(uiText("Type to search"));
                 this->searchInput_->setClearButtonEnabled(true);
                 this->searchInput_->findChild<QAbstractButton *>()->setIcon(
                     QPixmap(":/buttons/clearSearch.png"));

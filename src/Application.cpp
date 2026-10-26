@@ -837,7 +837,7 @@ SupibotCommands *Application::getSupibotCommands()
 
 void Application::aboutToQuit()
 {
-    ABOUT_TO_QUIT.store(true);
+    markAppAboutToQuit();
 
     this->eventSub->setQuitting();
 
@@ -929,6 +929,11 @@ IApplication *tryGetApp()
 bool isAppAboutToQuit()
 {
     return ABOUT_TO_QUIT.load();
+}
+
+void markAppAboutToQuit()
+{
+    ABOUT_TO_QUIT.store(true);
 }
 
 }  // namespace chatterino

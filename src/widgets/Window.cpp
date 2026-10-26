@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "widgets/Window.hpp"
 
 #include "Application.hpp"
@@ -645,9 +646,9 @@ void Window::addShortcuts()
                      qCWarning(chatterinoHotkeys)
                          << "Invalid argument for setStreamerMode hotkey: "
                          << arg;
-                     return QString("Invalid argument for setStreamerMode "
+                     return uiText(QString("Invalid argument for setStreamerMode "
                                     "hotkey: %1. Use \"on\", \"off\", "
-                                    "\"toggle\" or \"auto\".")
+                                    "\"toggle\" or \"auto\"."))
                          .arg(arg);
                  }
              }
@@ -746,39 +747,39 @@ void Window::addMenuBar()
         SettingsDialog::showDialog(this);
     });
 
-    QMenu *windowMenu = mainMenu->addMenu(QString("Window"));
+    QMenu *windowMenu = mainMenu->addMenu(uiText(QString("Window")));
 
-    QAction *minimizeWindow = windowMenu->addAction(QString("Minimize"));
+    QAction *minimizeWindow = windowMenu->addAction(uiText(QString("Minimize")));
     minimizeWindow->setShortcuts({QKeySequence("Meta+M")});
     connect(minimizeWindow, &QAction::triggered, this, [this] {
         this->setWindowState(Qt::WindowMinimized);
     });
 
-    QAction *nextTab = windowMenu->addAction(QString("Select next tab"));
+    QAction *nextTab = windowMenu->addAction(uiText(QString("Select next tab")));
     nextTab->setShortcuts({QKeySequence("Meta+Tab")});
     connect(nextTab, &QAction::triggered, this, [this] {
         this->notebook_->selectNextTab();
     });
 
-    QAction *prevTab = windowMenu->addAction(QString("Select previous tab"));
+    QAction *prevTab = windowMenu->addAction(uiText(QString("Select previous tab")));
     prevTab->setShortcuts({QKeySequence("Meta+Shift+Tab")});
     connect(prevTab, &QAction::triggered, this, [this] {
         this->notebook_->selectPreviousTab();
     });
 
-    QMenu *helpMenu = mainMenu->addMenu(QString("Help"));
+    QMenu *helpMenu = mainMenu->addMenu(uiText(QString("Help")));
 
-    QAction *helpWiki = helpMenu->addAction(QString("Chatterino Wiki"));
+    QAction *helpWiki = helpMenu->addAction(uiText(QString("Chatterino Wiki")));
     connect(helpWiki, &QAction::triggered, this, []() {
         QDesktopServices::openUrl(QUrl(LINK_CHATTERINO_WIKI.toString()));
     });
 
-    QAction *helpGithub = helpMenu->addAction(QString("Chatterino GitHub"));
+    QAction *helpGithub = helpMenu->addAction(uiText(QString("Chatterino GitHub")));
     connect(helpGithub, &QAction::triggered, this, []() {
         QDesktopServices::openUrl(QUrl(LINK_CHATTERINO_SOURCE.toString()));
     });
 
-    QAction *helpDiscord = helpMenu->addAction(QString("Chatterino Discord"));
+    QAction *helpDiscord = helpMenu->addAction(uiText(QString("Chatterino Discord")));
     connect(helpDiscord, &QAction::triggered, this, []() {
         QDesktopServices::openUrl(QUrl(LINK_CHATTERINO_DISCORD.toString()));
     });
@@ -812,7 +813,7 @@ void Window::onAccountSelected()
     {
         if (user->isAnon())
         {
-            this->userLabel_->setText("anonymous");
+            this->userLabel_->setText(uiText("anonymous"));
         }
         else
         {

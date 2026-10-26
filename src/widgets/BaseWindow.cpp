@@ -369,6 +369,10 @@ void BaseWindow::init()
 
             this->ui_.titlebarButtons =
                 new TitleBarButtons(this, minButton, maxButton, exitButton);
+            // Windows can start us minimized without WM_SHOWWINDOW. Establish
+            // caption constraints before the first layout, independent of that
+            // native notification, so the title row cannot consume chat space.
+            this->calcButtonsSizes();
 
             this->ui_.buttons.push_back(minButton);
             this->ui_.buttons.push_back(maxButton);
@@ -1022,11 +1026,6 @@ void BaseWindow::updateRealSize()
 
 void BaseWindow::calcButtonsSizes()
 {
-    if (!this->shown_)
-    {
-        return;
-    }
-
     if (this->frameless_ || !this->ui_.titlebarButtons)
     {
         return;

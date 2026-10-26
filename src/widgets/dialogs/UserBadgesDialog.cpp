@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/UserBadgesDialog.hpp"
 
 #include "Application.hpp"
@@ -102,7 +103,7 @@ QString badgeTooltip(const GqlBadge &badge)
     {
         tip += QChar('\n') + badge.description;
     }
-    tip += QStringLiteral("\nClick to open in Chat Vault");
+    tip += uiText(QStringLiteral("\nClick to open in Chat Vault"));
     return tip;
 }
 
@@ -317,7 +318,7 @@ UserBadgesDialog::UserBadgesDialog(const QString &userLogin,
         {.dark = ":/buttons/cancel.svg", .light = ":/buttons/cancelDark.svg"},
         this, QSize{3, 3});
     this->closeButton_->setScaleIndependentSize(18, 18);
-    this->closeButton_->setToolTip("Close");
+    this->closeButton_->setToolTip(uiText("Close"));
     this->closeButton_->setCursor(Qt::PointingHandCursor);
     this->closeButton_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     QObject::connect(this->closeButton_, &Button::leftClicked, this,
@@ -332,7 +333,7 @@ UserBadgesDialog::UserBadgesDialog(const QString &userLogin,
 
     this->searchInput_ = new QLineEdit(container);
     this->searchInput_->setObjectName("UserBadgesSearch");
-    this->searchInput_->setPlaceholderText("Search...");
+    this->searchInput_->setPlaceholderText(uiText("Search..."));
     this->searchInput_->setClearButtonEnabled(true);
     QObject::connect(this->searchInput_, &QLineEdit::textChanged, this,
                      [this](const QString &text) {
@@ -536,7 +537,7 @@ void UserBadgesDialog::loadBadges(bool force)
 
     this->initialFetchDone_ = true;
     this->badgesLoading_ = true;
-    this->setStatus("Loading badges...");
+    this->setStatus(uiText("Loading badges..."));
     this->rebuildContent();
 
     QPointer<UserBadgesDialog> self = this;
@@ -581,7 +582,7 @@ void UserBadgesDialog::rebuildContent()
 
     if (this->badgesLoading_)
     {
-        this->setStatus("Loading badges...");
+        this->setStatus(uiText("Loading badges..."));
         this->contentLayout_->addStretch(1);
         return;
     }
@@ -607,14 +608,14 @@ void UserBadgesDialog::rebuildContent()
     {
         if (!(this->statusIsError_ && !this->statusText_.isEmpty()))
         {
-            this->setStatus("No badges found.");
+            this->setStatus(uiText("No badges found."));
         }
         this->contentLayout_->addStretch(1);
         return;
     }
 
     const auto labelText = matchCount > 0
-                               ? QStringLiteral("Badges (%1)").arg(matchCount)
+                               ? uiText(QStringLiteral("Badges (%1)")).arg(matchCount)
                                : QStringLiteral("Badges");
     auto *label = new QLabel(labelText, this->contentWidget_);
     label->setObjectName("UserBadgesSectionLabel");
@@ -623,7 +624,7 @@ void UserBadgesDialog::rebuildContent()
     if (matchCount == 0)
     {
         auto *empty =
-            new QLabel("No badges match your search.", this->contentWidget_);
+            new QLabel(uiText("No badges match your search."), this->contentWidget_);
         empty->setObjectName("UserBadgesEmpty");
         empty->setWordWrap(true);
         this->contentLayout_->addWidget(empty);
@@ -878,7 +879,7 @@ void UserBadgesDialog::refreshStyle()
 QString UserBadgesDialog::authTokenOrMessage()
 {
     QString authError;
-    const auto auth = MoltorinoAuth::resolveCurrentUserToken(&authError);
+    const auto auth = MoltorinoAuth::resolveReadToken(&authError);
     if (auth.hasToken())
     {
         return auth.token;

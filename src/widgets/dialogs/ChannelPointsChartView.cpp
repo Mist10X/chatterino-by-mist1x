@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "providers/moltorino/MoltorinoFeatureFlags.hpp"
 
 #if MOLTORINO_ENABLE_CHANNEL_POINT_REWARDS
@@ -69,7 +70,7 @@ void populateRangeCombo(QComboBox *combo)
 {
     for (const auto &option : CHART_TIME_RANGE_OPTIONS)
     {
-        combo->addItem(QString::fromUtf8(option.label),
+        combo->addItem(uiText(QString::fromUtf8(option.label)),
                        static_cast<int>(option.range));
     }
 
@@ -117,7 +118,7 @@ QString utcAxisFormat(qint64 spanSeconds)
 
 QString fullBalanceText(qint64 balance)
 {
-    return QLocale().toString(balance) + QStringLiteral(" points");
+    return QLocale().toString(balance) + uiText(QStringLiteral(" points"));
 }
 
 // Picks a magnitude to divide the Y axis values by, plus the printf-style label
@@ -320,12 +321,12 @@ public:
         if (!hasAnyData)
         {
             this->emptyLabel->setText(
-                QStringLiteral("No chart data yet for this channel."));
+                uiText(QStringLiteral("No chart data yet for this channel.")));
         }
         else if (!hasVisibleData)
         {
             this->emptyLabel->setText(
-                QStringLiteral("No data in the selected time range."));
+                uiText(QStringLiteral("No data in the selected time range.")));
         }
 
         this->emptyLabel->setVisible(!hasVisibleData);
@@ -460,7 +461,7 @@ public:
 
         this->axisY->setRange(minY / scale.factor, maxY / scale.factor);
         this->axisY->setLabelFormat(scale.labelFormat);
-        this->axisY->setTitleText(QStringLiteral("Channel points"));
+        this->axisY->setTitleText(uiText(QStringLiteral("Channel points")));
         this->axisY->setTickCount(8);
         this->axisY->applyNiceNumbers();
 
@@ -535,7 +536,7 @@ public:
                 sample.balance - this->samples[index - 1].balance;
             const auto sign = delta >= 0 ? QStringLiteral("+") : QString();
             callout += QStringLiteral("\n") + sign + QLocale().toString(delta) +
-                       QStringLiteral(" since previous");
+                       uiText(QStringLiteral(" since previous"));
         }
 
         this->calloutLabel->setText(callout);
@@ -569,7 +570,7 @@ ChannelPointsChartView::ChannelPointsChartView(QWidget *parent)
     toolbarLayout->setSpacing(6);
 
     auto *rangeLabel =
-        new QLabel(QStringLiteral("Range:"), this->d_->toolbarWidget);
+        new QLabel(uiText(QStringLiteral("Range:")), this->d_->toolbarWidget);
     rangeLabel->setObjectName(QStringLiteral("ChannelPointsChartRangeLabel"));
 
     this->d_->rangeCombo = new QComboBox(this->d_->toolbarWidget);
@@ -583,15 +584,15 @@ ChannelPointsChartView::ChannelPointsChartView(QWidget *parent)
         listView->setMouseTracking(true);
     }
     this->d_->rangeCombo->setToolTip(
-        QStringLiteral("Show only points recorded in the selected period"));
+        uiText(QStringLiteral("Show only points recorded in the selected period")));
 
     this->d_->resetButton =
-        new QPushButton(QStringLiteral("Reset"), this->d_->toolbarWidget);
+        new QPushButton(uiText(QStringLiteral("Reset")), this->d_->toolbarWidget);
     this->d_->resetButton->setObjectName(
         QStringLiteral("ChannelPointsChartResetButton"));
     this->d_->resetButton->setEnabled(false);
     this->d_->resetButton->setToolTip(
-        QStringLiteral("Reset the time range and chart zoom"));
+        uiText(QStringLiteral("Reset the time range and chart zoom")));
 
     toolbarLayout->addWidget(rangeLabel);
     toolbarLayout->addWidget(this->d_->rangeCombo, 1);
@@ -600,7 +601,7 @@ ChannelPointsChartView::ChannelPointsChartView(QWidget *parent)
     layout->addWidget(this->d_->toolbarWidget);
 
     this->d_->emptyLabel =
-        new QLabel(QStringLiteral("No chart data yet for this channel."), this);
+        new QLabel(uiText(QStringLiteral("No chart data yet for this channel.")), this);
     this->d_->emptyLabel->setAlignment(Qt::AlignCenter);
     this->d_->emptyLabel->setWordWrap(true);
     layout->addWidget(this->d_->emptyLabel, 1);

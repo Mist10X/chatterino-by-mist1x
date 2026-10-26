@@ -10,6 +10,7 @@
 #include "messages/MessageBuilder.hpp"
 #include "messages/MessageElement.hpp"
 #include "messages/MessageSimilarity.hpp"
+#include "providers/seventv/SeventvPaints.hpp"
 #include "singletons/Logging.hpp"
 #include "singletons/Settings.hpp"
 #include "util/ChannelHelpers.hpp"
@@ -200,7 +201,18 @@ void Channel::addMessage(MessagePtr message, MessageContext context,
         this->messageRemovedFromStart(deleted);
     }
 
+    this->noteChatter(*message);
     this->messageAppended.invoke(message, overridingFlags);
+}
+
+void Channel::noteChatter(const Message &message)
+{
+    if (this->getType() == Type::Twitch && !message.userID.isEmpty() &&
+        !message.flags.has(MessageFlag::System))
+    {
+        getApp()->getSeventvPaints()->noteTwitchChatter(message.loginName,
+                                                       message.userID);
+    }
 }
 
 void Channel::addSystemMessage(const QString &contents)
@@ -257,6 +269,11 @@ void Channel::addMessagesAtStart(const std::vector<MessagePtr> &_messages)
 
     std::vector<MessagePtr> addedMessages =
         this->messages_.pushFront(_messages);
+
+    for (const auto &msg : addedMessages)
+    {
+        this->noteChatter(*msg);
+    }
 
     if (addedMessages.size() != 0)
     {
@@ -426,6 +443,30 @@ void Channel::mergeFrom(const std::span<std::span<const MessagePtr>> sources)
         }
         return max;
     });
+}
+
+void Channel::setMessageLimit(size_t limit)
+{
+    if (this->messageLimit() == limit) return;
+    auto removed = this->messages_.firstN(limit != 0 && this->countMessages() > limit ? this->countMessages() - limit : 0);
+    this->messages_.setLimit(limit);
+    for (const auto &message : removed) this->messageRemovedFromStart(message);
+    this->messageLimitChanged.invoke();
+}
+
+size_t Channel::messageLimit() const
+{
+    return this->messages_.limit() == std::numeric_limits<size_t>::max() ? 0 : this->messages_.limit();
+}
+
+bool Channel::archiveHistoryManaged() const { return this->archiveHistoryManaged_; }
+
+void Channel::followMessageLimit(pajlada::Signals::NoArgSignal &changed,
+                                 std::function<size_t()> policy)
+{
+    this->archiveHistoryManaged_ = true;
+    this->setMessageLimit(policy());
+    this->historyPolicyConnections_.managedConnect(changed, [this, policy] { this->setMessageLimit(policy()); });
 }
 
 void Channel::clearMessages()

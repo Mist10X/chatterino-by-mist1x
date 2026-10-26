@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/EmotePopup.hpp"
 
 #include "Application.hpp"
@@ -418,7 +419,7 @@ EmotePopup::EmotePopup(QWidget *parent)
     layout2->setContentsMargins(8, 8, 8, 8);
     layout2->setSpacing(8);
 
-    this->search_->setPlaceholderText("Search all emotes...");
+    this->search_->setPlaceholderText(uiText("Search all emotes..."));
     this->search_->setValidator(new QRegularExpressionValidator(searchRegex));
     this->search_->setClearButtonEnabled(true);
     this->search_->findChild<QAbstractButton *>()->setIcon(
@@ -493,7 +494,7 @@ EmotePopup::EmotePopup(QWidget *parent)
 
         if (addToNotebook)
         {
-            this->notebook_->addPage(view, std::move(tabTitle));
+            this->notebook_->addPage(view, uiText(tabTitle));
         }
 
         std::ignore = view->messageMenuCreated.connect(
@@ -514,11 +515,11 @@ EmotePopup::EmotePopup(QWidget *parent)
                 QAction *favouriteAction;
                 if (menu->actions().isEmpty())
                 {
-                    favouriteAction = menu->addAction("Favourite");
+                    favouriteAction = menu->addAction(uiText("Favourite"));
                 }
                 else
                 {
-                    favouriteAction = new QAction("Favourite");
+                    favouriteAction = new QAction(uiText("Favourite"));
                     menu->insertAction(menu->actions().constFirst(),
                                        favouriteAction);
                 }
@@ -704,7 +705,7 @@ void EmotePopup::loadChannel(ChannelPtr channel)
     this->twitchChannel_ = dynamic_cast<TwitchChannel *>(this->channel_.get());
     this->kickChannel_ = dynamic_cast<KickChannel *>(this->channel_.get());
 
-    this->setWindowTitle("Emotes in #" + this->channel_->getName());
+    this->setWindowTitle(uiText("Emotes in #") + this->channel_->getName());
 
     this->globalEmotesView_->setChannel(
         std::make_shared<Channel>("", Channel::Type::None));
@@ -850,10 +851,10 @@ void EmotePopup::updateFavouriteEmotesAndEmojis()
     if (!unavailableEmotes.empty())
     {
         static const auto explainUnavailability =
-            u"Emotes can be unavailable because they are specific for a "
+            uiText(u"Emotes can be unavailable because they are specific for a "
             u"particular channel, you are no longer subscribed to a channel "
             u"that provides the emotes or we were unable to verify that you "
-            u"have access to an emote due to network issues."_s;
+            u"have access to an emote due to network issues."_s);
 
         auto msg =
             makeInfoTextMessage("Currently unavailable favourite emotes");
@@ -906,7 +907,7 @@ void EmotePopup::reloadEmotes()
              getApp()->getSeventvPersonalEmotes()->getEmoteSetsForTwitchUser(
                  getApp()->getAccounts()->twitch.getCurrent()->getUserId()))
         {
-            addEmotes(*subChannel, *map, "7TV (Personal)");
+            addEmotes(*subChannel, *map, uiText("7TV (Personal)"));
         }
     }
     if (this->kickChannel_)
@@ -925,7 +926,7 @@ void EmotePopup::reloadEmotes()
                 getApp()->getAccounts()->kick.current()->userID());
         for (const auto &map : personalEmotes)
         {
-            addEmotes(*subChannel, *map, "7TV (Personal)");
+            addEmotes(*subChannel, *map, uiText("7TV (Personal)"));
         }
     }
     // global
@@ -1041,15 +1042,15 @@ void EmotePopup::filterTwitchEmotes(std::shared_ptr<Channel> searchChannel,
 
     if (!bttvGlobalEmotes.empty())
     {
-        addEmotes(*searchChannel, bttvGlobalEmotes, "BetterTTV (Global)");
+        addEmotes(*searchChannel, bttvGlobalEmotes, uiText("BetterTTV (Global)"));
     }
     if (!ffzGlobalEmotes.empty())
     {
-        addEmotes(*searchChannel, ffzGlobalEmotes, "FrankerFaceZ (Global)");
+        addEmotes(*searchChannel, ffzGlobalEmotes, uiText("FrankerFaceZ (Global)"));
     }
     if (!seventvGlobalEmotes.empty())
     {
-        addEmotes(*searchChannel, seventvGlobalEmotes, "7TV (Global)");
+        addEmotes(*searchChannel, seventvGlobalEmotes, uiText("7TV (Global)"));
     }
 
     if (this->kickChannel_)
@@ -1059,7 +1060,7 @@ void EmotePopup::filterTwitchEmotes(std::shared_ptr<Channel> searchChannel,
 
         if (!seventvChannelEmotes.empty())
         {
-            addEmotes(*searchChannel, seventvChannelEmotes, "7TV (Channel)");
+            addEmotes(*searchChannel, seventvChannelEmotes, uiText("7TV (Channel)"));
         }
 
         const auto personalEmotes =
@@ -1090,15 +1091,15 @@ void EmotePopup::filterTwitchEmotes(std::shared_ptr<Channel> searchChannel,
 
     if (!bttvChannelEmotes.empty())
     {
-        addEmotes(*searchChannel, bttvChannelEmotes, "BetterTTV (Channel)");
+        addEmotes(*searchChannel, bttvChannelEmotes, uiText("BetterTTV (Channel)"));
     }
     if (!ffzChannelEmotes.empty())
     {
-        addEmotes(*searchChannel, ffzChannelEmotes, "FrankerFaceZ (Channel)");
+        addEmotes(*searchChannel, ffzChannelEmotes, uiText("FrankerFaceZ (Channel)"));
     }
     if (!seventvChannelEmotes.empty())
     {
-        addEmotes(*searchChannel, seventvChannelEmotes, "7TV (Channel)");
+        addEmotes(*searchChannel, seventvChannelEmotes, uiText("7TV (Channel)"));
     }
 
     for (const auto &map :

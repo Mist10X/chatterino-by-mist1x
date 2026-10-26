@@ -21,6 +21,7 @@
 class QPainter;
 
 namespace chatterino {
+struct ClipPreviewInfo;
 class MessageElement;
 class Image;
 using ImagePtr = std::shared_ptr<Image>;
@@ -207,6 +208,27 @@ private:
     float scale;
     QString line1;
     QString line2;
+};
+
+class ClipCardLayoutElement : public MessageLayoutElement
+{
+public:
+    ClipCardLayoutElement(MessageElement &creator,
+                          std::shared_ptr<const ClipPreviewInfo> info,
+                          QSizeF size, float scale);
+
+protected:
+    void paint(QPainter &painter, const MessageColors &messageColors) override;
+    QRegion paintAnimated(QPainter &painter, qreal yOffset) override;
+    int getMouseOverIndex(QPointF abs) const override;
+    qreal getXFromIndex(size_t index) override;
+    void addCopyTextToString(QString &str, uint32_t from = 0,
+                             uint32_t to = UINT32_MAX) const override;
+    size_t getSelectionIndexCount() const override;
+
+private:
+    std::shared_ptr<const ClipPreviewInfo> info_;
+    float scale_;
 };
 
 class ReplyCurveLayoutElement : public MessageLayoutElement

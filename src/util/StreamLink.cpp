@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "util/StreamLink.hpp"
 
 #include "Application.hpp"
@@ -40,7 +41,7 @@ QString getStreamlinkPath()
 void showStreamlinkNotFoundError()
 {
     static auto *msg = new QErrorMessage;
-    msg->setWindowTitle("Leafyrino - streamlink not found");
+    msg->setWindowTitle(uiText("Leafyrino - streamlink not found"));
 
     if (getSettings()->streamlinkUseCustomPath)
     {

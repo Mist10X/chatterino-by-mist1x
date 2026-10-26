@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "widgets/helper/PredictionBanner.hpp"
 
 #include "Application.hpp"
@@ -142,23 +143,23 @@ QString formatPredictionAge(const QDateTime &dateTime)
         std::max<qint64>(0, dateTime.secsTo(QDateTime::currentDateTimeUtc()));
     if (seconds < 60)
     {
-        return QString("%1s ago").arg(seconds);
+        return uiText(QString("%1s ago")).arg(seconds);
     }
 
     const qint64 minutes = seconds / 60;
     if (minutes < 60)
     {
-        return QString("%1m ago").arg(minutes);
+        return uiText(QString("%1m ago")).arg(minutes);
     }
 
     const qint64 hours = minutes / 60;
     if (hours < 24)
     {
-        return QString("%1h ago").arg(hours);
+        return uiText(QString("%1h ago")).arg(hours);
     }
 
     const qint64 days = hours / 24;
-    return QString("%1d ago").arg(days);
+    return uiText(QString("%1d ago")).arg(days);
 }
 
 QString formatOutcomePoints(qlonglong points)
@@ -256,7 +257,7 @@ PredictionBanner::PredictionBanner(Split *split, QWidget *parent)
             .light = ":/buttons/switchDark.svg",
         },
         this, QSize(2, 2));
-    this->toggleButton_->setToolTip("Switch banner");
+    this->toggleButton_->setToolTip(uiText("Switch banner"));
     this->toggleButton_->setFixedSize(BASE_ICON_SIZE, BASE_ICON_SIZE);
     this->toggleButton_->setCursor(Qt::PointingHandCursor);
     auto *toggleOpacity = new QGraphicsOpacityEffect(this);
@@ -271,7 +272,7 @@ PredictionBanner::PredictionBanner(Split *split, QWidget *parent)
             .light = ":/buttons/cancelDark.svg",
         },
         this, QSize(2, 2));
-    this->closeButton_->setToolTip("Dismiss Prediction");
+    this->closeButton_->setToolTip(uiText("Dismiss Prediction"));
     this->closeButton_->setFixedSize(BASE_ICON_SIZE, BASE_ICON_SIZE);
     this->closeButton_->setCursor(Qt::PointingHandCursor);
     auto *opacity = new QGraphicsOpacityEffect(this);
@@ -536,28 +537,28 @@ void PredictionBanner::updateLayout()
         {
             betOutcomeTitle = "an outcome";
         }
-        metadata = QString("You bet %1 on %2")
+        metadata = uiText(QString("You bet %1 on %2"))
                        .arg(formatChannelPoints(prediction.selfPoints),
                             betOutcomeTitle);
     }
     else if (prediction.status == "RESOLVED" &&
              !prediction.endedByName.isEmpty())
     {
-        metadata = QString("Resolved by %1").arg(prediction.endedByName);
+        metadata = uiText(QString("Resolved by %1")).arg(prediction.endedByName);
     }
     else if (prediction.status == "CANCELED" &&
              !prediction.endedByName.isEmpty())
     {
-        metadata = QString("Canceled by %1").arg(prediction.endedByName);
+        metadata = uiText(QString("Canceled by %1")).arg(prediction.endedByName);
     }
     else if (prediction.status == "LOCKED" &&
              !prediction.lockedByName.isEmpty())
     {
-        metadata = QString("Locked by %1").arg(prediction.lockedByName);
+        metadata = uiText(QString("Locked by %1")).arg(prediction.lockedByName);
     }
     else if (!prediction.createdByName.isEmpty())
     {
-        metadata = QString("Prediction by %1").arg(prediction.createdByName);
+        metadata = uiText(QString("Prediction by %1")).arg(prediction.createdByName);
     }
     else
     {
@@ -617,18 +618,18 @@ void PredictionBanner::updateLayout()
                 const auto &winner = prediction.outcomes[winIdx];
                 const QColor wColor = outcomeColorByIndex(winIdx);
                 this->leftOutcomeLabel_->setText(
-                    QString(
+                    uiText(QString(
                         "<span style=\"color:#22c55e;font-weight:700;\">"
                         "Winner:</span> "
-                        "<span style=\"color:%1;font-weight:700;\">%2</span>")
+                        "<span style=\"color:%1;font-weight:700;\">%2</span>"))
                         .arg(wColor.name(), winner.title.toHtmlEscaped()));
             }
             else
             {
                 this->leftOutcomeLabel_->setText(
-                    QString(
+                    uiText(QString(
                         "<span style=\"color:%1;font-weight:700;\">%2</span>"
-                        " <span style=\"color:#999;\">(%3%)</span>")
+                        " <span style=\"color:#999;\">(%3%)</span>"))
                         .arg(leadColor.name(), leader.title.toHtmlEscaped())
                         .arg(leadPct));
             }
@@ -636,16 +637,16 @@ void PredictionBanner::updateLayout()
         else
         {
             this->leftOutcomeLabel_->setText(
-                QString("<span style=\"color:#999;\">Leading:</span> "
+                uiText(QString("<span style=\"color:#999;\">Leading:</span> "
                         "<span style=\"color:%1;font-weight:700;\">%2</span>"
-                        " <span style=\"color:#999;\">(%3%)</span>")
+                        " <span style=\"color:#999;\">(%3%)</span>"))
                     .arg(leadColor.name(), leader.title.toHtmlEscaped())
                     .arg(leadPct));
         }
 
         this->rightOutcomeLabel_->setText(
-            QString("<span style=\"color:#999;\">Total:</span> "
-                    "<span style=\"color:#999;\">%1 pts</span>")
+            uiText(QString("<span style=\"color:#999;\">Total:</span> "
+                    "<span style=\"color:#999;\">%1 pts</span>"))
                 .arg(formatCompactPoints(totalPoints)));
         this->rightOutcomeLabel_->show();
     }
@@ -676,13 +677,13 @@ void PredictionBanner::updateLayout()
         }
 
         QString leftStats =
-            QString("%1 pts").arg(formatOutcomePoints(leftOutcome.totalPoints));
+            uiText(QString("%1 pts")).arg(formatOutcomePoints(leftOutcome.totalPoints));
         if (totalPoints > 0)
         {
             leftStats += QString(" (%1%)").arg(leftPercent);
         }
         this->leftOutcomeLabel_->setText(
-            QString("%1 <span style=\"color:#999;\">%2</span>")
+            uiText(QString("%1 <span style=\"color:#999;\">%2</span>"))
                 .arg(leftName, leftStats.toHtmlEscaped()));
 
         if (outcomeCount > 1)
@@ -713,14 +714,14 @@ void PredictionBanner::updateLayout()
                              rightName);
             }
 
-            QString rightStats = QString("%1 pts").arg(
+            QString rightStats = uiText(QString("%1 pts")).arg(
                 formatOutcomePoints(rightOutcome.totalPoints));
             if (totalPoints > 0)
             {
                 rightStats.prepend(QString("(%1%) ").arg(rightPercent));
             }
             this->rightOutcomeLabel_->setText(
-                QString("<span style=\"color:#999;\">%1</span> %2")
+                uiText(QString("<span style=\"color:#999;\">%1</span> %2"))
                     .arg(rightStats.toHtmlEscaped(), rightName));
             this->rightOutcomeLabel_->show();
         }
@@ -754,7 +755,7 @@ void PredictionBanner::updateTimer()
         const auto endsAt = this->predictionEndsAt();
         if (!endsAt.isValid())
         {
-            this->timerLabel_->setText("LIVE");
+            this->timerLabel_->setText(uiText("LIVE"));
             this->timerLabel_->show();
             this->timerLabel_->setStyleSheet(
                 QString("font-size: %1px; color: #9147ff; font-weight: 700;")
@@ -773,12 +774,12 @@ void PredictionBanner::updateTimer()
             }
 
             this->timerLabel_->setText(
-                QString("%1 left").arg(formatRemainingTime(remaining)));
+                uiText(QString("%1 left")).arg(formatRemainingTime(remaining)));
             this->timerLabel_->show();
         }
         else
         {
-            this->timerLabel_->setText("Closing soon");
+            this->timerLabel_->setText(uiText("Closing soon"));
             this->timerLabel_->show();
             timerColor = QColor("#f59e0b");
         }

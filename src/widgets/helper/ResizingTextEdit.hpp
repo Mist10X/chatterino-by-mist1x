@@ -9,6 +9,8 @@
 #include <QKeyEvent>
 #include <QTextEdit>
 
+#include <functional>
+
 namespace chatterino {
 
 class ResizingTextEdit : public QTextEdit
@@ -34,6 +36,11 @@ public:
     void resetCompletion();
     void setGhostText(QString text);
     const QString &ghostText() const;
+    /// Empty space above and below the text, as a share of the line height.
+    void setVerticalPadding(qreal share);
+
+    /// Painted over the text after each repaint (inline emote preview).
+    std::function<void(QPainter &)> paintOverlay;
 
 protected:
     int heightForWidth(int) const override;
@@ -52,12 +59,14 @@ protected:
 private:
     qreal documentHeightForWidth(int width) const;
     void invalidateAncestorLayouts();
+    void applyVerticalPadding();
 
     QString textUnderCursor(bool *hadSpace = nullptr) const;
 
     QCompleter *completer_ = nullptr;
     QString ignoredCompletionPrefix_;
     QString ghostText_;
+    qreal verticalPadding_ = 0;
     /**
      * This is true if a completion was done but the user didn't type yet,
      * and might want to press `Tab` again to get the next completion

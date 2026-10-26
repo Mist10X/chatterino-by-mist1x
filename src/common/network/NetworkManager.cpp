@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "common/network/NetworkManager.hpp"
+#include "common/network/NetworkProxy.hpp"
 
 #include <QNetworkAccessManager>
 
@@ -20,7 +21,7 @@ void NetworkManager::init()
     NetworkManager::workerThread->setObjectName("NetworkWorker");
     NetworkManager::workerThread->start();
 
-    NetworkManager::accessManager = new QNetworkAccessManager;
+    NetworkManager::accessManager = createNetworkAccessManager();
     NetworkManager::accessManager->moveToThread(NetworkManager::workerThread);
 }
 

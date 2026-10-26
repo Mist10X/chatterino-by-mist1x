@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "controllers/tray/TrayController.hpp"
 
 #include "Application.hpp"
@@ -110,7 +111,7 @@ void TrayController::hideToTray()
         if (this->trayIcon_ != nullptr && QSystemTrayIcon::supportsMessages())
         {
             this->trayIcon_->showMessage(
-                QStringLiteral("Leafyrino is still running"),
+                uiText(QStringLiteral("Chatterino by Mist1X is still running")),
                 QStringLiteral(
                     "You can disable this feature from the settings."),
                 QSystemTrayIcon::Information, 7000);
@@ -188,28 +189,28 @@ void TrayController::ensureTrayIcon()
 
     this->trayIcon_ =
         new QSystemTrayIcon(QIcon(QStringLiteral(":/icon.ico")), this);
-    this->trayIcon_->setToolTip(QStringLiteral("Leafyrino"));
+    this->trayIcon_->setToolTip(uiText(QStringLiteral("Leafyrino")));
 
     this->menu_ = new QMenu;
     this->openAction_ =
-        this->menu_->addAction(QStringLiteral("Open Leafyrino"));
+        this->menu_->addAction(uiText(QStringLiteral("Open Leafyrino")));
     QObject::connect(this->openAction_, &QAction::triggered, this, [this] {
         this->restoreFromTray();
     });
 
     this->openLastPingAction_ =
-        this->menu_->addAction(QStringLiteral("Open last ping"));
+        this->menu_->addAction(uiText(QStringLiteral("Open last ping")));
     QObject::connect(this->openLastPingAction_, &QAction::triggered, this,
                      [this] {
                          this->openRecentPing(0);
                      });
 
     this->recentPingsMenu_ =
-        this->menu_->addMenu(QStringLiteral("Recent pings"));
+        this->menu_->addMenu(uiText(QStringLiteral("Recent pings")));
     this->menu_->addSeparator();
 
     this->mutePingsAction_ = this->menu_->addAction(
-        QStringLiteral("Mute ping notifications for 15 minutes"));
+        uiText(QStringLiteral("Mute ping notifications for 15 minutes")));
     QObject::connect(this->mutePingsAction_, &QAction::triggered, this, [this] {
         if (this->notificationsMuted())
         {
@@ -224,7 +225,7 @@ void TrayController::ensureTrayIcon()
     });
 
     this->pingNotificationsAction_ = this->menu_->addAction(
-        QStringLiteral("Show notifications for sound-enabled highlights"));
+        uiText(QStringLiteral("Show notifications for sound-enabled highlights")));
     this->pingNotificationsAction_->setCheckable(true);
     QObject::connect(this->pingNotificationsAction_, &QAction::toggled, this,
                      [](bool checked) {
@@ -233,7 +234,7 @@ void TrayController::ensureTrayIcon()
 
     this->menu_->addSeparator();
     this->quitAction_ =
-        this->menu_->addAction(QStringLiteral("Quit Leafyrino"));
+        this->menu_->addAction(uiText(QStringLiteral("Quit Leafyrino")));
     QObject::connect(this->quitAction_, &QAction::triggered, qApp, [] {
         QApplication::exit(0);
     });
@@ -294,12 +295,12 @@ void TrayController::refreshMenu()
     if (this->notificationsMuted())
     {
         this->mutePingsAction_->setText(
-            QStringLiteral("Unmute ping notifications"));
+            uiText(QStringLiteral("Unmute ping notifications")));
     }
     else
     {
         this->mutePingsAction_->setText(
-            QStringLiteral("Mute ping notifications for 15 minutes"));
+            uiText(QStringLiteral("Mute ping notifications for 15 minutes")));
     }
 
     {
@@ -322,7 +323,7 @@ void TrayController::rebuildRecentPingMenu()
     if (this->recentPings_.empty())
     {
         auto *action = this->recentPingsMenu_->addAction(
-            QStringLiteral("No recent pings"));
+            uiText(QStringLiteral("No recent pings")));
         action->setEnabled(false);
         return;
     }

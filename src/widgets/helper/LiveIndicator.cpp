@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/helper/LiveIndicator.hpp"
 
 #include "Application.hpp"
@@ -28,7 +29,7 @@ LiveIndicator::LiveIndicator(QWidget *parent)
 void LiveIndicator::setViewers(int viewers)
 {
     this->viewers_ = viewers;
-    this->setToolTip(u"Live with %1 viewers"_s.arg(localizeNumbers(viewers)));
+    this->setToolTip(uiText(u"Live with %1 viewers"_s).arg(localizeNumbers(viewers)));
     this->updateScale();
 }
 

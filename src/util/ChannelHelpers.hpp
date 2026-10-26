@@ -129,6 +129,7 @@ void addOrReplaceChannelTimeout(const Buf &buffer, MessagePtr message,
                                        message->serverReceivedTime);
 
             replacement->timeoutUser = message->timeoutUser;
+            replacement->timeoutUserID = message->timeoutUserID;
             replacement->channelName = message->channelName;
             replacement->count = count;
             replacement->flags = message->flags;

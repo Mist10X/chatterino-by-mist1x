@@ -9,6 +9,7 @@
 #include "common/Modes.hpp"
 #include "common/network/NetworkManager.hpp"
 #include "common/QLogging.hpp"
+#include "common/UiLanguage.hpp"
 #include "singletons/CrashHandler.hpp"
 #include "singletons/Paths.hpp"
 #include "singletons/Resources.hpp"
@@ -51,7 +52,7 @@
 extern void qt_set_sequence_auto_mnemonic(bool b);
 
 namespace chatterino {
-namespace {
+
 QString guiActivationServerName(const Paths &paths)
 {
     const auto hash = QCryptographicHash::hash(
@@ -59,6 +60,8 @@ QString guiActivationServerName(const Paths &paths)
     return QStringLiteral("leafyrino-gui-activate-%1")
         .arg(QString::fromLatin1(hash.toHex().left(24)));
 }
+
+namespace {
 
 void restoreGuiInstance()
 {
@@ -328,6 +331,7 @@ void runGui(QApplication &a, const Modes &modes, const Paths &paths,
 {
     initQt(args, settings);
     initResources();
+    initializeUiLanguage(settings.uiLanguage.getValue());
     initSignalHandler();
 
 #ifdef Q_OS_WIN

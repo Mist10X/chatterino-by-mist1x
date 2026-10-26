@@ -198,6 +198,14 @@ protected:
     void writeConnectionMessageReceived(Communi::IrcMessage *message);
 
     void onAnonymousReadConnected(IrcConnection *connection);
+    void anonymousMessageReceived(Communi::IrcMessage *message);
+    /// While the current account is banned in a channel, Twitch hides its chat
+    /// from that account: the channel is then read through the anonymous
+    /// connection instead (like Chatterino+).
+    void updateBannedChatReading(const QString &channelName);
+    void updateAllBannedChatReading();
+    bool readsBannedChat(const QString &channelName);
+    bool hasAnonymousTab(const QString &channelName);
     void onAnonymousDisconnected();
     void markAnonymousChannelsConnected();
     void ensureAnonymousReadConnection();
@@ -218,6 +226,8 @@ private:
 
     QMap<QString, std::weak_ptr<Channel>> channels;
     QMap<QString, std::weak_ptr<Channel>> anonymousChannels;
+    /// Normal channels read through the anonymous connection (see above).
+    QSet<QString> bannedChatChannels_;
     std::mutex channelMutex;
 
     QObjectPtr<IrcConnection> writeConnection_ = nullptr;

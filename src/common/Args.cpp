@@ -135,7 +135,7 @@ namespace chatterino {
 Args::Args(const QApplication &app)
 {
     QCommandLineParser parser;
-    parser.setApplicationDescription("Leafyrino Client for Twitch Chat");
+    parser.setApplicationDescription("Chatterino by Mist1X - Twitch Chat Client");
     parser.addHelpOption();
 
     auto crashRecoveryOption = hiddenOption("crash-recovery");
@@ -153,14 +153,14 @@ Args::Args(const QApplication &app)
                                      "allowing you to see debug output.");
 
     QCommandLineOption safeModeOption(
-        "safe-mode", "Starts Chatterino without loading Plugins and always "
+        "safe-mode", "Starts Chatterino by Mist1X without loading Plugins and always "
                      "show the settings button.");
 
     QCommandLineOption loginOption(
         "login",
-        "Starts Chatterino logged in as the account matching the supplied "
+        "Starts Chatterino by Mist1X logged in as the account matching the supplied "
         "username. If the supplied username does not match any account, "
-        "Chatterino starts logged in as anonymous.",
+        "Chatterino by Mist1X starts logged in as anonymous.",
         "username");
 
     auto channelLayout = QCommandLineOption(
@@ -180,7 +180,7 @@ Args::Args(const QApplication &app)
 
     QCommandLineOption useOldScalingOption(
         "use-old-scaling",
-        "Starts Chatterino with legacy scaling (96 DPI) for this run only. "
+        "Starts Chatterino by Mist1X with legacy scaling (96 DPI) for this run only. "
         "To persist it, enable \"Use legacy scaling\" in Settings → General.");
 
     QCommandLineOption portableEnable("portable", "Enable portable mode.");
@@ -188,6 +188,12 @@ Args::Args(const QApplication &app)
     QCommandLineOption portableDirectory(
         "portable-dir", "Directory to use when portable mode is enabled.",
         "directory");
+
+    auto isolationReportOption = hiddenOption(
+        "isolation-report",
+        "Resolve the profile, write where every file and integration goes "
+        "as JSON to <file>, and exit without opening a window or saving.",
+        "file");
 
 #ifndef NDEBUG
     QCommandLineOption useLocalEventsubOption(
@@ -211,6 +217,7 @@ Args::Args(const QApplication &app)
         useOldScalingOption,
         portableEnable,
         portableDirectory,
+        isolationReportOption,
 #ifndef NDEBUG
         useLocalEventsubOption,
 #endif
@@ -244,6 +251,13 @@ Args::Args(const QApplication &app)
     }
 
     this->verbose = parser.isSet(verboseOption);
+
+    if (parser.isSet(isolationReportOption))
+    {
+        this->isolationReport = parser.value(isolationReportOption);
+        this->dontSaveSettings = true;
+        this->dontLoadMainWindow = true;
+    }
 
     this->printVersion = parser.isSet("V");
 

@@ -1,0 +1,119 @@
+0	 %1 mo.
+1	 · Card buffer is bounded; scroll up for older rows
+2	 · checked 
+3	%1 y
+4	%1 d
+5	%1 gifts %2 subs · click to close
+6	%1 d
+7	%1 mo.
+8	%1 min
+9	%1 s
+10	%1 h
+11	%1 — usercard in #%2
+12	7TV paint: %1
+13	</span></p><p class='quote muted'>Dossier received 
+14	<p class='muted'>The source is not ready or is not supported by the local API.</p>
+15	<p class='muted'>This period is not covered.</p>
+16	<p class='muted'>No saved records found.</p>
+17	<p class='row'><span class='ban'>BAN</span> <span class='chan'>#
+18	<span class='ban'>BAN</span>
+19	<span class='del'>DELETED</span>
+20	<span class='mute'>TIMEOUT %1</span>
+21	Anonymous
+22	Archive
+23	This user's bans, timeouts and deletions in Archive
+24	No messages in the buffer
+25	No messages in the loaded channel buffer
+26	No messages in the loaded buffer
+27	Back to messages
+28	All saved messages from this user in Archive
+29	All history
+30	Data found in the local Archive
+31	No data received. This does not mean the user's history is empty.
+32	User actions
+33	Start the connected Archive to load history
+34	Loading messages…
+35	Loading saved data…
+36	Loading…
+37	Twitch badges
+38	Badges from messages; Twitch collection is loading
+39	Badges: %1 · click to view all
+40	Chatters: %1
+41	History
+42	Name history
+43	History was not requested: resolving a user by login alone could mix data from different Twitch IDs.
+44	History unavailable; retry with the History button
+45	User history
+46	Partial history: one source is unavailable
+47	Message context
+48	Copy name
+49	Local history: received %1 messages
+50	No local messages; click History to check public logs
+51	Pronouns: %1
+52	MODERATION
+53	Observed since 
+54	Click to copy
+55	Find this message
+56	Moderation
+57	User moderation history
+58	Could not confirm this user's Twitch ID.
+59	Partial results: a source did not respond
+60	No information
+61	Missing exact Twitch ID or message ID
+62	SHARED DOSSIER
+63	Open Archive
+64	Open available message history
+65	Open the Archive window
+66	Follow
+67	SUBSCRIPTIONS
+68	Unfollow
+69	This period is not covered
+70	Tier %1 subscription — %2
+71	Previously subscribed — %1
+72	Previously subscribed — 1 month · test data
+73	Subscription not found
+74	Subscription: loading…
+75	Searching public logs…
+76	Only some records are shown; see Archive for the rest
+77	Only badges from messages are shown. %1
+78	Coverage is unknown: only data seen by Archive is shown
+79	Earned Twitch badges and badges from loaded messages
+80	Last live: %1
+81	Public logs are disabled for this user
+82	Public logs are currently disabled
+83	Public logs: received %1 messages
+84	RAID
+85	Raid from %1: %2 viewers · click to close
+86	=
+87	MESSAGES
+88	Subscription information is hidden
+89	Profile information
+90	Copy %1
+91	Created %1
+92	Messages
+93	Messages in the current channel
+94	Chat messages
+95	Saved in Archive
+96	Saved history, then public logs. Scroll up to load more
+97	Saved data in the usercard
+98	No saved data
+99	Resolving Twitch user ID…
+100	Following since 
+101	Follow: loading…
+102	Followers: %1
+103	Color: %1
+104	Reading local history…
+105	What Archive has saved about this user
+106	Time not saved
+107	yesterday
+108	loading…
+109	context ≠ reason for punishment
+110	month
+111	months
+112	months
+113	not specified
+114	unavailable
+115	Russian
+116	today
+117	today 
+118	language

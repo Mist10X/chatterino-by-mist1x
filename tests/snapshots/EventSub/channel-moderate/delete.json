@@ -137,7 +137,7 @@
             ],
             "externalBadges": [
             ],
-            "flags": "System|DoNotTriggerNotification|EventSub|ModerationAction",
+            "flags": "System|DoNotTriggerNotification|EventSub|ModerationAction|Deletion",
             "frozen": true,
             "id": "",
             "localizedName": "",

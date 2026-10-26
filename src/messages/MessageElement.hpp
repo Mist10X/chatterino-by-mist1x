@@ -434,8 +434,17 @@ public:
     QJsonObject toJson() const override;
     std::string_view type() const override;
 
+    /// "Page title (domain)" once the link is resolved, otherwise empty.
+    QString titleText() const
+    {
+        return this->titleText_;
+    }
+
 private:
+    void watchLinkInfo();
+
     LinkInfo linkInfo_;
+    QString titleText_;
     // these are implicitly shared
     QStringList lowercase_;
     QStringList original_;
@@ -826,6 +835,34 @@ public:
 private:
     ImageSet images_;
     QString copyText_;
+};
+
+/// Card under a message with a Twitch clip link: thumbnail, duration,
+/// channel, game, clipper, views, age (like Chatterino+). Shows nothing
+/// until the clip is loaded.
+class ClipCardElement : public MessageElement
+{
+public:
+    static constexpr std::string_view TYPE = "clip-card";
+
+    ClipCardElement(QString slug, QString url);
+
+    void addToContainer(MessageLayoutContainer &container,
+                        const MessageLayoutContext &ctx) override;
+
+    std::unique_ptr<MessageElement> clone() const override;
+
+    QJsonObject toJson() const override;
+    std::string_view type() const override;
+
+    const QString &slug() const
+    {
+        return this->slug_;
+    }
+
+private:
+    QString slug_;
+    QString url_;
 };
 
 class ReplyCurveElement : public MessageElement

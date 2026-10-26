@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/ChatterListWidget.hpp"
 
 #include "Application.hpp"
@@ -300,17 +301,17 @@ QString groupName(ChatterRole role)
     switch (role)
     {
         case ChatterRole::Broadcaster:
-            return QStringLiteral("Broadcaster");
+            return uiText(QStringLiteral("Broadcaster"));
         case ChatterRole::Staff:
-            return QStringLiteral("Staff");
+            return uiText(QStringLiteral("Staff"));
         case ChatterRole::ChatBot:
-            return QStringLiteral("Chat bots");
+            return uiText(QStringLiteral("Chat bots"));
         case ChatterRole::Moderator:
-            return QStringLiteral("Moderators");
+            return uiText(QStringLiteral("Moderators"));
         case ChatterRole::Vip:
-            return QStringLiteral("VIPs");
+            return uiText(QStringLiteral("VIPs"));
         case ChatterRole::Viewer:
-            return QStringLiteral("Chatters");
+            return uiText(QStringLiteral("Chatters"));
     }
     return {};
 }
@@ -915,15 +916,15 @@ public:
             QString text;
             if (loading)
             {
-                text = QStringLiteral("Loading chatters…");
+                text = uiText(QStringLiteral("Loading chatters…"));
             }
             else if (!this->query_.isEmpty())
             {
-                text = QStringLiteral("No matching chatters");
+                text = uiText(QStringLiteral("No matching chatters"));
             }
             else
             {
-                text = QStringLiteral("No chatters found");
+                text = uiText(QStringLiteral("No chatters found"));
             }
             this->rows_.push_back({RowKind::Status, {}, text, 0});
         }
@@ -1189,17 +1190,17 @@ QString sourceStateText(SourceState state)
     switch (state)
     {
         case SourceState::Pending:
-            return QStringLiteral("updating");
+            return uiText(QStringLiteral("updating"));
         case SourceState::Ready:
-            return QStringLiteral("ready");
+            return uiText(QStringLiteral("ready"));
         case SourceState::Cached:
-            return QStringLiteral("ready from cache");
+            return uiText(QStringLiteral("ready from cache"));
         case SourceState::Partial:
-            return QStringLiteral("some details unavailable");
+            return uiText(QStringLiteral("some details unavailable"));
         case SourceState::Failed:
-            return QStringLiteral("unavailable");
+            return uiText(QStringLiteral("unavailable"));
         case SourceState::Skipped:
-            return QStringLiteral("not used");
+            return uiText(QStringLiteral("not used"));
     }
     return {};
 }
@@ -1213,7 +1214,7 @@ bool sourceIsReady(SourceState state)
 QString countLabel(int count, const QString &singular, const QString &plural)
 {
     return QStringLiteral("%1 %2").arg(localizeNumbers(count),
-                                       count == 1 ? singular : plural);
+                                       uiText(count == 1 ? singular : plural));
 }
 
 }  // namespace
@@ -1279,11 +1280,11 @@ public:
         tools->setContentsMargins(0, 0, 0, 0);
         tools->setSpacing(6);
         this->search = new QLineEdit(this->q);
-        this->search->setPlaceholderText("Search User...");
+        this->search->setPlaceholderText(uiText("Search User..."));
         this->search->setClearButtonEnabled(true);
-        this->refresh = new QPushButton(QStringLiteral("Refresh"), this->q);
+        this->refresh = new QPushButton(uiText(QStringLiteral("Refresh")), this->q);
         this->refresh->setToolTip(
-            QStringLiteral("Refresh all available sources"));
+            uiText(QStringLiteral("Refresh all available sources")));
         tools->addWidget(this->search, 1);
         tools->addWidget(this->refresh);
 
@@ -1968,7 +1969,7 @@ public:
                      countLabel(moderators, QStringLiteral("moderator"),
                                 QStringLiteral("moderators")),
                      countLabel(vips, QStringLiteral("VIP"),
-                                QStringLiteral("VIPs"))));
+                                uiText(QStringLiteral("VIPs")))));
 
         this->updateSourceStatus();
     }
@@ -1982,7 +1983,7 @@ public:
                              this->twitchState == SourceState::Failed ||
                              this->communityState == SourceState::Partial ||
                              this->communityState == SourceState::Failed;
-        auto status = QStringLiteral("Updated now");
+        auto status = uiText(QStringLiteral("Updated now"));
         if (this->pendingRequests() > 0)
         {
             if (!this->statusAnimation.isActive())
@@ -1990,7 +1991,7 @@ public:
                 this->statusDots = 1;
                 this->statusAnimation.start();
             }
-            status = QStringLiteral("Updating%1")
+            status = uiText(QStringLiteral("Updating%1"))
                          .arg(QString(this->statusDots, QLatin1Char('.')));
         }
         else
@@ -1999,22 +2000,22 @@ public:
             this->statusDots = 0;
             if (partial)
             {
-                status = QStringLiteral("Partial list");
+                status = uiText(QStringLiteral("Partial list"));
             }
             else if (this->communityState == SourceState::Cached)
             {
-                status = QStringLiteral("Updated recently");
+                status = uiText(QStringLiteral("Updated recently"));
             }
         }
         this->sources->setText(QStringLiteral("%1 %2 · %3")
                                    .arg(sourceCount)
                                    .arg(sourceCount == 1
-                                            ? QStringLiteral("source")
-                                            : QStringLiteral("sources"))
+                                            ? uiText(QStringLiteral("source"))
+                                            : uiText(QStringLiteral("sources")))
                                    .arg(status));
         this->sources->setToolTip(
-            QStringLiteral("Chat session: %1\nTwitch: %2\nTackling: %3")
-                .arg(QStringLiteral("ready"),
+            uiText(QStringLiteral("Chat session: %1\nTwitch: %2\nTackling: %3"))
+                .arg(uiText(QStringLiteral("ready")),
                      sourceStateText(this->twitchState),
                      sourceStateText(this->communityState)));
         this->refresh->setEnabled(this->pendingRequests() == 0);
@@ -2130,7 +2131,7 @@ ChatterListWidget::ChatterListWidget(std::shared_ptr<Channel> channel,
 {
     assert(this->d_->channel != nullptr);
     assert(!this->d_->localChannels.empty());
-    this->setWindowTitle("Chatter List - " + this->d_->channel->getName());
+    this->setWindowTitle(uiText("Chatter List - ") + this->d_->channel->getName());
     this->setAttribute(Qt::WA_DeleteOnClose);
     this->setMinimumSize(360, 360);
     this->d_->initialize();

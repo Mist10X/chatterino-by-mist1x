@@ -17,14 +17,21 @@
 #include "messages/layouts/MessageLayoutElement.hpp"
 #include "messages/Message.hpp"
 #include "providers/emoji/Emojis.hpp"
+#include "providers/twitch/ClipPreview.hpp"
 #include "providers/twitch/TwitchEmotes.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/Theme.hpp"
+#include "singletons/WindowManager.hpp"
 #include "util/DebugCount.hpp"
 #include "util/Variant.hpp"
 
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QCoreApplication>
+#include <QUrl>
+#include <QTimer>
+#include <QTextDocumentFragment>
+#include <QRegularExpression>
 #include <QJsonValue>
 #include <QLocale>
 #include <QTextLayout>
@@ -1691,6 +1698,7 @@ LinkElement::LinkElement(const Parsed &parsed, const QString &fullUrl,
     , original_({parsed.original})
 {
     this->setTooltip(parsed.original);
+    this->watchLinkInfo();
 }
 
 LinkElement::LinkElement(TextElement::CloneTag /*hack*/, QStringList lowercase,
@@ -1706,6 +1714,77 @@ LinkElement::LinkElement(TextElement::CloneTag /*hack*/, QStringList lowercase,
     {
         this->setTooltip(this->original_.at(0));
     }
+    this->watchLinkInfo();
+}
+
+namespace {
+
+/// The first bold text of the resolver's tooltip is the page title.
+QString titleFromTooltip(const QString &tooltip)
+{
+    static const QRegularExpression bold(
+        QStringLiteral("<b>(.*?)</b>"),
+        QRegularExpression::DotMatchesEverythingOption);
+    const auto match = bold.match(tooltip);
+    if (!match.hasMatch())
+    {
+        return {};
+    }
+    auto title = QTextDocumentFragment::fromHtml(match.captured(1))
+                     .toPlainText()
+                     .simplified();
+    if (title.size() > 90)
+    {
+        title = title.left(87) + QStringLiteral("…");
+    }
+    return title;
+}
+
+void scheduleRelayout()
+{
+    // Many links resolve together: one relayout of the chats for the batch.
+    static bool queued = false;
+    if (queued || tryGetApp() == nullptr)
+    {
+        return;
+    }
+    queued = true;
+    QTimer::singleShot(150, QCoreApplication::instance(), [] {
+        queued = false;
+        if (auto *app = tryGetApp(); app && app->getWindows())
+        {
+            app->getWindows()->forceLayoutChannelViews();
+        }
+    });
+}
+
+}  // namespace
+
+void LinkElement::watchLinkInfo()
+{
+    QObject::connect(
+        &this->linkInfo_, &LinkInfo::stateChanged, &this->linkInfo_,
+        [this](LinkInfo::State state) {
+            if (state != LinkInfo::State::Resolved)
+            {
+                return;
+            }
+            const auto title = titleFromTooltip(this->linkInfo_.tooltip());
+            if (title.isEmpty())
+            {
+                return;
+            }
+            auto host = QUrl(this->linkInfo_.originalUrl()).host();
+            if (host.startsWith(QStringLiteral("www.")))
+            {
+                host = host.mid(4);
+            }
+            this->titleText_ = host.isEmpty()
+                                   ? title
+                                   : title + QStringLiteral(" (") + host +
+                                         QStringLiteral(")");
+            scheduleRelayout();
+        });
 }
 
 void LinkElement::addToContainer(MessageLayoutContainer &container,
@@ -1713,6 +1792,15 @@ void LinkElement::addToContainer(MessageLayoutContainer &container,
 {
     const auto &source =
         getSettings()->lowercaseDomains ? this->lowercase_ : this->original_;
+
+    // "Page title (domain)" instead of the address, like Chatterino+.
+    if (!this->titleText_.isEmpty() && getSettings()->showLinkTitles)
+    {
+        this->words_ = this->titleText_.split(u' ', Qt::SkipEmptyParts);
+        TextElement::addToContainer(container, ctx);
+        this->words_ = source;
+        return;
+    }
 
     if (!getSettings()->wrapLinksAtBreaks)
     {
@@ -1795,6 +1883,7 @@ std::unique_ptr<MessageElement> LinkElement::clone() const
         this->linkInfo_.originalUrl(), this->getFlags(), this->color_,
         this->style_);
     el->cloneFrom(*this);
+    el->titleText_ = this->titleText_;
     return el;
 }
 
@@ -2400,6 +2489,69 @@ QJsonObject ScalingImageElement::toJson() const
 }
 
 std::string_view ScalingImageElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
+ClipCardElement::ClipCardElement(QString slug, QString url)
+    : MessageElement(MessageElementFlag::Text)
+    , slug_(std::move(slug))
+    , url_(std::move(url))
+{
+    this->setLink({Link::Url, this->url_});
+    if (getSettings()->showClipCards)
+    {
+        clippreview::request(this->slug_);
+    }
+}
+
+void ClipCardElement::addToContainer(MessageLayoutContainer &container,
+                                     const MessageLayoutContext &ctx)
+{
+    if (!this->matchesFlags(ctx.flags) || !getSettings()->showClipCards)
+    {
+        return;
+    }
+    auto info = clippreview::get(this->slug_);
+    if (!info)
+    {
+        return;
+    }
+    if (this->getTooltip().isEmpty() && !info->title.isEmpty())
+    {
+        this->setTooltip(info->title);
+    }
+    const float scale = container.getScale();
+    container.breakLine();
+    const qreal width =
+        std::min<qreal>(container.remainingWidth(), 420 * scale);
+    if (width < 160 * scale)
+    {
+        return;  // too narrow for a readable card
+    }
+    container.addElement(
+        (new ClipCardLayoutElement(*this, std::move(info),
+                                   QSizeF(width, 64 * scale), scale))
+            ->setLink(this->getLink()));
+}
+
+std::unique_ptr<MessageElement> ClipCardElement::clone() const
+{
+    auto el = std::make_unique<ClipCardElement>(this->slug_, this->url_);
+    el->cloneFrom(*this);
+    return el;
+}
+
+QJsonObject ClipCardElement::toJson() const
+{
+    auto base = MessageElement::toJson();
+    base["type"_L1] = u"ClipCardElement"_s;
+    base["slug"_L1] = this->slug_;
+    base["url"_L1] = this->url_;
+    return base;
+}
+
+std::string_view ClipCardElement::type() const
 {
     return std::remove_pointer_t<decltype(this)>::TYPE;
 }

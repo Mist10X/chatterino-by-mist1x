@@ -1,0 +1,1492 @@
+0	 - Plugin REPL
+1	 ago
+2	 failed to load: 
+3	 for help.
+4	 history
+5	 link
+6	 mps
+7	">Discord</a>
+8	">features</a>
+9	">here</a>
+10	">show license</a>
+11	#%1  •  %2 access
+12	#%1  •  Loading stream info
+13	#%1 • no active prediction
+14	#RRGGBB
+15	%1 <b>%2</b> as %3
+16	%1 <span style="color:#999;">%2</span>
+17	%1 Required
+18	%1 channel status%2 could not be checked. You can still try the action in those channels.
+19	%1 left
+20	%1 matching messages out of %2 total
+21	%1 messages in history
+22	%1 pts · %2 users · %3
+23	%1 queued
+24	%1 selected
+25	%1 — offline usercard preview
+26	%1's Reward Queue
+27	%1's Rewards
+28	%1's channel points
+29	&Clear messages
+30	&Copy
+31	&Copy link
+32	&Copy selection
+33	&Delete message
+34	&Execute command
+35	&Go to message
+36	&Mute highlight sounds
+37	&Notify when live
+38	&Open
+39	&Open in new split
+40	&Open link
+41	&Pin message
+42	&Reply to message
+43	&Subscribe
+44	&Toggle moderation mode
+45	&Translate message
+46	&Unpin message
+47	&Usercard
+48	'Helix' will use Twitch's Helix API to send messages. 'IRC' will use IRC to send messages.
+49	(maximum timeout duration = 2 w)
+50	) was not found.
+51	). Click to change.
+52	*Preview will appear here when you type markdown text...*
+53	. Dictionaries are pairs of .aff (affixes) and .dic (dictionary) files.
+54	. Each one is a new directory.
+55	/block <user> in chat blocks a user.
+/unblock <user> in chat unblocks a user.
+You can also click on a user to open the usercard.
+56	0 selected
+57	1. Fill in your username
+2. Fill in your user ID
+3. Fill in your client ID
+4. Fill in your OAuth token
+5. Press Add user
+58	10 minutes
+59	100 characters
+60	120 seconds
+61	12345abcd
+62	150 seconds
+63	180 seconds
+64	2 lines
+65	20 minutes
+66	200 characters
+67	3 lines
+68	30 minutes
+69	30 seconds
+70	300 characters
+71	4 lines
+72	400 characters
+73	5 lines
+74	5 minutes
+75	50 characters
+76	60 seconds
+77	7TV
+78	7TV profile not loaded yet
+79	90 seconds
+80	</a>. This proxy will not save your data.<br>It is required, because Kick does not provide a suitable OAuth flow for local chat clients like Chatterino.
+81	</code></b>
+82	</span>
+83	<a href="
+84	<a href='%1'><span style='color:#99f'>variable help</span></a>
+85	<a href='https://chatterino.com/help/regex'><span style='color:#99f'>regex info</span></a>
+86	<empty>
+87	<p>There are backups of this file.<br>Do you want to restore the selected backup?
+88	<span style="color:#22c55e;font-weight:700;">Winner:</span> <span style="color:%1;font-weight:700;">%2</span>
+89	<span style="color:#999;">%1</span> %2
+90	<span style="color:#999;">Leading:</span> <span style="color:%1;font-weight:700;">%2</span> <span style="color:#999;">(%3%)</span>
+91	<span style="color:#999;">Total:</span> <span style="color:#999;">%1 pts</span>
+92	<span style="color:%1;">%2</span>
+93	<span style="color:%1;">%2</span> <span style="color:%3;font-weight:700;">%4</span> <span style="color:%1;">%5% (%6 votes)</span>
+94	<span style="color:%1;font-weight:700;">%2</span> <span style="color:#999;">(%3%)</span>
+95	<span style="font-weight:400;">#%1</span> <span style="font-weight:400;">•</span> <span style="font-weight:700; color:%2;">%3</span>
+96	<span style="font-weight:600; color:%1;">%2</span><span style="color:%3;">%4%5</span>
+97	<span style='color:%1'>%2</span>
+98	<span>
+99	A card in the top-right corner of the chat: who raided and how many viewers they brought. Click it to close. The raid line in chat stays either way.
+100	A green card in the top-right corner of the chat when someone gifts several subs to random viewers: gifter and number of subs. Click it to close.
+101	A semicolon-separated list of Chrome or Firefox extension IDs allowed to interact with Chatterino's browser integration (requires restart).
+Using multiple extension IDs from different browsers may cause issues.
+102	ABCD123
+103	ACTIVE
+104	API key (optional):
+105	API key:
+106	Abnormal nonce detection
+107	About
+108	About Chatterino...
+109	Account
+110	Accounts
+111	Acknowledge this warning
+112	Action when clicking on a notification:  
+113	Add
+114	Add Account
+115	Add Channel
+116	Add Outcome
+117	Add Pin
+118	Add a right-click action for translating chat messages.
+119	Add a tag
+120	Add another account or manage saved accounts.
+121	Add editor
+122	Add hotkey
+123	Add lead moderator
+124	Add new account
+125	Add user
+126	Additional options
+127	Adds a line between each message to help better tell them apart.
+128	Adds an underline below the most recent message sent before you tabbed out of Leafyrino.
+129	Advanced
+130	After 10 minutes
+131	After 10 seconds
+132	After 2 minutes
+133	After 30 seconds
+134	After 5 minutes
+135	After 60 seconds
+136	After a reward is redeemed, go back to the rewards grid instead of staying on the current picker.
+137	All about Chatterino's <a href="
+138	All local files like settings and cache files are stored in this directory.
+139	All requests
+140	All tabs
+141	Allow
+142	Allow Additional Votes
+143	Allow a single message to be repeatedly sent without any changes.
+144	Allow searching selected text using a search engine from the right-click context menu.
+145	Allow sending duplicate messages
+146	Already voted
+147	Also show thumbnails if available
+148	Also suggest this channel's custom commands that do not start with its prefix.
+149	Alt
+150	Alternate background color
+151	Always
+152	Always expand long pinned messages
+153	Always include broadcaster in user completions
+154	Always keep Leafyrino as the top window.
+155	Always load more messages when possible
+156	Always on top
+157	Amount
+158	Amount of previous messages to check
+159	An emote name turns into the emote once a space or Tab follows it. The message text stays the same.
+160	An error happened during initialization of the browser extension: 
+161	An error occurred while attempting to open <a href="%1">the log in link (%1)</a> - open it manually in your browser and proceed from there.
+162	Android color
+163	Animate
+164	Animate 7TV badges
+165	Animate only when Leafyrino is focused
+166	Anonymous channel - read only
+167	AppData & Cache
+168	Apple emojis provided by <a href="https://apple.com">Apple</a>
+169	Application Data
+170	Apply
+171	Approximate older Chatterino scaling by treating the display as 96 DPI (Qt::AA_Use96Dpi). Useful if the UI or text feels wrong after an update on a high-DPI or fractional-scale display. Restart required. You can also pass --use-old-scaling on the command line for a single run.
+172	Are you sure that you want to clear your cache? Emotes may take longer to load next time Chatterino is started.
+173	Are you sure that you want to remove this tab?
+174	Are you sure you want to %1 %2 in #%3?
+175	Are you sure you want to close all other visible tabs?
+176	Are you sure you want to close all visible tabs to the 
+177	Are you sure you want to close all visible tabs?
+178	Are you sure you want to discard the backup? Doing so will overwrite and discard any previous settings.
+179	Are you sure you want to reset hotkeys to defaults?
+180	Are you sure you want to unfollow %1?
+181	Ask before the chat header follow button unfollows the current channel. The /unfollow command still runs without a prompt.
+182	Ask before the usercard follow button unfollows a user. The /unfollow command still runs without a prompt.
+183	Ask for confirmation when uploading an image
+184	Attach to any browser (may cause issues)
+185	Attempt to force the Chatterino Browser Extension to work in certain browsers that do not work automatically.
+e.g. Librewolf
+186	Attributions...
+187	Authentication
+188	Authentication will be done through <a href="
+189	Authority
+190	Authorize
+191	Auto detach watching tab (~10s timeout)
+192	Auto-dismiss resolved banners
+193	Auto-translate messages (risky)
+194	Automatically close reply thread popup when it loses focus
+195	Automatically close the poll menu after successfully casting a vote.
+196	Automatically close the prediction menu after successfully placing a bet.
+197	Automatically close user popup when it loses focus
+198	Automatically show the full content of long pins without requiring a click.
+199	Automatically subscribe to participated reply threads
+200	Available when the channel is live
+201	BANNED
+202	Back to all options
+203	Back to rewards
+204	Background opacity (0-255)
+205	Badge lookup is disabled in offline preview
+206	BadgeHQ
+207	Badges
+208	Badges for #%1
+209	Badges for 7TV admins, developers, and supporters
+210	Badges for Moltorino supporters, top donors, and developers
+211	Badges from the Homies supporter badge list
+212	Bal: %1
+213	Ban %1 without reason
+214	Ban reason:
+215	Ban selected
+216	Ban status is up to date
+217	Banner stacking behavior
+218	Banners in this split
+219	Basic
+220	Beta
+221	BetterTTV
+222	Betting...
+223	Block
+224	Blocking 
+225	Blocking %1 can cause unintended side-effects like unfollowing.
+
+Are you sure you want to block %1?
+226	Bluzyrino
+227	Bold @mentions to make them more noticeable.
+228	Bold @usernames
+229	Bot Badge (Developer)
+230	Bot badge account: %1 (@%2) - ID %3
+Token expires: %4
+231	Bot mode overrides all accounts
+232	Bottom
+233	Browser Error
+234	Browser Integration
+235	Button %1: 
+236	Cancel
+237	Category
+238	Change channel
+239	Change this only if you're noticing issues with sound playback on your system
+240	Change...
+241	Channel
+242	Channel Badge
+243	Channel Filter Creator
+244	Channel Points
+245	Channel Points Chart
+246	Channel Points: refreshing...
+247	Channel Rewards
+248	Channel avatars on tabs
+249	Channel event messages in chat. Requires Moltorino auth (Settings → Moltorino → Authentication), experimental EventSub enabled under Settings → General, and an app restart after turning EventSub on.
+250	Channel indicator:
+251	Channel points balance and rewards menu options.
+252	Chart
+253	Chat
+254	Chat input buttons, typing helpers, and quick controls.
+255	Chat send protocol
+256	Chat session: %1
+Twitch: %2
+Tackling: %3
+257	Chat title
+258	Chatsen
+259	Chatter List - 
+260	Chatter list source
+261	Chatterino
+262	Chatterino 
+263	Chatterino 1 Importer
+264	Chatterino Discord
+265	Chatterino GitHub
+266	Chatterino Wiki
+267	Chatterino Wiki can be found <a href="
+268	Chatterino expects the executable to be called "%1".
+269	Chatterino only attaches to known browsers to avoid attaching to other windows by accident.
+270	Chatterino quick setup
+271	Chatters: 
+272	Chatters: ...
+273	Check spelling
+274	Check spelling by default
+275	Check that bot badge messages can be sent.
+276	Check the spelling of words in the input box of all splits by default.
+277	Check the spelling of words in the input box of splits. Chatterino does not include dictionaries - they have to be downloaded or created manually. Chatterino expects Hunspell dictionaries in 
+278	Checking 7TV profile...
+279	Checking whether this user is banned in each channel
+280	Choose badge
+281	Choose how pin time is shown on the banner.
+282	Choose how pinned, poll, and prediction banners share the space above chat.
+283	Choose the API used for the chatter list. Tackling provides the extended list. Twitch requires moderator access. All choices include chatters seen in your chat session. Refresh or reopen the list after changing its source.
+284	Choose which extra details appear on usercards.
+285	Choose...
+286	Clear
+287	Clear Output
+288	Clear cache
+289	Clear fields
+290	Click to copy 
+291	Click to copy color
+292	Client
+293	Client detection
+294	Client detection highlights. 
+295	Client detection icons. 
+296	Close
+297	Close All Visible Tabs
+298	Close Other Visible Tabs
+299	Close Tab
+300	Close Visible Tabs to 
+301	Close button action
+302	Close poll and prediction dialogs when you click away from them.
+303	Close poll and prediction menus on focus loss
+304	Close poll menu after voting
+305	Close prediction menu after betting
+306	Close rewards menu after redeeming
+307	Close rewards menu on focus loss
+308	Close the popup after a reward is redeemed.
+309	Close the rewards popup when you click away from it.
+310	Closing in %1
+311	Closing soon
+312	Closing the main window hides Leafyrino to the system tray instead of disconnecting from chat.
+313	Color
+314	Color @usernames
+315	Color only moderators, members and the owner; regular chatters stay a neutral grey. Off = all names grey.
+Deleted messages follow the global "hide moderated messages" setting.
+316	Color usernames by role
+317	Color: 
+318	Color: #FFFFFF
+319	Colorize usernames
+320	Colorize users without color set (gray names)
+321	Combine consecutive cheermotes (sent in a single message) into one cheermote.
+322	Combine multiple bit tips into one
+323	Coming Soon
+324	Commands
+325	Commercial length
+326	Commercials
+327	Complete
+328	Complete (%1)
+329	Complete all
+330	Confirm
+331	Confirm before unfollowing from chat header
+332	Confirm before unfollowing from usercard
+333	Confirm commercial
+334	Confirm role change
+335	Connect the account used for bot badge messages.
+336	Connect with a Twitch anonymous chat session. You can read chat, but you can't send messages from this split.
+337	Connection
+338	Content classification
+339	Control
+340	Controls how far the shadow is offset on the x axis in device-independent pixels. A negative value offsets to the left and a positive to the right.
+341	Controls how far the shadow is offset on the y axis in device-independent pixels. A negative value offsets to the top and a positive to the bottom.
+342	Controls how far the shadow is spread (the blur radius) in device-independent pixels.
+343	Controls the inline Delete action beside messages sent by the selected account.
+344	Controls the inline Pin action beside moderator and broadcaster messages.
+345	Controls the opacity of the (possibly alternating) background behind messages. The color is set through the current theme. 255 corresponds to a fully opaque background.
+346	Controls the opacity of the added drop shadow. 255 corresponds to a fully opaque shadow.
+347	Convert #text to channel links
+348	Copy &
+349	Copy &full message
+350	Copy &message
+351	Copy Code
+352	Copy Script
+353	Copy URL
+354	Copy a&vatar link
+355	Copy current image uploader settings to clipboard as JSON
+356	Copy message &ID
+357	Copy message &JSON
+358	Correct ASCII art wrapping
+359	Could not load Twitch's rerun setting.
+360	Could not translate this draft.
+361	Couldn't load messages. Try again.
+362	Countdown only
+363	Counter color
+364	Create a clip
+365	Create poll
+366	Create prediction
+367	Cross %1 %2
+368	Custom (Turbo / Prime)
+369	Custom Color...
+370	Custom Homies badges
+371	Custom stream player
+372	Custom stream player URI Scheme
+373	Custom streamlink path
+374	Customize the timeout buttons in the user popup (accessible through clicking a username).
+Use seconds (s), minutes (m), hours (h), days (d) or weeks (w).
+375	DankChat
+376	Dark system theme
+377	Default
+378	Default colors
+379	Default commercial duration
+380	Default dictionary (requires restart)
+381	Default outgoing translation mode for channels that do not have their own saved input setting. Preview only shows a draft translation without changing what Enter sends. Translate on send sends the translated text. Per-channel mode can also be toggled from the input translation button. %1
+382	Default pin duration
+383	Default target language for outgoing translated messages in channels without their own saved input setting.
+384	Default translated message language
+385	Delay between /spam and /pyramid messages
+386	Delete
+387	Deleting...
+388	Deletion link
+389	Dev/contributor, QA, and supporter badges.
+390	Developer, admin, and Plus badges.
+391	Developer, helper, and supporter badges.
+392	Developer, supporter, artist, and Patreon badges.
+393	Device Login
+394	Disable
+395	Disable notification sounds and highlights from certain users (e.g. bots).
+396	Disable renaming of tabs on double-click
+397	Disabled
+398	Dismiss
+399	Dismiss Poll
+400	Dismiss Prediction
+401	Display 7TV Paint Shadows
+402	Display 7TV Paints
+403	Displays client icons beside messages
+404	Do not mark repeated messages from VIPs. Moderators and the broadcaster are always ignored.
+405	Don't show again
+406	Don't stack
+407	Double click to open links and other elements in chat
+408	Downloading update...
+409	Draw a line below the most recent message before switching applications.
+410	Duplicate Tab
+411	Duration
+412	ENDED
+413	Edit stream info
+414	Edit stream information or run a commercial as the broadcaster or a verified channel editor.
+415	Editing notes for 
+416	Emoji datasource provided by <a href="https://www.iamcal.com/">Cal Henderson</a> (<a href="https://github.com/iamcal/emoji-data/blob/master/LICENSE">show license</a>)
+417	Emoji style
+418	Emote & badge thumbnail size on hover
+419	Emote modifiers
+420	Emote only
+421	Emotes
+422	Emotes in #
+423	Enable
+424	Enable /mention tab highlights
+425	Enable /pin <message text>
+426	Enable /pin <username>
+427	Enable 7TV live emote updates (requires restart)
+428	Enable BetterTTV live emote updates (requires restart)
+429	Enable Bot Badge mode
+430	Enable Shadow
+431	Enable Streamer Mode
+432	Enable emote completion by typing :
+433	Enable experimental Twitch EventSub support (requires restart)
+434	Enable image uploader
+435	Enable search in right-click context menu
+436	Enable similarity checks
+437	Enable zero-width emotes
+438	Enable. Required for abnormal nonce and webchat detection to work!
+439	Enables a drop shadow on the overlay. This will use more processing power.
+440	Ending in %1
+441	Endpoint:
+442	Enter a new key
+443	Enter a title
+444	Error validating image uploader import: %1.
+445	Events
+446	Exact only
+447	Export Settings to Clipboard
+448	Export your current image uploader settings as JSON to share with others, or import settings from clipboard (compatible with ShareX .sxcu format).
+449	Extend wrapped tabs
+450	External tools
+451	Extra Headers
+452	Extra extension IDs
+453	Extra information like "youtube video stats" or title of webpages can be loaded for all links if enabled. Optionally you can also show thumbnails for emotes, videos and more. The information is pulled from our servers. The Link Previews are loaded through <a href="https://github.com/Chatterino/api">an API</a> hosted by the Chatterino developers. These are the API <a href="https://braize.pajlada.com/chatterino/legal/terms-of-service">Terms of Services</a> and <a href="https://braize.pajlada.com/chatterino/legal/privacy-policy">Privacy Policy</a>.
+454	FFZ and BTTV emote modifiers
+455	FFZ:AP
+456	Facebook emojis provided by <a href="https://facebook.com">Facebook</a>
+457	Failed to copy '%1' to '%2': %3
+458	Failed to download update.
+459	Failed to load version information.
+460	Failed to read settings: 
+461	Failed to restore file
+462	Failed to run updater.
+463	Failed to write update to disk.
+464	Fake messages as webchat
+465	Favorite
+466	Favorites
+467	Favourite
+468	Fetching name history...
+469	Files that are used often (such as emotes) are saved to disk to reduce bandwidth usage and to speed up loading.
+470	Filter is valid
+471	Filter name
+472	Filters
+473	Find a channel
+474	Find in settings... 
+475	Find mentions of users in chat without the @ prefix.
+476	Folhinha
+477	Follow %1
+478	Followers only
+479	Font
+480	Font:
+481	Form field
+482	Founder and event badges.
+483	Founder and supporter badges.
+484	FrankerFaceZ
+485	Fun
+486	GIF results
+487	GIFs in #
+488	GIFs you send must follow Twitch's Community Guidelines.
+489	General
+490	General Leafyrino tweaks and interface adjustments.
+491	General plugin settings
+492	Gifted by %1
+493	Gifted by an anonymous user
+494	Give each YouTube chatter a stable color based on their channel, like the Twitch colorize option. Roles still use their role color first.
+495	Give each message a faint background tint in its platform's color (Twitch purple, YouTube red, Kick green) so the chats are easy to tell apart.
+496	Give new memberships, milestones and gifted memberships a green highlight.
+497	Global Badge
+498	Google emojis provided by <a href="https://google.com">Google</a>
+499	Grant a random color to users who never set a color for themselves
+500	Handle, channel ID, or URL (e.g. @youtube)
+501	Help
+502	Hex:
+503	Hidden
+504	Hide Live notification popups from appearing. (Windows Only)
+505	Hide all
+506	Hide all tabs
+507	Hide banner here
+508	Hide bans, timeouts, and automod messages from appearing in chat.
+509	Hide blocked terms
+510	Hide blocked terms from showing up in places like AutoMod messages. This can be useful in case you have some blocked terms that you don't want to show on stream.
+511	Hide completed poll and prediction banners after a delay.
+512	Hide deleted messages
+513	Hide emoji button
+514	Hide link thumbnails
+515	Hide message timestamps when channel is live
+516	Hide messages from restricted users
+517	Hide mod actions on moderator usercards
+518	Hide moderation actions
+519	Hide moderator-only commands from tab completion when they are not available in the current channel.
+520	Hide my own messages
+521	Hide pinned message
+522	Hide poll
+523	Hide prediction
+524	Hide scrollbar highlights
+525	Hide scrollbar thumb
+526	Hide similar messages to those previously seen. Toggle hidden messages by pressing 
+527	Hide the emoji/emote picker button next to the message input.
+528	Hide the leading @ on YouTube handles in chat. Clicks, mentions and the user popup still work with the full name.
+529	Hide to tray when closing Leafyrino
+530	Hide unavailable mod commands
+531	Hide usercard avatars
+532	Hide viewer count and stream length while hovering over split header
+533	Hide whispers sent to you from appearing in chat.
+534	Hiding the scrollbar thumb (the handle you can drag) will disable all mouse interaction in the scrollbar.
+535	Highlight
+536	Highlight Super Chats
+537	Highlight matching messages while you type a /nuke command.
+538	Highlight memberships && gifts
+539	Highlight received inline whispers
+540	Highlight the whispers shown in all splits.
+If "Show Twitch whispers inline" is disabled, this setting will do nothing.
+541	Highlights
+542	Highlights messages sent from specified clients using the specified color below.
+543	Homies Custom
+544	Homies Supporter
+545	Hotkeys
+546	Hover a failed channel status for details
+547	Hover only
+548	How close two messages from the same user need to be before they count as repeated.
+549	How long /spam and /pyramid wait between messages. Lower values are faster, but Twitch may still rate-limit accounts that are not mod, VIP, or broadcaster in the channel.
+550	How long pins last when no duration is given.
+551	How many matching messages are required before the counter appears.
+552	How often Chatterino polls the Twitch API for the shared chat session status.
+553	How pin times are formatted.
+554	ID 
+555	If Chatterino has seen a user, highlight @mention's of them with their Twitch color.
+556	If turned off, only messages from other participants have a shared chat badge
+557	Ignore
+558	Ignore VIPs
+559	Ignore highlights
+560	Ignore messages based certain patterns.
+561	Ignores
+562	Image Uploader
+563	Image link
+564	Image upload
+565	Image uploader settings have been copied to clipboard as JSON.
+566	Image uploader settings have been imported successfully!
+567	Import Failed
+568	Import Settings
+569	Import Settings from Clipboard
+570	Import Successful
+571	Import commands from Chatterino 1
+572	Import image uploader settings from clipboard JSON
+573	In live channels show:
+574	In moderation mode
+575	Include Potat commands in suggestions
+576	Include Supibot commands in suggestions
+577	Include built-in shortcuts such as $cf. Your own aliases are suggested separately after you type $$.
+578	Include command shortcuts in Potat suggestions.
+579	Incoming raid banner duration (seconds)
+580	Indefinite
+581	Indefinitely
+582	Input Box
+583	Insert a blockquote
+584	Insert a bullet list item
+585	Insert a heading
+586	Insert a hyperlink
+587	Intelligent
+588	Interface
+589	Invalid account credentials
+590	Invalid filter
+591	JilChat
+592	Join a Kick channel by its name.<br>This is <b>very experimental</b> and Chatterino7 specific. Only basic features are supported. Please report bugs <a href="https://github.com/SevenTV/chatterino7/issues">here</a>.
+593	Join a Twitch channel by its channel name
+594	Join a YouTube channel by its handle or name (e.g. <b>@youtube</b>).<br>Opens the channel's current live chat. This is <b>read-only</b> and <b>experimental</b>.
+595	Join anonymously (read only)
+596	Join the official 7TV <a href="
+597	Join the official Chatterino <a href="
+598	Jump to a channel or open a new one
+599	Keep Leafyrino running in the tray after closing the window.
+600	Keep sound backend alive (requires restart)
+601	Kick
+602	Kick connection preference (requires restart)
+603	LIVE
+604	Large
+605	Last live: 
+606	Last live: 0000-00-00
+607	Leafyrino
+608	Leafyrino - 
+609	Leafyrino - Color picker
+610	Leafyrino - Debug popup
+611	Leafyrino - Discard Backup?
+612	Leafyrino - Editing Settings Forbidden
+613	Leafyrino - License for 
+614	Leafyrino - Overlay
+615	Leafyrino - Restore Backup of 
+616	Leafyrino - hidden tabs
+617	Leafyrino - select stream quality
+618	Leafyrino - streamlink not found
+619	Leafyrino - unable to open in browser
+620	Leafyrino Settings
+621	Leafyrino can automatically change behavior if it detects that any streaming software is running.
+Select which things you want to change while streaming
+622	Leafyrino could not open your browser automatically.
+623	Leave empty for current account
+624	Left
+625	Legacy Login
+626	Legacy Login Helper
+627	Legacy login found. Existing features will keep working. Refresh accounts from settings to show account details.
+628	Let /pin followed by a username pin that user's latest message.
+629	Let /pin followed by text send that message and pin it.
+630	Let URLs wrap at /, ?, &, #, and = instead of staying on one line.
+631	Light system theme
+632	Limerino
+633	Limit length of deleted messages
+634	Limit message height
+635	Limit the width of messages containing ASCII art to match the width of Twitch web chat.
+636	Line color
+637	Line style
+638	Link Previews
+639	List of blocked users:
+640	Live Notifications
+641	Live with %1 viewers
+642	Load AVIF images
+643	Load message history on connect
+644	Load more
+645	Load more messages
+646	Load older messages from Twitch mod logs
+647	Loading category
+648	Loading content labels
+649	Loading messages...
+650	Loading older messages from Twitch mod logs
+651	Loading stream title
+652	Loading tags
+653	Loading...
+654	Lock Submissions
+655	Lock Tab Layout
+656	Locking...
+657	Log In
+658	Log file timestamp format: 
+659	Log in (Opens in browser)
+660	Log in or manage saved Leafyrino accounts.
+661	Log in with Device Login or Legacy Login.
+662	Logging in enables Leafyrino features like pins, polls, predictions, and channel points.
+663	Longer windows smooth out Twitch burst delivery so the counter does not spike and drop to zero between bursts.
+664	Loose
+665	Lowercase domains (anti-phishing)
+666	MAX
+667	MPS averaging window
+668	MPS overlay position
+669	Make all clickable links lowercase to deter phishing attempts.
+670	Make selected text bold
+671	Make selected text italic
+672	Manage
+673	Manage Accounts
+674	Manage channel...
+675	Manage editor and lead mod roles
+676	Mark Tab as Unread on New Messages
+677	Mark tabs with live channels
+678	Markdown parsing (Experimental)
+679	Mass gift banner duration (seconds)
+680	Mass gift banner from how many subs
+681	Max number of history messages to load on connect
+682	Maximum delay between messages
+683	Medium
+684	Mention
+685	Mention users with a comma
+686	Message history provider
+687	Message overflow
+688	Message timestamp format
+689	Message timestamp size
+690	Messages
+691	Messages in /mentions highlights tab
+692	Messages per second
+693	Minimize
+694	Miscellaneous
+695	Missing (Available Now)
+696	Missing / Soon
+697	Mo&derate
+698	Mobile (new) color
+699	Mod channels
+700	Moderation
+701	Moderation mode is enabled by clicking <img width='18' height='18' src=':/buttons/moderationDisabledDarkMode18x18.png'> in a channel that you moderate.<br><br>Moderation buttons can be bound to chat commands such as "/ban {user.name}", "/timeout {user.name} 1000", "/w someusername !report {user.name} was bad in channel {channel.name}" or any other custom text commands.<br>For deleting messages use /delete {msg.id}.<br><br>More information can be found <a href='https://wiki.chatterino.com/Moderation/#moderation-mode'>here</a>.
+702	Moderation tools and chat safety options.
+703	Moderator prediction banner click
+704	Moderators and the broadcaster are always skipped. Enable this if VIPs should be protected too.
+705	Modifier for alternate right-click action
+706	Moltorino
+707	More languages
+708	Mousewheel scroll speed
+709	Move Pin actions to Moderate menu
+710	Move down
+711	Move up
+712	Multiple commands with the same trigger found. Only one of the commands will work.
+713	Mute mention sounds
+714	Mute ping notifications for 15 minutes
+715	Mute your ping sound from playing.
+716	My filter
+717	NUKED!!!
+718	Name
+719	Name history loads after Twitch profile data.
+720	Name matched by regex
+721	Name:
+722	Never
+723	New tag
+724	Nicknames
+725	Nicknames do not work with features such as user highlights and filters.
+With those features you will still need to use the user's original name.
+726	No 7TV profile found
+727	No Badge
+728	No accounts saved yet.
+729	No active poll in this channel.
+730	No active prediction in this channel.
+731	No badges match your search.
+732	No bot badge account verified yet.
+733	No chart data yet for this channel.
+734	No data in the selected time range.
+735	No filters defined
+736	No limit
+737	No link info found (
+738	No name history found
+739	No recent pings
+740	No saved key
+741	No valid image uploader settings found in the JSON.
+742	None
+743	None selected
+744	Nuke mod message:
+745	Number of suggestions in context menu
+746	Off
+747	Ok
+748	Only /pin @username can search for a user's latest message. Bare names are not treated as usernames.
+749	Only highlight rules with Play sound enabled will show a notification while Leafyrino is hidden.
+750	Only if by the same user
+751	Only in channels where I can moderate
+752	Only live tabs
+753	Only logged while Leafyrino is open. Dates are shown in UTC.
+754	Only search for emote autocompletion at the start of emote names
+755	Only search for username autocompletion with an @
+756	Only show live tabs
+757	Only show repeat counters in channels where you can moderate.
+758	Only show repetition counters when the inline mod buttons are visible.
+759	Open &
+760	Open &7TV user in browser
+761	Open &avatar in browser
+762	Open &reward queue
+763	Open 7TV profile
+764	Open AppData directory
+765	Open Leafyrino
+766	Open REPL
+767	Open Sound
+768	Open Twitch Activate and copy an 8-character code.
+769	Open betting view
+770	Open channel &logs in browser
+771	Open channel in &browser
+772	Open channel in a new &popup window
+773	Open channel in a new &tab
+774	Open channel on &YouTube
+775	Open color picker
+776	Open in &Chat Vault
+777	Open in &ChatVault
+778	Open in &logs
+779	Open in &streamlink
+780	Open in Lur&kology
+781	Open in custom &player
+782	Open in custom player
+783	Open in new &tab
+784	Open last ping
+785	Open link &incognito
+786	Open links in incognito/private mode
+787	Open manage view
+788	Open player in &browser
+789	Open poll
+790	Open profile in &ChatVault
+791	Open profile in Lur&kology
+792	Open rewards menu from points balance
+793	Open source software used...
+794	Open the reward queue
+795	Open to reuse one of the last 5 predictions.
+796	Option %1
+797	Optional
+798	Optional Gigantify message
+799	Optional message before the enlarged emote
+800	Optional reason shown to the user and other mods
+801	Optional, for example eastus
+802	Optional. Paste the resource endpoint from Azure.
+803	Outcomes
+804	Outgoing translation
+805	Outgoing translation default
+806	Outgoing translation: %1
+Target: %2
+807	Overlay
+808	Owner, developer, founder, and membership milestones badges.
+809	Parsing errors occurred:
+810	Paste Token
+811	Paste login info
+812	Pause on mouse hover
+813	Pause redemptions
+814	People
+815	Pick Font
+816	Pin Indefinitely
+817	Pin Poll Popup
+818	Pin Prediction Popup
+819	Pin Rewards Popup
+820	Pin Window
+821	Pin chart popup
+822	Pin stream editor
+823	Pin timestamp format
+824	Pinned Messages
+825	Pinned by 
+826	Pinned by %1
+Pinned indefinitely
+827	Pinned by %1 \xC2\xB7 %2
+828	Pinned message banner and pin action options.
+829	Play notification sounds and highlight messages based on certain patterns.
+Message highlights are prioritized over badge highlights and user highlights.
+830	Play notification sounds and highlight messages based on user badges.
+Badge highlights are prioritized under user and message highlights.
+831	Play notification sounds and highlight messages from certain users.
+User highlights are prioritized over badge highlights, but under message highlights.
+832	Plugins
+833	Plugins can expand functionality of Chatterino. They can be made in Lua. This functionality is still in public alpha stage. Use ONLY the plugins you trust. The permission system is best effort, always assume plugins can bypass permissions and can execute arbitrary code. To see how to create plugins 
+834	Plugins will not be fully loaded because Chatterino is in safe mode. You can still enable and disable them.
+835	Point cost unavailable
+836	Points
+837	Points and Rewards
+838	Poll
+839	Poll and Prediction
+840	Poll title (%1 chars)
+841	Poll, prediction, and banner behavior options.
+842	Popup
+843	Popup Tab
+844	Popup overlay
+845	PotatBotat
+846	Prediction
+847	Prediction title (%1 chars)
+848	Predictions
+849	Prefer pinned
+850	Prefer poll
+851	Prefer prediction
+852	Preferred quality
+853	Prevent
+854	Prevent potentially explicit avatars from showing.
+855	Prevent potentially explicit thumbnails from showing when hovering links.
+856	Prevents the rename dialog from opening when a tab is double-clicked
+857	Preview
+858	Previously recorded stream
+859	Pronouns are retrieved from <a href="https://pr.alejo.io">pr.alejo.io</a> when a user card is opened.
+860	Pulse text input when one of your messages is successfully sent
+861	Pulses the text input in a green color whenever a message of yours is successfully sent in the matching channel.
+862	Put Pin and Unpin inside the Moderate submenu when right-clicking a message.
+863	Queue
+864	Quick Add
+865	Quit Leafyrino
+866	RETURN
+867	Range:
+868	Reason:
+869	Receive beta updates
+870	Receive notification sounds from hidden messages
+871	Recent pings
+872	Recently used
+873	Reconnect
+874	Redeem %1
+875	Redeeming...
+876	Reduce opacity of message history
+877	Reduce opacity of messages that were posted before Leafyrino was started or while re-connecting.
+878	Refresh
+879	Refresh Accounts
+880	Refresh YouTube live chat (find the channel's latest stream)
+881	Refresh all available sources
+882	Refresh saved accounts and moderator access.
+883	Region:
+884	Reject
+885	Reject (%1)
+886	Reject all
+887	Relative
+888	Reload
+889	Reload channel emotes
+890	Reload subscriber emotes
+891	Remove
+892	Remove %1
+893	Remove %1 from saved accounts?
+894	Remove @ from usernames
+895	Remove Outcome
+896	Remove account
+897	Remove editor
+898	Remove key
+899	Remove lead moderator
+900	Remove saved key?
+901	Remove spaces between emotes
+902	Remove the saved %1 key?
+903	Remove this tab
+904	Rename Tab
+905	Rename Tab…
+906	Render the author name in white on the colored Super Chat row for readability.
+907	Repetition threshold
+908	Reply
+909	Reply Thread
+910	Reply to &original thread
+911	Replying to @
+912	Request URL
+913	Require @ for /pin <username>
+914	Required permissions:
+915	Requires the Chatterino browser extension
+916	Rerun
+917	Reset
+918	Reset /watching
+919	Reset hotkeys
+920	Reset the time range and chart zoom
+921	Reset to Default
+922	Reset to defaults
+923	Resolving...
+924	Response %1
+925	Responses
+926	Restart on crash (requires restart)
+927	Restore Backup
+928	Restore dismissed banners
+929	Restricted users can be marked by you, your moderators, or Twitch's AutoMod
+930	Retry %1
+931	Return to rewards list after redeeming
+932	Right
+933	Run a commercial for %1 seconds in #%2?
+934	Run commercial
+935	Save
+936	Save and test
+937	Save changes (Ctrl+Enter)
+938	Saved key
+939	Saved reasons are sent with normal timeout and ban clicks. Use the reason prompt when you want to edit the reason first.
+940	Scale Twitch GIFs from 0.5x to 2x.
+941	Search
+942	Search GIFs
+943	Search Giphy
+944	Search User...
+945	Search all emotes...
+946	Search all open tabs
+947	Search categories
+948	Search emotes
+949	Search engine URL
+950	Search engine name
+951	Search engine preset
+952	Search engine which appears when you select text and right-click a message. Select a search engine preset from the dropdown below, or fill in your custom search engine URL and name.
+953	Search in incognito/private mode
+954	Search input history...
+955	Search keybind:
+956	Search...
+957	Searching all open tabs
+958	Searching in 
+959	Search…
+960	Segoe UI
+961	Select Badge
+962	Select Stop to finish the current request and leave the rest selected
+963	Select a channel to join
+964	Select all
+965	Select badge
+966	Select custom sound file
+967	Select filters
+968	Select log directory 
+969	Select next tab
+970	Select previous tab
+971	Select...
+972	Selected
+973	Selectively display messages in Splits using channel filters. Set filters under a Split menu.
+974	Send
+975	Send /spam and /pyramid through the old IRC path instead of Twitch's Helix chat API.
+976	Send activity to 7TV
+977	Send activity to BetterTTV
+978	Send eligible messages through the warning style message flow instead of the normal chat path.
+979	Send enlarged emote · %1
+980	Send message as warnings
+981	Send message in 
+982	Sending to: 
+983	Sending...
+984	Separate with lines
+985	Server:
+986	Service used for incoming and outgoing translations.
+987	Service used to load chat history when joining a channel.
+CHATTERINO2_RECENT_MESSAGES_URL overrides this when set.
+988	Set Context
+989	Set filters…
+990	Set up the Chat Bot badge used by /bot.
+991	Set up translation
+992	Settings
+993	Settings Exported
+994	Settings cannot be edited when running with
+commandline arguments such as '-c'.
+995	Shadow color
+996	Shadow offset x
+997	Shadow offset y
+998	Shadow opacity (0-255)
+999	Shadow radius
+1000	Shared chat session status refresh interval
+1001	Shift
+1002	Shorten by %1 character%2
+1003	Show 
+1004	Show &original
+1005	Show /nuke summary when it finishes
+1006	Show /nuke target preview while typing
+1007	Show /spam and /pyramid status messages
+1008	Show 0 mps
+1009	Show 7TV
+1010	Show 7TV Animated Profile Picture
+1011	Show 7TV channel emotes
+1012	Show 7TV global emotes
+1013	Show 7TV paint
+1014	Show 7TV profile button
+1015	Show @username in the split header
+1016	Show BetterTTV channel emotes
+1017	Show BetterTTV global emotes
+1018	Show FrankerFaceZ channel emotes
+1019	Show FrankerFaceZ global emotes
+1020	Show Gigantify emotes in chat
+1021	Show Markdown Preview
+1022	Show Potat command aliases
+1023	Show Potat commands without a prefix
+1024	Show Super Chats as a colored highlighted row (per tier).
+1025	Show Supibot command aliases
+1026	Show Translate message in right-click menu
+1027	Show Twitch GIFs
+1028	Show Twitch pins, polls && predictions
+1029	Show Twitch status
+1030	Show Twitch whispers inline
+1031	Show Twitch's Gigantify reward and enlarge its selected emote in chat. The /gigantify command still works when this is off.
+1032	Show a Send button next to each split input that can be clicked to send the message
+1033	Show a Twitch system message stating what users have joined the chat, only available when the chat has less than 1000 users
+1034	Show a Twitch system message stating what users have left the chat, only available when chat has less than 1000 users
+1035	Show a chat message when a moderator pins something.
+1036	Show a chat message when a moderator unpins something.
+1037	Show a chat message when someone follows the channel. Only available when you are the broadcaster or a moderator.
+1038	Show a compact command suggestion strip above the message input.
+1039	Show a compact usercard button for previous Twitch names.
+1040	Show a compact usercard menu for adding or removing editor and lead moderator roles. Actions still require a saved broadcaster login.
+1041	Show a compact year and month value next to subscription month counts after the first year.
+1042	Show a duration next to the follow date, like (1y 3m), (3 weeks), or (12 days).
+1043	Show a follow/unfollow button in the top bar above each Twitch chat.
+1044	Show a follow/unfollow button on usercards. Requires Moltorino auth (Settings → Moltorino → Authentication).
+1045	Show a reply button next to every chat message
+1046	Show a usercard button for loading older messages when your saved Leafyrino login can moderate the channel.
+1047	Show a usercard button that opens the user's 7TV profile when available.
+1048	Show account creation date
+1049	Show all
+1050	Show all tabs
+1051	Show already-detected repeat counters beside cached messages in usercards.
+1052	Show announcement header
+1053	Show blocked term automod messages
+1054	Show chat messages when predictions or polls are created, locked, ended, paid out, refunded, or archived.
+1055	Show chatter &list
+1056	Show chatter count
+1057	Show chatter list in all Twitch channels
+1058	Show combined viewer count in the split header
+1059	Show command suggestions while typing
+1060	Show countdown on slow mode or when timed out
+1061	Show counters in usercards
+1062	Show cross ban and cross unban in channels you don't moderate
+1063	Show delete button on my messages
+1064	Show deletions of single messages
+1065	Show editor and lead mod role menu
+1066	Show emote & badge thumbnail on hover
+1067	Show emotes in the chat input
+1068	Show follow button
+1069	Show follow button in chat header
+1070	Show follow notifications in chat
+1071	Show followage
+1072	Show follower count
+1073	Show full date when hovering timestamps
+1074	Show gift sub gifter
+1075	Show header timestamps
+1076	Show how long the channel has been live
+1077	Show how long the user has followed this channel. Only available when you are the broadcaster or a moderator.
+1078	Show how long you may need to wait before being able to send in a Twitch channel again if the channel is in slow mode or if you have been timed out
+1079	Show how many characters are currently in your input box.
+Useful for making sure you don't go past the 500 character Twitch limit, or a lower limit enforced by a moderation bot
+1080	Show how many users are watching
+1081	Show incoming raid banner
+1082	Show input when it's empty
+1083	Show joined users (< 1000 chatters)
+1084	Show last live
+1085	Show live viewer count
+1086	Show load more messages button
+1087	Show mass gifted subs banner
+1088	Show message length while typing
+1089	Show message reply button
+1090	Show message reply context
+1091	Show messages for timeouts, bans, and other moderator actions.
+1092	Show messages from blocked users:
+1093	Show messages that are blocked by AutoMod for containing a public blocked term in the current channel.
+1094	Show messages-per-second (mps) overlay in splits
+1095	Show mod actions on mod usercards as lead mod
+1096	Show mod/unmod and vip/unvip buttons as a lead mod
+1097	Show moderation messages
+1098	Show multiple channels in one split. From the input box, you can select an active/context channel to send messages in. Report issues <a href="https://github.com/SevenTV/chatterino7/issues">here</a>.
+1099	Show muted (translated) text after translated messages.
+1100	Show name history
+1101	Show name history button
+1102	Show notifications for sound-enabled highlights
+1103	Show one compact chat message after /nuke finishes.
+1104	Show only in moderation mode
+1105	Show only points recorded in the selected period
+1106	Show parted users (< 1000 chatters)
+1107	Show pin button on mods and broadcaster
+1108	Show pin notifications in chat
+1109	Show pinned messages
+1110	Show placeholder in text input box (requires restart)
+1111	Show points balance
+1112	Show poll banners and open poll menus from Leafyrino.
+1113	Show poll button
+1114	Show polls
+1115	Show prediction banners and open prediction menus from Leafyrino.
+1116	Show prediction button
+1117	Show prediction chat messages
+1118	Show predictions
+1119	Show preferences button
+1120	Show raid countdown above chat input
+1121	Show relative followage
+1122	Show relative sub duration
+1123	Show repeated or very similar messages with an inline counter such as x2, x3, or x4.
+1124	Show repeated-message counters
+1125	Show role buttons on usercards when Twitch confirms you are a lead moderator.
+1126	Show select badge button
+1127	Show send message button
+1128	Show shared chat badge for all messages
+1129	Show stream title in live message
+1130	Show subscription age
+1131	Show subscription header
+1132	Show tab close button
+1133	Show the Twitch channel's avatar on its tab. With "Avatar only", the other tabs show just the avatar and the name appears on hover.
+1134	Show the Twitch pinned message, poll and prediction banners from the Twitch channel in this multi split.
+1135	Show the badge picker button in the chat input bar.
+1136	Show the channel @handle in the split header instead of the display name. Hovering always shows the handle.
+1137	Show the chat box even when there is nothing typed.
+1138	Show the chat input translation button.
+1139	Show the chatter list button even when you are not a moderator.
+1140	Show the current chatter count when available.
+1141	Show the edit stream info button in the chat header
+1142	Show the edit stream info shortcut in the chat header when broadcaster or editor access is available.
+1143	Show the full message date and time when hovering a timestamp. Uses your message timestamp format for the time portion.
+1144	Show the pinned message banner above chat.
+1145	Show the poll button next to the message input.
+1146	Show the prediction button next to the message input.
+1147	Show the raid target, viewer count, and countdown above the message input.
+1148	Show the start and finished messages for /spam and /pyramid. Errors and manual stop messages still show.
+1149	Show the stream title
+1150	Show the summed live viewer count of all channels in this multi split's header.
+1151	Show the user's Twitch chat color.
+1152	Show the user's equipped 7TV paint on the usercard.
+1153	Show thumbnails of streams
+1154	Show translated indicator
+1155	Show translation button
+1156	Show unlisted 7TV emotes
+1157	Show unpin notifications in chat
+1158	Show user button
+1159	Show user color
+1160	Show user's pronouns in user card
+1161	Show username autocompletion popup menu
+1162	Show watch streak header
+1163	Show what Category the stream is listed under
+1164	Show when a single message is deleted.
+e.g. A message from TreuKS was deleted: abc
+1165	Show when the user was last live. Hover the row to see the stream title.
+1166	Show whether the user is Staff, Partner, Affiliate, or Regular.
+1167	Show whispers as messages in all splits instead of just /whispers.
+1168	Show your channel points next to the message input.
+1169	Showing latest %1 names
+1170	Showing the most recent requests first
+1171	Showing the oldest requests first
+1172	Shows a faint overlay label (e.g. "12 mps") with the average number of messages per second over the selected window.
+1173	Shows a red dot in the top right corner of a tab to indicate one of the channels in the tab is live.
+1174	Shows all the messages that highlight you from any channel
+1175	Shows the whispers that you receive while Chatterino is running
+1176	Shows when AutoMod catches a message in any channel you moderate.
+1177	Shows when channels go live
+1178	Sign in with Device Login. Leafyrino will open Twitch Activate and copy an 8-character code for you to paste there.
+1179	Similarity sensitivity
+1180	Similarity threshold
+1181	Size
+1182	Skip VIPs when using /nuke
+1183	Slightly change the background behind every other message to help better tell them apart.
+1184	Slow
+1185	Small
+1186	Smooth scrolling
+1187	Smooth scrolling on new messages
+1188	Soft
+1189	Sort Tabs Alphabetically
+1190	Sort by newest
+1191	Sort by oldest
+1192	Sound
+1193	Sound backend (requires restart)
+1194	Spam, pyramid, and playful chat command options.
+1195	Spell checker (experimental)
+1196	Split message scrollback limit (requires restart)
+1197	Stack
+1198	Stack timeouts
+1199	Stack until timeout
+1200	Staff, contributor, founder, and supporter badges.
+1201	Start
+1202	Start Device Login
+1203	Start Leafyrino when your computer starts.
+1204	Start Poll
+1205	Start Prediction
+1206	Start a Poll
+1207	Start a Prediction
+1208	Start lazy-loading older usercard messages without clicking the load button.
+1209	Start with Windows
+1210	Starting...
+1211	Status
+1212	Status: 
+1213	Status: ...
+1214	Stop
+1215	Stopping...
+1216	Stops viewers from redeeming this reward until it is unpaused
+1217	Stream language
+1218	Streamer Mode
+1219	Streamlink
+1220	Streamlink is a command-line utility that pipes video streams from various services into a video player, such as VLC. Make sure to edit the configuration file before you use it!
+1221	Strict
+1222	Strip leading mention in replies
+1223	Submissions closing...
+1224	Submissions locked
+1225	Subscribe to thread
+1226	Subscriber 
+1227	Subscriber only
+1228	Suggest Potat commands after you type that channel's prefix, including custom commands that use it, when PotatBotat is joined.
+1229	Suggest Supibot $ commands after you type $, in channels where Supibot is active.
+1230	Supibot commands
+1231	Suppress Inline Whispers
+1232	Suppress Live Notifications
+1233	Switch banner
+1234	Switch to manage view (lock/resolve/cancel)
+1235	Tab Color
+1236	Tab layout
+1237	Tab style
+1238	Tab visibility
+1239	Target language
+1240	Target language for translated chat messages.
+1241	Technorino
+1242	Tell viewers what you're streaming
+1243	Temporary files (Cache)
+1244	Test
+1245	Text color for the inline repeated-message counter.
+1246	The Kick API does not provide an OAuth flow for local chat clients like Chatterino to authenticate without exposing the client secret or using an external server that would need to see <i>all</i> tokens of <i>all</i> users.<br>Because of this, the <b>experimental</b> Kick login is intended for developers with application credentials until Kick adds a suitable OAuth flow.<br><br>Developer applications can be found at <a href="https://kick.com/settings/developer">kick.com/settings/developer</a>. The following redirect URL <b>must</b> be added: <b><code>
+1247	The Moltorino tab enables channel points, pinned messages, and other mod features. The usual login below is enough for chat.
+1248	The browser extension replaces the default Twitch.tv chat with Chatterino, and updates the /watching split on Chatterino when Twitch.tv is open.
+1249	The browser extension updates the /watching split on Chatterino when Twitch.tv is open.
+1250	The current request will finish. Remaining channels will stay selected.
+1251	The legacy helper command was copied to your clipboard.
+
+1. Twitch was opened in your browser.
+2. Press F12 and open the Console tab.
+3. Paste the copied command and press Enter.
+4. Come back here and click Paste Token.
+1252	The portable updater (expected in 
+1253	The read connection is the one where Chatterino joins a channel and listens to the messages.
+- Authenticated: Join as your logged in user.
+- Anonymous: Join as an anonymous user. This causes to you not show up in the viewer list.
+- Anonymous (parallel): Join as an anonymous user on multiple connections at once. This speeds up the connection phase when joining many channels. The other modes will join in delayed batches.
+1254	The system tray is not available in this desktop session.
+1255	The title in the message will be the title the streamer set when they went live, and will not update as the streamer updates their title.
+1256	The transport to use for receiving Kick messages.
+- Default: Use Pusher.
+- Pusher: Use Kick's Pusher app. This was historically the default, but the web app has moved on.
+- Centrifugo: Use Kick's centrifugo instance. This is usually used by default on the web.
+- Any: Advertise support for both Pusher and Centrifugo. This matches the behaviour on the web.
+
+1257	Theme
+1258	There was an error while loading this plugin: 
+1259	There were errors while loading metadata for this plugin:
+1260	These are the channels for which you will be informed when they go live:
+1261	This Leafyrino build never registers browser integration: the registry entry it would write is shared with other Chatterino clients and would take their browser extension over.
+1262	This YouTube chat is read-only
+1263	This aims to match the appearance of paints in the browser.
+1264	This requires '7TV live updates' to work.
+1265	This setting makes Chatterino output silence to your sound device, even if no ping is being played. Try this setting if you have issues with wireless devices not playing the first sound. Note that this can prevent your monitor or computer from sleeping.
+1266	This setting will only affect how messages are shown. You can reply to a message regardless of this setting.
+1267	This sound will play for all highlight phrases that have sound enabled and don't have a custom sound set.
+1268	This theme is selected if your system is in a dark theme and you enabled the adaptive 'System' theme.
+1269	This theme is selected if your system is in a light theme and you enabled the adaptive 'System' theme.
+1270	This will ensure a broadcaster is always easy to ping, even if they don't have chat open or have typed recently.
+1271	This will overwrite your current image uploader settings. Continue?
+1272	This window will close automatically.
+1273	Time + Countdown
+1274	Time only
+1275	Time:
+1276	Timer display
+1277	Tint message background by platform
+1278	Title
+1279	Top
+1280	Top most window
+1281	Translate messages to
+1282	Translates new visible chat messages in this channel as they arrive. Risky in fast chats because translation requests can hit rate limits, fail, or skip messages.
+1283	Translating before send...
+1284	Translating to %1 before send...
+1285	Translating to %1...
+1286	Translation
+1287	Translation service
+1288	Tray
+1289	Tray notifications are not available in this desktop session.
+1290	Try again
+1291	Try to find usernames without @ prefix
+1292	Try to use Twitch's timestamp (the time when the message was received by Twitch's chat server), rather than your computer's local timestamp.
+Note that using this setting can result in out-of-order timestamps in the log files, and that if Twitch's timestamp was unavailable for a message, it will fall back to your computer's local timestamp.
+1293	Turn off all modifier effects without changing your individual choices. Disabled modifiers appear as separate emote icons.
+1294	Twemoji emojis provided by <a href="https://github.com/twitter/twemoji">Twitter's Twemoji</a>
+1295	Twitch Colors
+1296	Twitch GIF size
+1297	Twitch GIFs will be shown inline. When disabled, they're shown as links.
+1298	Twitch application Client ID
+1299	Twitch application Client Secret
+1300	Twitch chat behavior, compatibility, and client experience options.
+1301	Twitch emote data provided by <a href="https://chatvau.lt/">Chat Vault</a>
+1302	Twitch read connection mode (requires restart)
+1303	Type something...
+1304	Type to search
+1305	Unable to check saved key
+1306	Unavailable
+1307	Unban selected
+1308	Unexpected filter return type
+1309	Unfavorite
+1310	Unfollow %1
+1311	Unfollow channel?
+1312	Unique chat (R9K)
+1313	Unmute ping notifications
+1314	Unpin Message
+1315	Unpin for everyone
+1316	Unpin message
+1317	Unshorten links
+1318	Uptime
+1319	Use IRC for /spam and /pyramid
+1320	Use Legacy Login only if Device Login fails. Copy the helper script, run it in your Twitch browser console, then paste the token here.
+1321	Use Twitch's timestamps
+1322	Use bot limits for JOINs
+1323	Use bot limits for messages
+1324	Use custom FrankerFaceZ VIP badges
+1325	Use custom FrankerFaceZ moderator badges
+1326	Use custom path (Enable if using non-standard streamlink installation path)
+1327	Use experimental smarter emote completion.
+1328	Use global endpoint
+1329	Use larger 7TV Paint Shadows
+1330	Use legacy scaling (requires restart)
+1331	Use message colors for tab alerts
+1332	Use the configured reason prompt shortcut to edit the reason before sending.
+1333	Use your saved account's channels even when you cannot moderate the channel you are viewing.
+1334	Used when /commercial has no duration. An explicit duration, such as /commercial 60, overrides this.
+1335	User %1
+1336	Usercard
+1337	Usercard scrollback limit (requires restart)
+1338	Usercards
+1339	Username
+1340	Username font weight
+1341	Username right-click behavior
+1342	Username right-click with modifier behavior
+1343	Username style
+1344	VOTES
+1345	Valid filter
+1346	Vanity
+1347	Verify
+1348	Version
+1349	View &thread
+1350	View channel points history chart
+1351	View earned Twitch badges
+1352	View points chart
+1353	Viewer count
+1354	Visible badges
+1355	Vote
+1356	Vote (%1)
+1357	Voting ended
+1358	Voting...
+1359	Wager
+1360	Wait %1s
+1361	Waiting...
+1362	Watching tab live sound
+1363	Webchat color
+1364	Weight
+1365	What opens when a moderator clicks a prediction banner.
+1366	What the close button does on a pinned message banner.
+1367	When a message highlights a tab, use that highlight color for the tab alert line.
+1368	When bot mode is on, send normal messages through the bot badge account even if another account is selected.
+1369	When checked, messages that are very similar to each other can still be shown as long as they're sent by different users.
+1370	When disabled, emote tab-completion will complete based on any part of the name.
+e.g. sheffy -> DatSheffy
+1371	When disabled, emotes that overlap other emotes, such as BTTV's cvMask and 7TV's RainTime, will appear as normal emotes.
+1372	When disabled, messages sent in reply threads will include the @mention for the related thread. If the reply context is hidden, these mentions will never be stripped.
+1373	When disabled, the /mentions tab will not highlight in red when you are mentioned.
+1374	When disabled, the x to close a tab will be hidden.
+Tabs can still be closed by right-clicking or pressing 
+1375	When enabled and an AVIF decoder is found, AVIF images will be preferred over WEBP on 7TV. This saves bandwidth.
+1376	When enabled, "right-click + copy link" will copy the unshortened version of the link.
+e.g. https://bit.ly/mrfors -> https://forsen.tv/
+1377	When enabled, Leafyrino will signal an activity to 7TV when you send a chat message. This is used for badges, paints, and personal emotes. When disabled, no activity is sent and others won't see your cosmetics.
+1378	When enabled, Leafyrino will signal an activity to BetterTTV when you send a chat message. This is used for badges,  and personal emotes. When disabled, no activity is sent and others won't see your cosmetics.
+1379	When enabled, adjacent emotes will no longer have an added space separating them.
+1380	When enabled, channel emotes will get updated automatically (no reload required) and cosmetics (badges/paints/personal emotes) will get updated.
+1381	When enabled, messages deleted by moderators will be hidden.
+1382	When enabled, opening links/usercards requires double-clicking.
+Useful for making sure you don't accidentally click on suspicious links.
+Clicking a link once will pause the chat briefly to allow for a less accident-prone double-clicking.
+1383	When enabled, replaces the red live dot next to the username with the live viewer count.
+1384	When enabled, username tab-completion will only complete when using @
+e.g. pajl -> pajl | @pajl -> @pajlada
+1385	When enabled, you will automatically subscribe to reply threads you participate in.
+This means reply threads you participate in will use your "Subscribed Reply Threads" highlight settings.
+1386	When horizontal tabs are wrapped, extend the line for the whole width of the window.
+1387	When mod actions are hidden on moderator usercards, show them anyway if Twitch confirms you are a lead moderator. Broadcaster usercards stay hidden.
+1388	When off, clicking the balance only refreshes points. Use /redeem to open rewards.
+1389	When possible, restart Chatterino if the program crashes
+1390	When right-clicking any word, show this many suggestions. If this is 0, no suggestions will be shown and if it's -1, no limit is set.
+1391	When the selected account is the configured bot account, send normal chat messages through the Bot Badge.
+1392	When the user has an active gifted subscription in a channel, show who gifted it on the usercard.
+1393	When using tab-completion, if the username is at the start of the message, include a comma at the end of the name.
+e.g. pajl -> pajlada,
+1394	When you are a moderator, hide timeout and ban controls on moderator and broadcaster usercards. Broadcasters still see the full controls.
+1395	White username in Super Chats
+1396	Window
+1397	With this setting enabled, typing the colon character opens the colon-completion popup which gives you an updating list of emotes matching the text after the colon.
+1398	Wrap links at breaks
+1399	Yes, don't ask again
+1400	You can be informed when certain channels go live. You must be logged in to receive live notifications.
+You can be informed in multiple ways:
+1401	You can ignore this warning after you have removed or edited the above-mentioned hotkeys.
+1402	You can load plugins by putting them into 
+1403	You can open Twitch streams directly in any video player that has built-in Twitch support and its own URI Scheme.
+E.g.: IINA for macOS and PotPlayer (with extension) for Windows.
+
+With this value set, you will get the option to "Open in custom player" when right-clicking a channel header.
+1404	You can receive updates earlier by ticking the box below. Report issues <a href='https://chatterino.com/link/issues'>here</a>.
+1405	You can set custom host for uploading images, like imgur.com or s-ul.eu.<br>Check 
+1406	You shouldn't be seeing this dialog.
+1407	You've just hidden your tabs.
+1408	YouTube
+1409	Your operating system is not officially supplied with builds. For updates, please rebuild Chatterino from sources. Report issues <a href='https://chatterino.com/link/issues'>here</a>.
+1410	Zoom
+1411	Zoom factor
+1412	a = am/pm, zzz = milliseconds
+1413	aka
+1414	anonymous
+1415	e.g. Bot, FrankerFaceZ supporter, FrankerFaceZ developer
+1416	e.g. Chatterino Supporter/Contributor/Developer
+1417	e.g. broadcaster, moderator
+1418	e.g. prime, bits, sub gifter
+1419	e.g. staff, admin
+1420	h:mm
+1421	h:mm a
+1422	h:mm:ss
+1423	h:mm:ss a
+1424	h:mm:ss.zzz
+1425	h:mm:ss.zzz a
+1426	hh:mm
+1427	hh:mm a
+1428	hh:mm:ss
+1429	hh:mm:ss a
+1430	hh:mm:ss.zzz
+1431	hh:mm:ss.zzz a
+1432	iOS color
+1433	move split
+1434	optional ban reason
+1435	optional timeout reason
+1436	placeholder :D
+1437	pt
+1438	x link

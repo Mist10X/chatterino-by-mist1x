@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "providers/moltorino/MoltorinoFeatureFlags.hpp"
 
 #if MOLTORINO_ENABLE_CHANNEL_POINT_REWARDS
@@ -67,7 +68,7 @@ ChannelPointsChartDialog::ChannelPointsChartDialog(TwitchChannel *channel,
 {
     this->setAttribute(Qt::WA_DeleteOnClose);
     this->setObjectName("ChannelPointsChartDialog");
-    this->setWindowTitle(QStringLiteral("Channel Points Chart"));
+    this->setWindowTitle(uiText(QStringLiteral("Channel Points Chart")));
     this->setScaleIndependentSize(DEFAULT_DIALOG_SIZE);
 
     auto *container = this->getLayoutContainer();
@@ -101,7 +102,7 @@ ChannelPointsChartDialog::ChannelPointsChartDialog(TwitchChannel *channel,
     headerLayout->addLayout(headerTextLayout, 1);
 
     this->pinButton_ = this->createPinButton();
-    this->pinButton_->setToolTip(QStringLiteral("Pin chart popup"));
+    this->pinButton_->setToolTip(uiText(QStringLiteral("Pin chart popup")));
     headerLayout->addWidget(this->pinButton_);
 
     this->closeButton_ = new SvgButton(
@@ -111,7 +112,7 @@ ChannelPointsChartDialog::ChannelPointsChartDialog(TwitchChannel *channel,
         },
         this, QSize{3, 3});
     this->closeButton_->setScaleIndependentSize(18, 18);
-    this->closeButton_->setToolTip(QStringLiteral("Close"));
+    this->closeButton_->setToolTip(uiText(QStringLiteral("Close")));
     this->closeButton_->setCursor(Qt::PointingHandCursor);
     QObject::connect(this->closeButton_, &Button::leftClicked, this,
                      &QWidget::close);
@@ -251,11 +252,11 @@ void ChannelPointsChartDialog::showEvent(QShowEvent *event)
 void ChannelPointsChartDialog::refreshHeader()
 {
     this->headerTitleLabel_->setText(
-        QStringLiteral("%1's channel points")
+        uiText(QStringLiteral("%1's channel points"))
             .arg(channelDisplayName(this->channel_)));
     this->headerSubtitleLabel_->setText(
-        QStringLiteral("Only logged while Leafyrino is open. Dates are shown "
-                       "in UTC."));
+        uiText(QStringLiteral("Only logged while Leafyrino is open. Dates are shown "
+                       "in UTC.")));
 }
 
 void ChannelPointsChartDialog::refreshStyle()

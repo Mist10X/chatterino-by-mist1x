@@ -288,6 +288,7 @@ void makeModerateMessage(
 
     builder.setMessageAndSearchText(text);
     builder->timeoutUser = action.userLogin.qt();
+    builder->timeoutUserID = action.userID.qt();
 }
 
 void makeModerateMessage(
@@ -315,6 +316,7 @@ void makeModerateMessage(
 
     builder.setMessageAndSearchText(text);
     builder->timeoutUser = action.userLogin.qt();
+    builder->timeoutUserID = action.userID.qt();
 }
 
 void makeModerateMessage(
@@ -323,7 +325,7 @@ void makeModerateMessage(
     const lib::payload::channel_moderate::v2::Delete &action)
 {
     builder->flags.set(MessageFlag::DoNotTriggerNotification,
-                       MessageFlag::ModerationAction);
+                       MessageFlag::ModerationAction, MessageFlag::Deletion);
 
     (void)event;
     builder->loginName.clear();
@@ -362,6 +364,7 @@ void makeModerateMessage(
                .arg(action.userLogin.qt(), text);
     builder.setMessageAndSearchText(text);
     builder->timeoutUser = action.userLogin.qt();
+    builder->timeoutUserID = action.userID.qt();
 }
 
 void makeModerateMessage(

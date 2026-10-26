@@ -50,12 +50,14 @@
 #include <QCursor>
 #include <QDateTime>
 #include <QDesktopServices>
+#include <QGuiApplication>
 #include <QHash>
 #include <QJsonObject>
 #include <QLocale>
 #include <QPainter>
 #include <QPoint>
 #include <QRegularExpression>
+#include <QScreen>
 #include <QSet>
 #include <QString>
 #include <QStringList>
@@ -1136,6 +1138,23 @@ QString runFollowCommand(const CommandContext &ctx, bool unfollow)
 }
 
 }  // namespace
+
+QString reconnectChat(const CommandContext &ctx)
+{
+    if (ctx.channel == nullptr)
+    {
+        return "";
+    }
+    if (!ctx.channel->canReconnect())
+    {
+        ctx.channel->addSystemMessage(
+            "Эту вкладку переподключить нельзя.");
+        return "";
+    }
+    ctx.channel->addSystemMessage("Переподключение к чату…");
+    ctx.channel->reconnect();
+    return "";
+}
 
 QString follow(const CommandContext &ctx)
 {
@@ -2427,14 +2446,28 @@ QString openUsercard(const CommandContext &ctx)
     QPoint center = QCursor::pos();
     if (currentSplit != nullptr && currentSplit->window() != nullptr)
     {
-        center = currentSplit->window()->geometry().center();
+        auto *parentWindow = currentSplit->window();
+        center = parentWindow->mapToGlobal(parentWindow->rect().center());
     }
 
     userPopup->show();
     const auto size = userPopup->size();
-    userPopup->showAndMoveTo(
-        center - QPoint(size.width() / 2, size.height() / 2),
-        widgets::BoundsChecking::DesiredPosition);
+    QPoint position = center - QPoint(size.width() / 2, size.height() / 2);
+    if (auto *screen = QGuiApplication::screenAt(center))
+    {
+        // DesiredPosition selects a screen from the popup's top-left. Keep
+        // that point on the parent's screen even when centering would cross
+        // into a neighbouring monitor. Oversized popups start at its edge.
+        const auto available = screen->availableGeometry();
+        position.setX(std::clamp(
+            position.x(), available.left(),
+            std::max(available.left(), available.right() - size.width() + 1)));
+        position.setY(std::clamp(
+            position.y(), available.top(),
+            std::max(available.top(), available.bottom() - size.height() + 1)));
+    }
+    userPopup->showAndMoveTo(position,
+                             widgets::BoundsChecking::DesiredPosition);
     userPopup->raise();
     userPopup->activateWindow();
     return "";

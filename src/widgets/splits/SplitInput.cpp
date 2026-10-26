@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/splits/SplitInput.hpp"
 
 #include "Application.hpp"
@@ -48,11 +49,14 @@
 #include "widgets/helper/ChannelView.hpp"
 #include "widgets/helper/CmdDeleteKeyFilter.hpp"
 #include "widgets/helper/MessageView.hpp"
+#include "widgets/helper/ChannelPointsLabel.hpp"
 #include "widgets/helper/ResizingTextEdit.hpp"
 #include "widgets/Notebook.hpp"
 #include "widgets/Scrollbar.hpp"
 #include "widgets/splits/InputCompletionPopup.hpp"
 #include "widgets/splits/InputHighlighter.hpp"
+#include "singletons/helper/GifTimer.hpp"
+#include "controllers/emotes/EmoteController.hpp"
 #include "widgets/splits/Split.hpp"
 #include "widgets/splits/SplitContainer.hpp"
 
@@ -149,7 +153,8 @@ QString formatChannelPointsValue(qint64 balance)
         return QStringLiteral("...");
     }
 
-    return formatCompactNumber(balance, 2);
+    // the whole number, as Chatterino+ shows it ("13 450", not "13k")
+    return getSystemLocale().toString(balance);
 }
 
 QString formatChannelPointsToolTip(qint64 balance)
@@ -157,20 +162,20 @@ QString formatChannelPointsToolTip(qint64 balance)
     const auto action =
 #if MOLTORINO_ENABLE_CHANNEL_POINT_REWARDS
         getSettings()->openRewardsWithChannelPointsClick
-            ? QStringLiteral("Click to open rewards")
-            : QStringLiteral("Click to refresh");
+            ? uiText(QStringLiteral("Click to open rewards"))
+            : uiText(QStringLiteral("Click to refresh"));
 #else
-        QStringLiteral("Click to refresh");
+        uiText(QStringLiteral("Click to refresh"));
 #endif
 
     if (balance >= 0)
     {
         const auto locale = getSystemLocale();
-        return QStringLiteral("Channel Points: %1\n%2")
+        return uiText(QStringLiteral("Channel Points: %1\n%2"))
             .arg(locale.toString(balance), action);
     }
 
-    return QStringLiteral("Channel Points: loading...\n%1").arg(action);
+    return uiText(QStringLiteral("Channel Points: loading...\n%1")).arg(action);
 }
 
 QString channelPointsIdleToolTip()
@@ -178,10 +183,10 @@ QString channelPointsIdleToolTip()
 #if MOLTORINO_ENABLE_CHANNEL_POINT_REWARDS
     if (getSettings()->openRewardsWithChannelPointsClick)
     {
-        return QStringLiteral("Channel Points (click to open rewards)");
+        return uiText(QStringLiteral("Channel Points (click to open rewards)"));
     }
 #endif
-    return QStringLiteral("Channel Points (click to refresh)");
+    return uiText(QStringLiteral("Channel Points (click to refresh)"));
 }
 
 QString normalizedOutgoingTranslationMode(QString mode)
@@ -200,11 +205,11 @@ QString outgoingTranslationModeLabel(const QString &mode)
     const auto normalized = normalizedOutgoingTranslationMode(mode);
     if (normalized == QLatin1String(OUTGOING_TRANSLATION_PREVIEW))
     {
-        return QStringLiteral("Preview only");
+        return uiText(QStringLiteral("Preview only"));
     }
     if (normalized == QLatin1String(OUTGOING_TRANSLATION_SEND))
     {
-        return QStringLiteral("Translate on send");
+        return uiText(QStringLiteral("Translate on send"));
     }
     return QStringLiteral("Off");
 }
@@ -234,7 +239,7 @@ qint64 remainingRaidMilliseconds(const TwitchChannel::RaidEvent &raid)
 
 QString raidViewerText(int viewerCount)
 {
-    return QStringLiteral("%1 viewer%2")
+    return uiText(QStringLiteral("%1 viewer%2"))
         .arg(std::max(0, viewerCount))
         .arg(viewerCount == 1 ? QString() : QStringLiteral("s"));
 }
@@ -260,32 +265,32 @@ QString warningMessageError(HelixWarnUserError error, const QString &message,
     switch (error)
     {
         case Error::ConflictingOperation:
-            return QStringLiteral("There was a conflicting warn operation on "
-                                  "this user. Please try again.");
+            return uiText(QStringLiteral("There was a conflicting warn operation on "
+                                  "this user. Please try again."));
 
         case Error::Forwarded:
             return message;
 
         case Error::Ratelimited:
-            return QStringLiteral("You are being ratelimited by Twitch. Try "
-                                  "again in a few seconds.");
+            return uiText(QStringLiteral("You are being ratelimited by Twitch. Try "
+                                  "again in a few seconds."));
 
         case Error::CannotWarnUser:
-            return QStringLiteral("You cannot warn %1.").arg(displayName);
+            return uiText(QStringLiteral("You cannot warn %1.")).arg(displayName);
 
         case Error::UserMissingScope:
-            return QStringLiteral("Missing required scope. Re-login with your "
-                                  "account and try again.");
+            return uiText(QStringLiteral("Missing required scope. Re-login with your "
+                                  "account and try again."));
 
         case Error::UserNotAuthorized:
-            return QStringLiteral(
-                "You don't have permission to perform that action.");
+            return uiText(QStringLiteral(
+                "You don't have permission to perform that action."));
 
         case Error::Unknown:
-            return QStringLiteral("An unknown error has occurred.");
+            return uiText(QStringLiteral("An unknown error has occurred."));
     }
 
-    return QStringLiteral("An unknown error has occurred.");
+    return uiText(QStringLiteral("An unknown error has occurred."));
 }
 
 void sendWarningMessageToTarget(const ChannelPtr &channel,
@@ -310,7 +315,7 @@ void sendWarningMessageToTarget(const ChannelPtr &channel,
                 }
 
                 channel->addSystemMessage(
-                    QStringLiteral("Failed to send message as warning - %1")
+                    uiText(QStringLiteral("Failed to send message as warning - %1"))
                         .arg(warningMessageError(error, message, displayName)));
             });
     };
@@ -336,8 +341,8 @@ void sendWarningMessageToTarget(const ChannelPtr &channel,
                 if (channel != nullptr)
                 {
                     channel->addSystemMessage(
-                        QStringLiteral("Failed to send message as warning - "
-                                       "bad target username: %1")
+                        uiText(QStringLiteral("Failed to send message as warning - "
+                                       "bad target username: %1"))
                             .arg(QString::fromLatin1(
                                 WARNING_MESSAGE_TARGET_LOGIN)));
                 }
@@ -353,8 +358,8 @@ void sendWarningMessageToTarget(const ChannelPtr &channel,
             if (channel != nullptr)
             {
                 channel->addSystemMessage(
-                    QStringLiteral("Failed to send message as warning - "
-                                   "could not look up %1.")
+                    uiText(QStringLiteral("Failed to send message as warning - "
+                                   "could not look up %1."))
                         .arg(
                             QString::fromLatin1(WARNING_MESSAGE_TARGET_LOGIN)));
             }
@@ -432,6 +437,9 @@ SplitInput::SplitInput(QWidget *parent, Split *_chatWidget,
     this->raidStatusTimer_.setInterval(RAID_STATUS_PROGRESS_TICK_MS);
     QObject::connect(&this->raidStatusTimer_, &QTimer::timeout, this,
                      &SplitInput::updateRaidStatus);
+    this->ownRestrictionTimer_.setInterval(1000);
+    QObject::connect(&this->ownRestrictionTimer_, &QTimer::timeout, this,
+                     &SplitInput::updateOwnRestriction);
 
     // The textEdit's signal will be destroyed before this SplitInput is
     // destroyed, so we can safely ignore this signal's connection.
@@ -443,6 +451,33 @@ SplitInput::SplitInput(QWidget *parent, Split *_chatWidget,
     // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
     auto *spellChecker = getApp()->getSpellChecker();
     this->inputHighlighter = new InputHighlighter(*spellChecker, this);
+    this->ui_.textEdit->paintOverlay = [this](QPainter &painter) {
+        this->inputHighlighter->paintEmotes(painter, *this->ui_.textEdit);
+    };
+    // Emote images arrive later than the text: lay the line out again then.
+    this->signalHolder_.managedConnect(
+        getApp()->getWindows()->layoutRequested, [this](Channel *) {
+            if (this->inputHighlighter->takePendingSizes())
+            {
+                this->inputHighlighter->rehighlight();
+            }
+            if (this->inputHighlighter->showsEmotes())
+            {
+                this->ui_.textEdit->viewport()->update();
+            }
+        });
+    this->signalHolder_.managedConnect(
+        getApp()->getEmotes()->getGIFTimer()->signal, [this] {
+            if (this->inputHighlighter->showsEmotes())
+            {
+                this->ui_.textEdit->viewport()->update();
+            }
+        });
+    getSettings()->showEmotesInInput.connect(
+        [this](const auto &, auto) {
+            this->checkSpellingChanged();
+        },
+        this->managedConnections_, false);
     this->updateChannel();
 
     this->signalHolder_.managedConnect(this->split_->channelChanged, [this] {
@@ -630,7 +665,7 @@ void SplitInput::handleImagePaste(const QMimeData *source)
     if (images.empty())
     {
         channel->addSystemMessage(
-            QString("An error occurred trying to process your image: %1")
+            uiText(QString("An error occurred trying to process your image: %1"))
                 .arg(imageProcessError));
         return;
     }
@@ -638,16 +673,16 @@ void SplitInput::handleImagePaste(const QMimeData *source)
     if (getSettings()->askOnImageUpload.getValue())
     {
         QMessageBox msgBox(this->window());
-        msgBox.setWindowTitle("Leafyrino");
-        msgBox.setText("Image upload");
+        msgBox.setWindowTitle(uiText("Leafyrino"));
+        msgBox.setText(uiText("Image upload"));
         msgBox.setInformativeText(
-            "You are uploading an image to a 3rd party service not in "
+            uiText("You are uploading an image to a 3rd party service not in "
             "control of the Leafyrino team. You may not be able to "
-            "remove the image from the site. Are you okay with this?");
+            "remove the image from the site. Are you okay with this?"));
         auto *cancel = msgBox.addButton(QMessageBox::Cancel);
         auto *yes = msgBox.addButton(QMessageBox::Yes);
         auto *yesDontAskAgain =
-            msgBox.addButton("Yes, don't ask again", QMessageBox::YesRole);
+            msgBox.addButton(uiText("Yes, don't ask again"), QMessageBox::YesRole);
 
         msgBox.setDefaultButton(QMessageBox::Yes);
 
@@ -709,7 +744,7 @@ void SplitInput::initLayout()
         auto input = backLayout.emplace<BackwardsSearchLineEdit>().assign(
             &this->ui_.historySearchInput);
         input->setFrame(false);
-        input->setPlaceholderText("Search input history...");
+        input->setPlaceholderText(uiText("Search input history..."));
         input->setFocusPolicy(Qt::ClickFocus);
         QObject::connect(input.getElement(), &QLineEdit::textChanged, this,
                          [this](const QString &text) {
@@ -876,6 +911,8 @@ void SplitInput::initLayout()
     connect(textEdit.getElement(), &ResizingTextEdit::textChanged, this,
             &SplitInput::editTextChanged);
     textEdit->setFrameStyle(QFrame::NoFrame);
+    // a little taller than the text, like Chatterino+'s input
+    textEdit->setVerticalPadding(0.15);
     this->ui_.inputHbox->setStretch(0, 1);
 
     auto *shortcutFilter = new CmdDeleteKeyFilter(this);
@@ -918,7 +955,7 @@ void SplitInput::initLayout()
         makeInputActionLabelCompressible(this->ui_.sendWaitStatus);
         this->ui_.sendWaitStatus->setHidden(true);
 
-        this->ui_.channelPointsLabel = new QLabel();
+        this->ui_.channelPointsLabel = new ChannelPointsLabel();
         this->ui_.channelPointsLabel->setAlignment(Qt::AlignRight |
                                                    Qt::AlignBottom);
         makeInputActionLabelSticky(this->ui_.channelPointsLabel);
@@ -933,7 +970,7 @@ void SplitInput::initLayout()
                 .light = ":/buttons/prediction-lightMode.svg",
             },
             nullptr, QSize{3, 3});
-        this->ui_.predictionButton->setToolTip("Create prediction");
+        this->ui_.predictionButton->setToolTip(uiText("Create prediction"));
         this->ui_.predictionButton->hide();
 
         this->ui_.pollButton = new SvgButton(
@@ -942,7 +979,7 @@ void SplitInput::initLayout()
                 .light = ":/buttons/poll-lightMode.svg",
             },
             nullptr, QSize{3, 3});
-        this->ui_.pollButton->setToolTip("Open poll");
+        this->ui_.pollButton->setToolTip(uiText("Open poll"));
         this->ui_.pollButton->hide();
 
         this->ui_.badgeButton = new SvgButton(
@@ -951,7 +988,7 @@ void SplitInput::initLayout()
                 .light = ":/buttons/badge-lightMode.svg",
             },
             nullptr, QSize{3, 3});
-        this->ui_.badgeButton->setToolTip("Select badge");
+        this->ui_.badgeButton->setToolTip(uiText("Select badge"));
         this->ui_.badgeButton->hide();
 
         this->ui_.outgoingTranslateButton = new SvgButton(
@@ -960,7 +997,7 @@ void SplitInput::initLayout()
                 .light = ":/buttons/translate-lightMode.svg",
             },
             nullptr, QSize{2, 1});
-        this->ui_.outgoingTranslateButton->setToolTip("Outgoing translation");
+        this->ui_.outgoingTranslateButton->setToolTip(uiText("Outgoing translation"));
         this->ui_.outgoingTranslateButton->hide();
 
         this->ui_.emoteButton = new SvgButton(
@@ -1594,6 +1631,8 @@ QString SplitInput::handleSendMessage(const std::vector<QString> &arguments)
 void SplitInput::postMessageSend(const QString &message,
                                  const std::vector<QString> &arguments)
 {
+    this->noteOwnRestrictionSend(message);
+
     // don't add duplicate messages and empty message to message history
     if ((this->prevMsg_.isEmpty() || !this->prevMsg_.endsWith(message)) &&
         !message.trimmed().isEmpty())
@@ -1611,6 +1650,8 @@ void SplitInput::postMessageSend(const QString &message,
 void SplitInput::postTranslatedMessageSend(
     const QString &message, const std::vector<QString> &arguments)
 {
+    this->noteOwnRestrictionSend(message);
+
     if ((this->prevMsg_.isEmpty() || !this->prevMsg_.endsWith(message)) &&
         !message.trimmed().isEmpty())
     {
@@ -1642,7 +1683,7 @@ bool SplitInput::maybeSendTranslatedMessage(
         if (this->ui_.translationPreviewWidget != nullptr)
         {
             this->ui_.translationPreviewLabel->setText(
-                QStringLiteral("Translating before send..."));
+                uiText(QStringLiteral("Translating before send...")));
             this->ui_.translationPreviewWidget->show();
         }
         return true;
@@ -1664,7 +1705,7 @@ bool SplitInput::maybeSendTranslatedMessage(
     if (this->ui_.translationPreviewWidget != nullptr)
     {
         this->ui_.translationPreviewLabel->setText(
-            QStringLiteral("Translating to %1 before send...").arg(targetName));
+            uiText(QStringLiteral("Translating to %1 before send...")).arg(targetName));
         this->ui_.translationPreviewWidget->show();
     }
 
@@ -1674,15 +1715,15 @@ bool SplitInput::maybeSendTranslatedMessage(
         translatedText.replace('\n', ' ');
         if (translatedText.isEmpty())
         {
-            channel->addSystemMessage(QStringLiteral(
+            channel->addSystemMessage(uiText(QStringLiteral(
                 "Translation failed, so nothing was sent. Try switching "
-                "providers in Settings."));
+                "providers in Settings.")));
             return;
         }
         if (translatedText.size() > TWITCH_MESSAGE_LIMIT)
         {
-            channel->addSystemMessage(QStringLiteral(
-                "The translated message is too long for Twitch."));
+            channel->addSystemMessage(uiText(QStringLiteral(
+                "The translated message is too long for Twitch.")));
             return;
         }
 
@@ -1731,9 +1772,9 @@ bool SplitInput::maybeSendTranslatedMessage(
             sendTranslated(result.translatedText);
         },
         [channel](const QString &) {
-            channel->addSystemMessage(QStringLiteral(
+            channel->addSystemMessage(uiText(QStringLiteral(
                 "Translation failed, so nothing was sent. Try switching "
-                "providers in Settings."));
+                "providers in Settings.")));
         },
         [this] {
             this->outgoingTranslationSendInFlight_ = false;
@@ -1767,7 +1808,7 @@ bool SplitInput::trySendMessageAsWarning(const QString &message,
     if (currentUser->isAnon())
     {
         channel->addSystemMessage(
-            QStringLiteral("You must be logged in to send warnings."));
+            uiText(QStringLiteral("You must be logged in to send warnings.")));
         return true;
     }
 
@@ -1775,7 +1816,7 @@ bool SplitInput::trySendMessageAsWarning(const QString &message,
     if (broadcasterID.isEmpty())
     {
         channel->addSystemMessage(
-            QStringLiteral("Cannot send warning: channel ID not available."));
+            uiText(QStringLiteral("Cannot send warning: channel ID not available.")));
         return true;
     }
 
@@ -2097,7 +2138,7 @@ void SplitInput::addShortcuts()
                  if (auto channel = this->split_->getSelectedChannel())
                  {
                      channel->addSystemMessage(
-                         QStringLiteral("Outgoing translation: %1")
+                         uiText(QStringLiteral("Outgoing translation: %1"))
                              .arg(outgoingTranslationModeLabel(newMode)));
                  }
              }
@@ -2188,7 +2229,7 @@ bool SplitInput::eventFilter(QObject *obj, QEvent *event)
 #if MOLTORINO_ENABLE_CHANNEL_POINT_REWARDS
         auto *contextEvent = static_cast<QContextMenuEvent *>(event);
         QMenu menu(this);
-        menu.addAction(QStringLiteral("View points chart"), this, [tc, this] {
+        menu.addAction(uiText(QStringLiteral("View points chart")), this, [tc, this] {
             ChannelPointsChartDialog::showDialog(tc, this);
         });
         menu.exec(contextEvent->globalPos());
@@ -2237,7 +2278,7 @@ bool SplitInput::eventFilter(QObject *obj, QEvent *event)
 
             this->ui_.channelPointsLabel->setText("...");
             this->ui_.channelPointsLabel->setToolTip(
-                "Channel Points: refreshing...");
+                uiText("Channel Points: refreshing..."));
             this->updateActionRowCompactness();
 
             if (!tc->isChannelPointsFetchInFlight())
@@ -2353,7 +2394,7 @@ void SplitInput::installTextEditEvents()
                 auto currentIdx = mc->activeChannelIndex();
                 if (!channels.empty())
                 {
-                    auto *submenu = menu->addMenu("Set Context");
+                    auto *submenu = menu->addMenu(uiText("Set Context"));
                     auto *group = new QActionGroup(submenu);
 
                     for (size_t i = 0; i < channels.size(); i++)
@@ -2391,7 +2432,7 @@ void SplitInput::installTextEditEvents()
 
 #ifdef CHATTERINO_WITH_SPELLCHECK
             menu->addSeparator();
-            auto *spellcheckAction = new QAction("Check spelling", menu);
+            auto *spellcheckAction = new QAction(uiText("Check spelling"), menu);
             spellcheckAction->setCheckable(true);
             spellcheckAction->setChecked(this->shouldCheckSpelling());
             QObject::connect(spellcheckAction, &QAction::toggled, this,
@@ -2545,6 +2586,173 @@ void SplitInput::applyNukePreview()
     this->ui_.nukePreviewLabel->setVisible(!preview.statusText.isEmpty());
 }
 
+void SplitInput::bindOwnRestrictionChannel()
+{
+    this->ownRestrictionConnection_ = pajlada::Signals::ScopedConnection();
+
+    auto *channel =
+        dynamic_cast<TwitchChannel *>(this->split_->getSelectedChannel().get());
+    if (channel == nullptr)
+    {
+        return;
+    }
+
+    this->ownRestrictionConnection_ =
+        channel->ownRestrictionChanged.connect([this] {
+            this->updateOwnRestriction();
+        });
+}
+
+void SplitInput::updateOwnRestriction()
+{
+    using Kind = TwitchChannel::OwnRestriction::Kind;
+
+    auto *channel =
+        dynamic_cast<TwitchChannel *>(this->split_->getSelectedChannel().get());
+    auto kind = Kind::None;
+    if (channel != nullptr && getSettings()->showOwnTimeoutInInput)
+    {
+        const auto &own = channel->ownRestriction();
+        if (own.kind == Kind::TimedOut &&
+            own.until <= QDateTime::currentDateTimeUtc())
+        {
+            channel->liftOwnRestriction();  // signals back into this function
+            return;
+        }
+        kind = own.kind;
+    }
+
+    const bool blocked = kind == Kind::TimedOut || kind == Kind::Banned;
+    if (blocked && !this->ownRestrictionBlocked_)
+    {
+        // Like Chatterino+: the countdown replaces the input; a draft waits.
+        this->ownRestrictionDraft_ = this->ui_.textEdit->toPlainText();
+        this->ui_.textEdit->clear();
+    }
+    else if (!blocked && this->ownRestrictionBlocked_)
+    {
+        this->ui_.textEdit->setReadOnly(false);
+        if (!this->ownRestrictionDraft_.isEmpty() &&
+            this->ui_.textEdit->toPlainText().isEmpty())
+        {
+            this->ui_.textEdit->setPlainText(this->ownRestrictionDraft_);
+            this->ui_.textEdit->moveCursor(QTextCursor::End);
+        }
+        this->ownRestrictionDraft_.clear();
+    }
+    this->ownRestrictionBlocked_ = blocked;
+
+    if (kind == Kind::TimedOut)
+    {
+        if (!this->ownRestrictionTimer_.isActive())
+        {
+            this->ownRestrictionTimer_.start();
+        }
+    }
+    else
+    {
+        this->ownRestrictionTimer_.stop();
+    }
+
+    const int tint = blocked ? 1 : kind == Kind::Lifted ? 2 : 0;
+    const bool wasShowing = this->ownRestrictionShowing_;
+    this->ownRestrictionShowing_ = kind != Kind::None;
+    if (tint != this->ownRestrictionTint_)
+    {
+        this->ownRestrictionTint_ = tint;
+        this->updateTextEditPalette();
+        this->update();
+    }
+    // Nothing to show and nothing shown before: leave the placeholder alone.
+    // (This also runs from the constructor, before the Split owns this input.)
+    if (this->ownRestrictionShowing_ || wasShowing)
+    {
+        this->split_->updateInputPlaceholder();
+    }
+}
+
+bool SplitInput::applyOwnRestrictionPlaceholder()
+{
+    using Kind = TwitchChannel::OwnRestriction::Kind;
+
+    auto *channel =
+        dynamic_cast<TwitchChannel *>(this->split_->getSelectedChannel().get());
+    if (channel == nullptr || !getSettings()->showOwnTimeoutInInput)
+    {
+        return false;
+    }
+    const auto &own = channel->ownRestriction();
+    QString text;
+    switch (own.kind)
+    {
+        case Kind::TimedOut: {
+            const auto left = std::max<qint64>(
+                1, QDateTime::currentDateTimeUtc().secsTo(own.until));
+            const auto days = left / 86400;
+            const auto clock =
+                QStringLiteral("%1:%2:%3")
+                    .arg((left / 3600) % 24)
+                    .arg((left / 60) % 60, 2, 10, QChar('0'))
+                    .arg(left % 60, 2, 10, QChar('0'));
+            QString countdown =
+                left < 3600 ? QStringLiteral("%1:%2")
+                                  .arg(left / 60)
+                                  .arg(left % 60, 2, 10, QChar('0'))
+                            : clock;
+            if (days > 0)
+            {
+                countdown = uiText("%1d %2").arg(days).arg(clock);
+            }
+            text = uiText("You are timed out · %1 left").arg(countdown);
+            break;
+        }
+        case Kind::Banned:
+            text = uiText("You are banned in this channel");
+            break;
+        case Kind::Lifted:
+            text = own.liftedBan
+                       ? uiText("You have been unbanned — you can chat again")
+                       : uiText("Your timeout has ended — you can chat again");
+            break;
+        case Kind::None:
+        default:
+            return false;
+    }
+    this->ui_.textEdit->setPlaceholderText(text);
+    return true;
+}
+
+QColor SplitInput::inputBackground() const
+{
+    const auto base = this->backgroundColor();
+    if (this->ownRestrictionTint_ == 0)
+    {
+        return base;
+    }
+    const QColor tint = this->ownRestrictionTint_ == 1 ? QColor(214, 48, 49)
+                                                       : QColor(46, 160, 67);
+    const qreal amount = this->theme->isLightTheme() ? 0.18 : 0.30;
+    return QColor::fromRgbF(
+        base.redF() * (1 - amount) + tint.redF() * amount,
+        base.greenF() * (1 - amount) + tint.greenF() * amount,
+        base.blueF() * (1 - amount) + tint.blueF() * amount, base.alphaF());
+}
+
+void SplitInput::noteOwnRestrictionSend(const QString &message)
+{
+    auto *channel =
+        dynamic_cast<TwitchChannel *>(this->split_->getSelectedChannel().get());
+    const auto trimmed = message.trimmed();
+    // Commands are not chat messages (and some never reach Twitch).
+    if (channel == nullptr || trimmed.isEmpty() || trimmed.startsWith('/') ||
+        trimmed.startsWith('.'))
+    {
+        return;
+    }
+    channel->noteSendWhileRestricted();
+    channel->acknowledgeOwnRestrictionLifted();
+}
+
 void SplitInput::bindRaidStatusChannel()
 {
     this->raidStatusConnection_ = pajlada::Signals::ScopedConnection();
@@ -2617,8 +2825,8 @@ void SplitInput::updateRaidStatus()
         target = QStringLiteral("target");
     }
     const auto phase = totalSeconds >= 90 && elapsedSeconds < 10
-                           ? QStringLiteral("Preparing raid to %1")
-                           : QStringLiteral("Raiding %1 in %2");
+                           ? uiText(QStringLiteral("Preparing raid to %1"))
+                           : uiText(QStringLiteral("Raiding %1 in %2"));
     const auto text =
         totalSeconds >= 90 && elapsedSeconds < 10
             ? QStringLiteral("%1 - %2 - %3")
@@ -2770,7 +2978,7 @@ void SplitInput::updateOutgoingTranslationPreview()
     }
 
     this->ui_.translationPreviewLabel->setText(
-        QStringLiteral("Translating to %1...").arg(targetName));
+        uiText(QStringLiteral("Translating to %1...")).arg(targetName));
     this->ui_.translationPreviewWidget->show();
     this->scheduleOutgoingTranslationPreview(body);
 }
@@ -2816,7 +3024,7 @@ void SplitInput::applyOutgoingTranslationPreview()
                 return;
             }
             this->ui_.translationPreviewLabel->setText(
-                QStringLiteral("Could not translate this draft."));
+                uiText(QStringLiteral("Could not translate this draft.")));
             this->ui_.translationPreviewWidget->show();
         },
         [] {});
@@ -2842,7 +3050,7 @@ void SplitInput::updateOutgoingTranslationButton()
     }
     this->ui_.outgoingTranslateButton->setColor(buttonColor);
     this->ui_.outgoingTranslateButton->setToolTip(
-        QStringLiteral("Outgoing translation: %1\nTarget: %2")
+        uiText(QStringLiteral("Outgoing translation: %1\nTarget: %2"))
             .arg(outgoingTranslationModeLabel(mode), targetName));
 }
 
@@ -2872,7 +3080,7 @@ void SplitInput::openOutgoingTranslationMenu()
     addMode("Translate on send", QStringLiteral("send"));
     menu->addSeparator();
 
-    auto *targetMenu = menu->addMenu("Target language");
+    auto *targetMenu = menu->addMenu(uiText("Target language"));
     auto *languageGroup = new QActionGroup(targetMenu);
     languageGroup->setExclusive(true);
     const auto currentTarget = normalizedTranslationTargetLanguage(
@@ -2920,7 +3128,7 @@ void SplitInput::openOutgoingTranslationMenu()
     }
 
     targetMenu->addSeparator();
-    auto *moreMenu = targetMenu->addMenu("More languages");
+    auto *moreMenu = targetMenu->addMenu(uiText("More languages"));
     auto *aToFMenu = moreMenu->addMenu("A - F");
     auto *gToMMenu = moreMenu->addMenu("G - M");
     auto *nToZMenu = moreMenu->addMenu("N - Z");
@@ -3164,7 +3372,7 @@ bool SplitInput::updateCommandCompletion(const QString &query, int start,
                 if (waitingForChannel || waitingForCatalog)
                 {
                     this->showCommandCompletionStatus(
-                        QStringLiteral("Loading Potat commands…"));
+                        uiText(QStringLiteral("Loading Potat commands…")));
                     return true;
                 }
             }
@@ -3179,7 +3387,7 @@ bool SplitInput::updateCommandCompletion(const QString &query, int start,
                 (supibot->commands().empty() || !supibot->channelListReady()))
             {
                 this->showCommandCompletionStatus(
-                    QStringLiteral("Loading Supibot commands…"));
+                    uiText(QStringLiteral("Loading Supibot commands…")));
                 return true;
             }
         }
@@ -3257,9 +3465,9 @@ void SplitInput::renderCommandCompletion()
                 : QStringLiteral(
                       "QLabel#commandCompletionRow { background: transparent; "
                       "border: 0; }"));
-        row->setText(QStringLiteral(
+        row->setText(uiText(QStringLiteral(
                          "<span style=\"font-weight:600; color:%1;\">%2</span>"
-                         "<span style=\"color:%3;\">%4%5</span>")
+                         "<span style=\"color:%3;\">%4%5</span>"))
                          .arg(textColor, suggestion.completion.toHtmlEscaped(),
                               mutedColor,
                               suggestion.usage.isEmpty() ? QString()
@@ -3532,7 +3740,7 @@ void SplitInput::showCommandCompletionStatus(const QString &text)
             auto muted = this->theme->splits.input.text;
             muted.setAlphaF(this->theme->isLightTheme() ? 0.68F : 0.58F);
             row->setText(
-                QStringLiteral("<span style=\"color:%1;\">%2</span>")
+                uiText(QStringLiteral("<span style=\"color:%1;\">%2</span>"))
                     .arg(muted.name(QColor::HexArgb), text.toHtmlEscaped()));
             row->setToolTip({});
             row->setCursor(Qt::ArrowCursor);
@@ -3919,7 +4127,7 @@ void SplitInput::paintEvent(QPaintEvent * /*event*/)
     };
 
     const auto inputBoxRect = this->ui_.inputWrapper->geometry();
-    painter.fillRect(inputBoxRect, this->backgroundColor());
+    painter.fillRect(inputBoxRect, this->inputBackground());
     drawBorder(inputBoxRect);
 
     if (this->enableInlineReplying_ && this->replyTarget_ != nullptr)
@@ -4025,7 +4233,7 @@ void SplitInput::setReply(MessagePtr target, std::weak_ptr<Channel> channel)
             this->ui_.textEdit->setPlainText(replyPrefix + plainText + " ");
             this->ui_.textEdit->moveCursor(QTextCursor::EndOfBlock);
             this->ui_.textEdit->resetCompletion();
-            this->ui_.replyLabel->setText("Replying to @" +
+            this->ui_.replyLabel->setText(uiText("Replying to @") +
                                           this->replyTarget_->displayName);
             this->relayoutParentWidgets();
         }
@@ -4122,9 +4330,14 @@ void SplitInput::updateTextEditPalette()
 {
     QPalette p;
 
-    // Placeholder text color
+    // Placeholder text color (red / green while the own user is restricted)
+    const bool light = this->theme->isLightTheme();
     p.setColor(QPalette::PlaceholderText,
-               this->theme->messages.textColors.chatPlaceholder);
+               this->ownRestrictionTint_ == 1
+                   ? (light ? QColor(0xb42323) : QColor(0xff9d9d))
+               : this->ownRestrictionTint_ == 2
+                   ? (light ? QColor(0x1f7a35) : QColor(0x93e3a6))
+                   : this->theme->messages.textColors.chatPlaceholder);
 
     // Text color
     p.setColor(QPalette::Text, this->theme->messages.textColors.regular);
@@ -4136,7 +4349,7 @@ void SplitInput::updateTextEditPalette()
                    : this->theme->tabs.selected.backgrounds.regular);
 
     // Background color
-    p.setBrush(QPalette::Base, this->backgroundColor());
+    p.setBrush(QPalette::Base, this->inputBackground());
 
     this->ui_.textEdit->setPalette(p);
 }
@@ -4176,8 +4389,12 @@ bool SplitInput::shouldCheckSpelling() const
 
 void SplitInput::checkSpellingChanged()
 {
+    this->inputHighlighter->setSpellCheckEnabled(this->shouldCheckSpelling());
+    this->inputHighlighter->setEmotePreviewEnabled(
+        getSettings()->showEmotesInInput);
+
     QTextDocument *target = nullptr;
-    if (this->shouldCheckSpelling())
+    if (this->inputHighlighter->needsDocument())
     {
         target = this->ui_.textEdit->document();
     }
@@ -4185,6 +4402,10 @@ void SplitInput::checkSpellingChanged()
     if (this->inputHighlighter->document() != target)
     {
         this->inputHighlighter->setDocument(target);
+    }
+    else if (target)
+    {
+        this->inputHighlighter->rehighlight();
     }
 }
 
@@ -4259,8 +4480,8 @@ void SplitInput::bindChannelPoints(TwitchChannel *channel)
         this->pollButtonWanted_ = getSettings()->enablePolls &&
                                   getSettings()->showPollButton &&
                                   (canModerate || hasActivePoll);
-        this->ui_.pollButton->setToolTip(hasActivePoll ? "Open poll"
-                                                       : "Create poll");
+        this->ui_.pollButton->setToolTip(hasActivePoll ? uiText("Open poll")
+                                                       : uiText("Create poll"));
         this->badgeButtonWanted_ =
             getSettings()->showSelectBadgeButton && channel != nullptr;
         this->updateActionRowCompactness();
@@ -4376,13 +4597,14 @@ void SplitInput::updateChannelPointsDisplay(TwitchChannel *channel)
                           ? QStringLiteral("--")
                           : formatChannelPointsValue(balance);
     auto tooltip = (balance < 0 && !error.isEmpty())
-                       ? QStringLiteral("Channel Points unavailable")
+                       ? uiText(QStringLiteral("Channel Points unavailable"))
                        : formatChannelPointsToolTip(balance);
     if (!error.isEmpty())
     {
         tooltip += "\nError: " + error;
     }
 
+    this->ui_.channelPointsLabel->setIconUrl(channel->channelPointsIconUrl());
     if (this->ui_.channelPointsLabel->text() != text)
     {
         this->ui_.channelPointsLabel->setText(text);
@@ -4661,6 +4883,8 @@ void SplitInput::updateChannel()
         this->updateNukePreview(this->ui_.textEdit->toPlainText());
         this->bindRaidStatusChannel();
         this->updateRaidStatus();
+        this->bindOwnRestrictionChannel();
+        this->updateOwnRestriction();
         this->resetCommandCompletionSession();
         this->commandHintKey_.clear();
         this->commandHintChannel_.reset();

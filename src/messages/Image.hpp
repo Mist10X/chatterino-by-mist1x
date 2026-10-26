@@ -5,6 +5,7 @@
 #pragma once
 
 #include "common/Aliases.hpp"
+#include "messages/ImageLoadRetry.hpp"
 #include "util/DebugCount.hpp"
 
 #include <QList>
@@ -117,7 +118,10 @@ private:
     Image(qreal scale);
 
     void setPixmap(const QPixmap &pixmap);
+    void loadIfNeeded();
     void actuallyLoad();
+    void failLoad(bool retryable);
+    void scheduleRetry();
     void expireFrames();
 
     const Url url_{};
@@ -132,6 +136,9 @@ private:
     std::atomic_bool empty_{false};
 
     bool shouldLoad_{false};
+    // Accessed only on the GUI thread, including completion callbacks.
+    detail::ImageLoadRetry loadRetry_;
+    bool retryScheduled_{false};
 
     /// Size this image should take when loaded (in both dimensions).
     ///

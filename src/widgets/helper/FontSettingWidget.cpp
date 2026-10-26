@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/helper/FontSettingWidget.hpp"
 
 #include "Application.hpp"
@@ -35,7 +36,7 @@ FontSettingWidget::FontSettingWidget(QStringSetting &family, IntSetting &size,
 
     this->listener.add(getApp()->getFonts()->fontChanged);
 
-    layout->addWidget(new QLabel("Font:"));
+    layout->addWidget(new QLabel(uiText("Font:")));
     layout->addStretch(1);
     layout->addWidget(this->currentLabel);
     layout->addWidget(button);
@@ -52,7 +53,7 @@ void FontSettingWidget::updateCurrentLabel()
     QFont font = getApp()->getFonts()->getFont(FontStyle::ChatMedium, 1);
     QString family = font.family();
     QString ptSize = QString::number(font.pointSize());
-    this->currentLabel->setText(family + ", " + ptSize + "pt");
+    this->currentLabel->setText(family + ", " + ptSize + uiText("pt"));
 }
 
 void FontSettingWidget::showDialog()

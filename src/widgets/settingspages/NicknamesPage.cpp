@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/settingspages/NicknamesPage.hpp"
 
 #include "controllers/nicknames/Nickname.hpp"
@@ -22,10 +23,10 @@ NicknamesPage::NicknamesPage()
     auto layout = layoutCreator.setLayoutType<QVBoxLayout>();
 
     layout.emplace<QLabel>(
-        "Nicknames do not work with features such as user highlights and "
+        uiText("Nicknames do not work with features such as user highlights and "
         "filters."
         "\nWith those features you will still need to use the user's original "
-        "name.");
+        "name."));
     EditableModelView *view =
         layout
             .emplace<EditableModelView>(
@@ -34,7 +35,7 @@ NicknamesPage::NicknamesPage()
             .getElement();
     this->view_ = view;
 
-    view->setTitles({"Username", "Nickname", "Enable regex", "Case-sensitive"});
+    view->setTitles({uiText("Username"), uiText("Nickname"), uiText("Enable regex"), uiText("Case-sensitive")});
     view->getTableView()->horizontalHeader()->setSectionResizeMode(
         QHeaderView::Fixed);
     view->getTableView()->horizontalHeader()->setSectionResizeMode(

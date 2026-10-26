@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/GifPickerDialog.hpp"
 
 #include "Application.hpp"
@@ -78,23 +79,23 @@ QString subscriptionRejectionMessage(const QString &error, int tier)
 {
     if (tier >= 2)
     {
-        return QStringLiteral(
+        return uiText(QStringLiteral(
                    "Twitch rejected the GIF (%1), although you have a Tier "
                    "%2 sub here. GIFs may be limited to a higher tier or "
-                   "turned off for this channel.")
+                   "turned off for this channel."))
             .arg(error)
             .arg(tier);
     }
-    return QStringLiteral("Tier 2+ sub required. You have %1 in this channel.")
-        .arg(tier == 1 ? QStringLiteral("a Tier 1 sub")
-                       : QStringLiteral("no sub"));
+    return uiText(QStringLiteral("Tier 2+ sub required. You have %1 in this channel."))
+        .arg(tier == 1 ? uiText(QStringLiteral("a Tier 1 sub"))
+                       : uiText(QStringLiteral("no sub")));
 }
 
 QString subscriptionLookupFailedMessage(const QString &error)
 {
-    return QStringLiteral(
+    return uiText(QStringLiteral(
                "Twitch rejected the GIF (%1). Most channels need a "
-               "Tier 2+ sub for GIFs; your sub here could not be checked.")
+               "Tier 2+ sub for GIFs; your sub here could not be checked."))
         .arg(error);
 }
 
@@ -164,16 +165,16 @@ GifPickerDialog::GifPickerDialog(TwitchChannel *channel,
     , channel_(channel->sharedFromThis())
 {
     this->setObjectName("GifPickerDialog");
-    this->setWindowTitle("GIFs in #" + channel->getName());
+    this->setWindowTitle(uiText("GIFs in #") + channel->getName());
     this->getLayoutContainer()->setObjectName("GifPickerBody");
     auto *layout = new QVBoxLayout(this->getLayoutContainer());
     this->tabs_ = new QTabBar(this);
-    this->tabs_->addTab("Search");
-    this->tabs_->addTab("Favorites");
+    this->tabs_->addTab(uiText("Search"));
+    this->tabs_->addTab(uiText("Favorites"));
     layout->addWidget(this->tabs_);
     this->search_ = new QLineEdit(this);
-    this->search_->setPlaceholderText("Search Giphy");
-    this->search_->setAccessibleName("Search GIFs");
+    this->search_->setPlaceholderText(uiText("Search Giphy"));
+    this->search_->setAccessibleName(uiText("Search GIFs"));
     this->search_->setMaxLength(twitchgifs::MAX_SEARCH_LENGTH);
     this->search_->setClearButtonEnabled(true);
     this->search_->setText(searchTerm);
@@ -193,11 +194,11 @@ GifPickerDialog::GifPickerDialog(TwitchChannel *channel,
     this->grid_->setSpacing(0);
     this->grid_->setMouseTracking(true);
     this->grid_->viewport()->installEventFilter(this);
-    this->grid_->setAccessibleName("GIF results");
+    this->grid_->setAccessibleName(uiText("GIF results"));
     this->delegate_ = new GifGridDelegate(*this);
     this->grid_->setItemDelegate(this->delegate_);
     layout->addWidget(this->grid_, 1);
-    this->retry_ = new QPushButton("Try again", this);
+    this->retry_ = new QPushButton(uiText("Try again"), this);
     this->retry_->hide();
     layout->addWidget(this->retry_);
     this->status_ = new QLabel(this);
@@ -211,13 +212,13 @@ GifPickerDialog::GifPickerDialog(TwitchChannel *channel,
     this->caption_->setMinimumWidth(0);
     this->caption_->installEventFilter(this);
     footer->addWidget(this->caption_, 1);
-    this->favorite_ = new QPushButton("Favorite", this);
+    this->favorite_ = new QPushButton(uiText("Favorite"), this);
     this->favorite_->setEnabled(false);
     footer->addWidget(this->favorite_);
-    this->send_ = new QPushButton("Send", this);
+    this->send_ = new QPushButton(uiText("Send"), this);
     this->send_->setEnabled(false);
     this->send_->setToolTip(
-        "GIFs you send must follow Twitch's Community Guidelines.");
+        uiText("GIFs you send must follow Twitch's Community Guidelines."));
     footer->addWidget(this->send_);
     layout->addLayout(footer);
 
@@ -623,22 +624,22 @@ void GifPickerDialog::refreshAccount()
     if (!this->auth_.hasToken() || this->auth_.legacy)
     {
         this->setStatus(error.isEmpty()
-                            ? "Sign in with Twitch device login in Settings > "
+                            ? uiText("Sign in with Twitch device login in Settings > "
                               "Moltorino to send GIFs with the selected "
-                              "account."
+                              "account.")
                             : error);
         return;
     }
     if (this->channel_->roomId().isEmpty())
     {
         this->setStatus(
-            "This channel is still connecting. Try again in a moment.");
-        this->retry_->setText("Try again");
+            uiText("This channel is still connecting. Try again in a moment."));
+        this->retry_->setText(uiText("Try again"));
         this->retry_->show();
         return;
     }
     this->configLoading_ = true;
-    this->setStatus("Loading GIFs...");
+    this->setStatus(uiText("Loading GIFs..."));
     twitchgifs::loadConfig(
         this->channel_->roomId(), this->auth_.token, this,
         [this, generation](auto config) {
@@ -657,7 +658,7 @@ void GifPickerDialog::refreshAccount()
             }
             this->configLoading_ = false;
             this->setStatus(error);
-            this->retry_->setText("Try again");
+            this->retry_->setText(uiText("Try again"));
             this->retry_->setEnabled(true);
             this->retry_->show();
         });
@@ -697,13 +698,13 @@ void GifPickerDialog::loadPage()
                          : QStringList{};
     if (this->tabs_->currentIndex() == 1 && ids.isEmpty())
     {
-        this->setStatus("No favorites yet. Select a GIF and click Favorite to "
-                        "save it here.");
+        this->setStatus(uiText("No favorites yet. Select a GIF and click Favorite to "
+                        "save it here."));
         return;
     }
     this->loading_ = true;
     this->retry_->hide();
-    this->setStatus("Loading GIFs...");
+    this->setStatus(uiText("Loading GIFs..."));
     const auto generation = this->generation_;
     twitchgifs::loadPage(
         this->config_, this->searchTerm_, ids, this->nextOffset_, this,
@@ -729,8 +730,8 @@ void GifPickerDialog::loadPage()
                 this->gifs_.push_back(gif);
                 auto *item = new QListWidgetItem(gif.title, this->grid_);
                 item->setData(Qt::AccessibleTextRole, gif.title);
-                item->setToolTip("<span>" + gif.title.toHtmlEscaped() +
-                                 "</span>");
+                item->setToolTip(uiText("<span>") + gif.title.toHtmlEscaped() +
+                                 uiText("</span>"));
             }
             this->nextOffset_ = page.nextOffset;
 
@@ -739,7 +740,7 @@ void GifPickerDialog::loadPage()
                 this->nextOffset_ = -1;
             }
             this->setStatus(this->gifs_.isEmpty()
-                                ? "No GIFs found. Try another search."
+                                ? uiText("No GIFs found. Try another search.")
                                 : QString{});
             this->viewportUpdate_.start(0);
         },
@@ -750,7 +751,7 @@ void GifPickerDialog::loadPage()
             }
             this->loading_ = false;
             this->setStatus(error);
-            this->retry_->setText("Try again");
+            this->retry_->setText(uiText("Try again"));
             this->retry_->setEnabled(true);
             this->retry_->show();
         });
@@ -767,7 +768,7 @@ void GifPickerDialog::selectGif()
         selected &&
         twitchgifs::favoriteIds(getSettings()->favoriteTwitchGifs.getValue())
             .contains(this->gifs_.at(row).id);
-    this->favorite_->setText(saved ? "Unfavorite" : "Favorite");
+    this->favorite_->setText(saved ? uiText("Unfavorite") : uiText("Favorite"));
     this->refreshSend();
 }
 
@@ -792,7 +793,7 @@ void GifPickerDialog::toggleFavorite()
     else
     {
         this->setStatus(
-            "Your favorites are full. Remove one before adding another.");
+            uiText("Your favorites are full. Remove one before adding another."));
         return;
     }
     getSettings()->favoriteTwitchGifs =
@@ -817,8 +818,8 @@ void GifPickerDialog::refreshSend()
                           twitchgifs::validGif(this->gifs_.at(row)) &&
                           !this->config_.apiKey.isEmpty();
     this->send_->setEnabled(selected && !state.pending && seconds == 0);
-    this->send_->setText(seconds > 0 ? QString("Wait %1s").arg(seconds)
-                                     : "Send");
+    this->send_->setText(seconds > 0 ? uiText(QString("Wait %1s")).arg(seconds)
+                                     : uiText("Send"));
     if (state.pending || seconds > 0)
     {
         this->cooldownTimer_.start();

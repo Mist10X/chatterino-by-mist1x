@@ -32,6 +32,15 @@ namespace {
 
 constexpr int SCROLLBAR_PADDING = 20;
 
+bool hasPunishmentIndicator(MessageFlags flags)
+{
+    // ModerationAction also includes unbans, chat modes and term-list changes.
+    // Disabled marks the original chat text, not a punishment notice.
+    return flags.hasNone(MessageFlag::Untimeout, MessageFlag::ClearChat) &&
+           flags.hasAny(MessageFlag::Timeout, MessageFlag::Deletion,
+                        MessageFlag::AutoModOffendingMessage);
+}
+
 std::optional<QColor> clientDetectionHighlightColor(
     Message::ClientDetectionStatus status,
     const MessagePreferences &preferences)
@@ -386,6 +395,26 @@ MessagePaintResult MessageLayout::paint(const MessagePaintContext &ctx)
                 1,
             },
             brush);
+    }
+
+    if (hasPunishmentIndicator(this->message_->flags) &&
+        this->container_.getLineCount() != 0)
+    {
+        // Stay inside the existing left text margin. All dimensions are
+        // logical pixels; the painter handles device DPI without changing
+        // message layout, wrapping, selection or the scroll height.
+        const qreal inset = 3.0 * this->scale_;
+        const QRectF stripe{this->scale_, ctx.y + inset, 2.0 * this->scale_,
+                            this->container_.getHeight() - 2.0 * inset};
+        if (stripe.height() > 0)
+        {
+            ctx.painter.save();
+            ctx.painter.setRenderHint(QPainter::Antialiasing);
+            ctx.painter.setPen(Qt::NoPen);
+            ctx.painter.setBrush(QColor(239, 68, 84));
+            ctx.painter.drawRoundedRect(stripe, this->scale_, this->scale_);
+            ctx.painter.restore();
+        }
     }
 
     this->bufferValid_ = true;

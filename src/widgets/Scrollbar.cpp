@@ -35,6 +35,7 @@ Scrollbar::Scrollbar(size_t messagesLimit, ChannelView *parent)
     : BaseWidget(parent)
     , currentValueAnimation_(this, "currentValue_")
     , highlights_(messagesLimit)
+    , messageLimit_(messagesLimit)
 {
     this->resize(static_cast<int>(16 * this->scale()), 100);
     this->currentValueAnimation_.setDuration(150);
@@ -65,14 +66,28 @@ boost::circular_buffer<ScrollbarHighlight> Scrollbar::getHighlights() const
     return this->highlights_;
 }
 
+void Scrollbar::setMessageLimit(size_t limit)
+{
+    this->messageLimit_ = limit;
+    this->highlights_.rset_capacity(limit == 0 ? std::max(size_t(1000), this->highlights_.size()) : limit);
+}
+
+void Scrollbar::reserveHighlights(size_t count)
+{
+    if (this->messageLimit_ == 0 && this->highlights_.size() + count > this->highlights_.capacity())
+        this->highlights_.set_capacity(std::max(this->highlights_.size() + count, this->highlights_.capacity() * 2));
+}
+
 void Scrollbar::addHighlight(ScrollbarHighlight highlight)
 {
+    this->reserveHighlights(1);
     this->highlights_.push_back(std::move(highlight));
 }
 
 void Scrollbar::addHighlightsAtStart(
     const std::vector<ScrollbarHighlight> &highlights)
 {
+    this->reserveHighlights(highlights.size());
     size_t nItems = std::min(highlights.size(), this->highlights_.capacity() -
                                                     this->highlights_.size());
 

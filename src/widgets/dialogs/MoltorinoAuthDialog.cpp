@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/MoltorinoAuthDialog.hpp"
 
 #include "widgets/dialogs/KickLoginPage.hpp"
@@ -23,7 +24,7 @@ void showMoltorinoAuthDialog(QWidget *parent, const QString &windowTitle,
         (dialog.windowFlags() & ~(Qt::WindowContextHelpButtonHint)) |
         Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint);
     dialog.setWindowTitle(windowTitle.isEmpty()
-                              ? QStringLiteral("Manage Accounts")
+                              ? uiText(QStringLiteral("Manage Accounts"))
                               : windowTitle);
 
     auto *layout = new QVBoxLayout(&dialog);
@@ -39,7 +40,7 @@ void showMoltorinoAuthDialog(QWidget *parent, const QString &windowTitle,
     {
         if (auto *tabs = moltorinoAuthLoginPageTabs(page))
         {
-            tabs->addTab(new KickLoginPage(), QStringLiteral("Kick"));
+            tabs->addTab(new KickLoginPage(), uiText(QStringLiteral("Kick")));
         }
     }
 

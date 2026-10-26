@@ -20,6 +20,7 @@
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchAccountManager.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
+#include "providers/twitch/TwitchReadConnectionPool.hpp"
 #include "providers/twitch/TwitchCommon.hpp"
 #include "providers/twitch/TwitchHelpers.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
@@ -258,6 +259,7 @@ std::optional<ClearChatMessage> parseClearChatMessage(
                        calculateMessageTime(message))
             .release();
     trimChannelName(message->parameter(0), timeoutMsg->channelName);
+    timeoutMsg->timeoutUserID = message->tag("target-user-id").toString();
 
     return ClearChatMessage{.message = timeoutMsg,
                             .disableAllMessages = false,
@@ -602,20 +604,40 @@ void IrcMessageHandler::handleClearChatMessage(Communi::IrcMessage *message)
     else
     {
         // Set send wait timer when the user is timed out
-        const auto currentUsername =
-            getApp()->getAccounts()->twitch.getCurrent()->getUserName();
-        if (currentUsername == clearChat.username)
+        const auto current = getApp()->getAccounts()->twitch.getCurrent();
+        const auto currentUsername = current->getUserName();
+        const auto targetId = message->tag("target-user-id").toString();
+        const bool currentUser =
+            !current->isAnon() &&
+            ((!targetId.isEmpty() && targetId == current->getUserId()) ||
+             currentUsername.compare(clearChat.username.value_or(QString()),
+                                     Qt::CaseInsensitive) == 0);
+        // Another of the user's own accounts counts too: switching to it
+        // must show its timeout.
+        if (currentUser || TwitchChannel::isOwnAccountId(targetId))
         {
+            const auto userId =
+                targetId.isEmpty() ? current->getUserId() : targetId;
             bool ok = false;
             int remainingTime =
                 message->tags().getOrEmpty("ban-duration").toInt(&ok);
-            if (ok)
+            auto *tc = dynamic_cast<TwitchChannel *>(chan.get());
+            assert(tc != nullptr);
+            if (tc != nullptr)
             {
-                auto *tc = dynamic_cast<TwitchChannel *>(chan.get());
-                assert(tc != nullptr);
-                if (tc != nullptr)
+                if (ok)
                 {
-                    tc->setSendWait(remainingTime);
+                    if (currentUser)
+                    {
+                        tc->setSendWait(remainingTime);
+                    }
+                    tc->setOwnTimedOut(
+                        QDateTime::currentDateTimeUtc().addSecs(remainingTime),
+                        userId);
+                }
+                else
+                {
+                    tc->setOwnBanned(userId);
                 }
             }
         }
@@ -807,6 +829,23 @@ void IrcMessageHandler::handleUserNoticeMessage(Communi::IrcMessage *message,
         return;
     }
     parseUserNoticeMessageInto(message, *channel, channel);
+
+    // Live events only (history goes through parseUserNoticeMessageInto alone)
+    const auto msgId = message->tag("msg-id").toString();
+    if (msgId == u"raid")
+    {
+        channel->incomingRaid.invoke(
+            message->tag("msg-param-login").toString(),
+            message->tag("msg-param-displayName").toString(),
+            message->tag("msg-param-viewerCount").toInt());
+    }
+    else if (msgId == u"submysterygift")
+    {
+        channel->massGiftSubs.invoke(
+            message->tag("login").toString(),
+            message->tag("display-name").toString(),
+            message->tag("msg-param-mass-gift-count").toInt());
+    }
 }
 
 void IrcMessageHandler::parseUserNoticeMessageInto(Communi::IrcMessage *message,
@@ -1143,7 +1182,24 @@ void IrcMessageHandler::handleNoticeMessage(Communi::IrcNoticeMessage *message)
     {
         // Notice received when the user sends a message while timed out.
         // @msg-id=msg_timedout :tmi.twitch.tv NOTICE #twitch :You are timed out for 3600 more seconds.
-        handleSendWait(message->content().split(u' ').value(5));
+        const auto remaining = message->content().split(u' ').value(5);
+        handleSendWait(remaining);
+        bool ok = false;
+        const int seconds = remaining.toInt(&ok);
+        if (auto *tc = dynamic_cast<TwitchChannel *>(channel.get());
+            tc != nullptr && ok && seconds > 0)
+        {
+            tc->setOwnTimedOut(
+                QDateTime::currentDateTimeUtc().addSecs(seconds));
+        }
+    }
+    else if (tags == "msg_banned")
+    {
+        // @msg-id=msg_banned :tmi.twitch.tv NOTICE #channel :You are permanently banned from talking in channel.
+        if (auto *tc = dynamic_cast<TwitchChannel *>(channel.get()))
+        {
+            tc->setOwnBanned();
+        }
     }
 }
 
@@ -1169,7 +1225,11 @@ void IrcMessageHandler::handleJoinMessage(Communi::IrcMessage *message)
     }();
     if (ownUser)
     {
-        twitchChannel->addSystemMessage("joined channel");
+        // After a drop the connection status line already says so.
+        if (!connectionTroubleRecent(twitchChannel->getName()))
+        {
+            twitchChannel->addSystemMessage("joined channel");
+        }
         twitchChannel->joined.invoke();
     }
     else if (getSettings()->showJoins.getValue())

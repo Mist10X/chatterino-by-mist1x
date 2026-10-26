@@ -31,6 +31,7 @@ public:
     void replaceHighlight(size_t index, ScrollbarHighlight replacement);
 
     void clearHighlights();
+    void setMessageLimit(size_t limit);
 
     void scrollToBottom(bool animate = false);
     void scrollToTop(bool animate = false);
@@ -106,6 +107,9 @@ private:
     QPropertyAnimation currentValueAnimation_;
 
     boost::circular_buffer<ScrollbarHighlight> highlights_;
+
+    size_t messageLimit_;
+    void reserveHighlights(size_t count);
 
     bool atBottom_{true};
 

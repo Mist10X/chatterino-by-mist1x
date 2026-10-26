@@ -5,6 +5,7 @@
 #include "singletons/Paths.hpp"
 
 #include "common/Args.hpp"
+#include "common/Isolation.hpp"
 #include "common/Modes.hpp"
 #include "singletons/Settings.hpp"
 #include "util/CombinePath.hpp"
@@ -12,108 +13,15 @@
 #include <QCoreApplication>
 #include <QCryptographicHash>
 #include <QDir>
-#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
-#include <QStandardPaths>
 
 #include <cassert>
-#include <vector>
+#include <mutex>
 
 using namespace std::literals;
 
 namespace chatterino {
-
-namespace {
-
-bool copyRecursively(const QString &sourcePath, const QString &destinationPath)
-{
-    const QDir sourceDir(sourcePath);
-    if (!sourceDir.exists())
-    {
-        return false;
-    }
-
-    if (!QDir().mkpath(destinationPath))
-    {
-        return false;
-    }
-
-    QDirIterator it(sourcePath, QDir::NoDotAndDotDot | QDir::AllEntries,
-                    QDirIterator::Subdirectories);
-    while (it.hasNext())
-    {
-        const auto sourceEntryPath = it.next();
-        const QFileInfo sourceInfo(sourceEntryPath);
-        const auto relativePath = sourceDir.relativeFilePath(sourceEntryPath);
-        const auto destinationEntryPath =
-            combinePath(destinationPath, relativePath);
-
-        if (sourceInfo.isDir())
-        {
-            if (!QDir().mkpath(destinationEntryPath))
-            {
-                return false;
-            }
-            continue;
-        }
-
-        const auto destinationDir = QFileInfo(destinationEntryPath).dir();
-        if (!destinationDir.exists() && !QDir().mkpath(destinationDir.path()))
-        {
-            return false;
-        }
-
-        if (QFile::exists(destinationEntryPath) &&
-            !QFile::remove(destinationEntryPath))
-        {
-            return false;
-        }
-
-        if (!QFile::copy(sourceEntryPath, destinationEntryPath))
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void tryMigrateLinuxSettingsInto(const QString &destinationPath)
-{
-    const auto destinationSettings =
-        combinePath(destinationPath, "Settings/settings.json");
-    if (QFileInfo::exists(destinationSettings))
-    {
-        return;
-    }
-
-    std::vector<QString> candidatePaths;
-
-    if (qEnvironmentVariableIsSet("FLATPAK_ID"))
-    {
-        candidatePaths.emplace_back(
-            QDir::homePath() +
-            "/.var/app/com.chatterino.chatterino/data/chatterino");
-    }
-
-    candidatePaths.emplace_back(QDir::homePath() + "/.local/share/chatterino");
-
-    for (const auto &candidatePath : candidatePaths)
-    {
-        const auto candidateSettings =
-            combinePath(candidatePath, "Settings/settings.json");
-        if (!QFileInfo::exists(candidateSettings))
-        {
-            continue;
-        }
-
-        copyRecursively(candidatePath, destinationPath);
-        return;
-    }
-}
-
-}  // namespace
 
 Paths::Paths(const Args &args, const Modes &modes)
 {
@@ -130,11 +38,12 @@ bool Paths::createFolder(const QString &folderPath)
 
 QString Paths::cacheDirectory() const
 {
-    static const auto pathSetting = [] {
+    static const auto pathSetting = [this] {
         QStringSetting cachePathSetting("/cache/path");
 
-        cachePathSetting.connect([](const auto &newPath) {
-            if (!newPath.isEmpty())
+        cachePathSetting.connect([root = this->rootAppDataDirectory](
+                                     const auto &newPath) {
+            if (!newPath.isEmpty() && isolation::isInside(newPath, root))
             {
                 QDir().mkpath(newPath);
             }
@@ -150,7 +59,25 @@ QString Paths::cacheDirectory() const
         return this->cacheDirectory_;
     }
 
-    return path;
+    // A custom cache folder is honoured only inside this profile; one copied
+    // from another client (e.g. %LOCALAPPDATA%\ChatterinoPlus\Cache) is ignored.
+    static std::mutex mutex;
+    static QString checkedPath;
+    static QString checkedResult;
+    std::lock_guard lock(mutex);
+    if (path != checkedPath)
+    {
+        checkedPath = path;
+        checkedResult = isolation::confine(path, this->rootAppDataDirectory,
+                                           this->cacheDirectory_);
+    }
+    return checkedResult;
+}
+
+QString Paths::messageLogsIn(const QString &configured) const
+{
+    return isolation::confine(configured, this->rootAppDataDirectory,
+                              this->messageLogDirectory);
 }
 
 QString Paths::cacheFilePath(const QString &fileName) const
@@ -172,37 +99,37 @@ void Paths::initAppFilePathHash()
 
 void Paths::initRootDirectory(const Args &args, const Modes &modes)
 {
-    this->rootAppDataDirectory = [&]() -> QString {
-        if (modes.isPortable)
+    // This build is always portable (isolation::FORCE_PORTABLE): the profile
+    // is the folder of the executable or --portable-dir. There is no code
+    // path to %APPDATA%\Chatterino2 or any other shared location.
+    static_assert(isolation::FORCE_PORTABLE);
+    assert(modes.isPortable);
+    (void)modes;
+
+    QString root = QCoreApplication::applicationDirPath();
+    if (args.portableDirectory.has_value())
+    {
+        root = args.portableDirectory.value();
+        if (!QFileInfo(root).isDir())
         {
-            // override
-            if (args.portableDirectory.has_value())
-            {
-                return args.portableDirectory.value();
-            }
-
-            return QCoreApplication::applicationDirPath();
+            throw std::runtime_error(
+                "The profile directory \""s +
+                QDir::toNativeSeparators(root).toStdString() +
+                "\" does not exist. Leafyrino will not create or use "
+                "another one.");
         }
+    }
 
-        QString path =
-            QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-        if (path.isEmpty())
-        {
-            throw std::runtime_error("Could not create directory \""s +
-                                     path.toStdString() + "\"");
-        }
+    const auto reason =
+        isolation::rejectProfileRoot(root, isolation::foreignProfileRoots());
+    if (!reason.isEmpty())
+    {
+        throw std::runtime_error(
+            "Leafyrino refused to use this profile directory. "s +
+            reason.toStdString());
+    }
 
-#ifdef Q_OS_LINUX
-        tryMigrateLinuxSettingsInto(path);
-#endif
-
-#ifdef Q_OS_WIN
-        path.replace("chatterino", "Chatterino");
-
-        path += "2";
-#endif
-        return path;
-    }();
+    this->rootAppDataDirectory = QDir::cleanPath(root);
 }
 
 void Paths::initSubDirectories()
@@ -223,6 +150,14 @@ void Paths::initSubDirectories()
 
     makePath("");
     this->settingsDirectory = makePath("Settings");
+    for (const auto &dir : {this->rootAppDataDirectory, this->settingsDirectory})
+    {
+        const auto error = isolation::probeWritable(dir);
+        if (!error.isEmpty())
+        {
+            throw std::runtime_error(error.toStdString());
+        }
+    }
     this->cacheDirectory_ = makePath("Cache");
     this->messageLogDirectory = makePath("Logs");
     this->miscDirectory = makePath("Misc");

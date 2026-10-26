@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/SelectChannelDialog.hpp"
 
 #include "Application.hpp"
@@ -51,7 +52,7 @@ public:
         , name(new QLineEdit)
     {
         this->setAttribute(Qt::WA_DeleteOnClose);
-        this->setWindowTitle("Add Channel");
+        this->setWindowTitle(uiText("Add Channel"));
 
         auto *layout = new QVBoxLayout(this->getLayoutContainer());
 
@@ -63,7 +64,7 @@ public:
             "YouTube", QVariant::fromValue(MultiChannel::Platform::YouTube));
         layout->addWidget(this->platform);
 
-        this->name->setPlaceholderText("Name");
+        this->name->setPlaceholderText(uiText("Name"));
         layout->addWidget(this->name);
 
         auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok |
@@ -168,7 +169,7 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
 {
     using AutoCheckedRadioButton = detail::AutoCheckedRadioButton;
 
-    this->setWindowTitle("Select a channel to join");
+    this->setWindowTitle(uiText("Select a channel to join"));
 
     this->tabFilter_.dialog = this;
 
@@ -185,7 +186,7 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
     ui.channel = new AutoCheckedRadioButton("Channel");
     layout->addWidget(ui.channel);
 
-    ui.channelLabel = new QLabel("Join a Twitch channel by its channel name");
+    ui.channelLabel = new QLabel(uiText("Join a Twitch channel by its channel name"));
     ui.channelLabel->setVisible(false);
     layout->addWidget(ui.channelLabel);
 
@@ -193,11 +194,11 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
     ui.channelName->setVisible(false);
     layout->addWidget(ui.channelName);
 
-    ui.channelAnonymous = new QCheckBox("Join anonymously (read only)");
+    ui.channelAnonymous = new QCheckBox(uiText("Join anonymously (read only)"));
     ui.channelAnonymous->setVisible(false);
     ui.channelAnonymous->setToolTip(
-        "Connect with a Twitch anonymous chat session. You can read chat, but "
-        "you can't send messages from this split.");
+        uiText("Connect with a Twitch anonymous chat session. You can read chat, but "
+        "you can't send messages from this split."));
     layout->addWidget(ui.channelAnonymous);
 
     QObject::connect(ui.channel, &AutoCheckedRadioButton::toggled, this,
@@ -222,7 +223,7 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
     layout->addWidget(ui.whispers);
 
     ui.whispersLabel = new QLabel(
-        "Shows the whispers that you receive while Chatterino is running");
+        uiText("Shows the whispers that you receive while Chatterino is running"));
     ui.whispersLabel->setVisible(false);
     ui.whispersLabel->setWordWrap(true);
     layout->addWidget(ui.whispersLabel);
@@ -240,7 +241,7 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
     layout->addWidget(ui.mentions);
 
     ui.mentionsLabel = new QLabel(
-        "Shows all the messages that highlight you from any channel");
+        uiText("Shows all the messages that highlight you from any channel"));
     ui.mentionsLabel->setVisible(false);
     ui.mentionsLabel->setWordWrap(true);
     layout->addWidget(ui.mentionsLabel);
@@ -257,7 +258,7 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
     ui.watching = new AutoCheckedRadioButton("Watching");
     layout->addWidget(ui.watching);
 
-    ui.watchingLabel = new QLabel("Requires the Chatterino browser extension");
+    ui.watchingLabel = new QLabel(uiText("Requires the Chatterino browser extension"));
     ui.watchingLabel->setVisible(false);
     layout->addWidget(ui.watchingLabel);
 
@@ -273,7 +274,7 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
     ui.live = new AutoCheckedRadioButton("Live");
     layout->addWidget(ui.live);
 
-    ui.liveLabel = new QLabel("Shows when channels go live");
+    ui.liveLabel = new QLabel(uiText("Shows when channels go live"));
     ui.liveLabel->setVisible(false);
     layout->addWidget(ui.liveLabel);
 
@@ -289,8 +290,8 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
     ui.automod = new AutoCheckedRadioButton("AutoMod");
     layout->addWidget(ui.automod);
 
-    ui.automodLabel = new QLabel("Shows when AutoMod catches a message in "
-                                 "any channel you moderate.");
+    ui.automodLabel = new QLabel(uiText("Shows when AutoMod catches a message in "
+                                 "any channel you moderate."));
     ui.automodLabel->setVisible(false);
     ui.automodLabel->setWordWrap(true);
     layout->addWidget(ui.automodLabel);
@@ -313,16 +314,16 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
         auto *layout = new QVBoxLayout(ui.kickPage);
 
         auto *kickLabel = new QLabel(
-            "Join a Kick channel by its name.<br>This is <b>very "
+            uiText("Join a Kick channel by its name.<br>This is <b>very "
             "experimental</b> and Chatterino7 specific. Only basic features "
             "are supported. Please report bugs <a "
-            "href=\"https://github.com/SevenTV/chatterino7/issues\">here</a>.");
+            "href=\"https://github.com/SevenTV/chatterino7/issues\">here</a>."));
         kickLabel->setOpenExternalLinks(true);
         kickLabel->setWordWrap(true);
         layout->addWidget(kickLabel);
 
         ui.kickName = new QLineEdit();
-        ui.kickName->setPlaceholderText("Username");
+        ui.kickName->setPlaceholderText(uiText("Username"));
         layout->addWidget(ui.kickName);
 
         layout->addStretch(1);
@@ -335,16 +336,16 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
         auto *layout = new QVBoxLayout(ui.youtubePage);
 
         auto *youtubeLabel = new QLabel(
-            "Join a YouTube channel by its handle or name (e.g. "
+            uiText("Join a YouTube channel by its handle or name (e.g. "
             "<b>@youtube</b>).<br>Opens the channel's current live chat. "
-            "This is <b>read-only</b> and <b>experimental</b>.");
+            "This is <b>read-only</b> and <b>experimental</b>."));
         youtubeLabel->setOpenExternalLinks(true);
         youtubeLabel->setWordWrap(true);
         layout->addWidget(youtubeLabel);
 
         ui.youtubeName = new QLineEdit();
         ui.youtubeName->setPlaceholderText(
-            "Handle, channel ID, or URL (e.g. @youtube)");
+            uiText("Handle, channel ID, or URL (e.g. @youtube)"));
         layout->addWidget(ui.youtubeName);
 
         layout->addStretch(1);
@@ -357,19 +358,19 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
         ui.multiView = new QListWidget;
         ui.multiIndicatorMode = new QComboBox;
         ui.multiTintByPlatform =
-            new QCheckBox("Tint message background by platform");
+            new QCheckBox(uiText("Tint message background by platform"));
         ui.multiShowTwitchOverlays =
-            new QCheckBox("Show Twitch pins, polls && predictions");
+            new QCheckBox(uiText("Show Twitch pins, polls && predictions"));
         ui.multiCombinedViewerCount =
-            new QCheckBox("Show combined viewer count in the split header");
+            new QCheckBox(uiText("Show combined viewer count in the split header"));
         auto *layout = new QVBoxLayout(ui.multiPage);
         {
             auto *descriptionLabel = new QLabel(
-                "Show multiple channels in one split. From the input box, you "
+                uiText("Show multiple channels in one split. From the input box, you "
                 "can select an active/context channel to send messages in. "
                 "Report issues <a "
                 "href=\"https://github.com/SevenTV/chatterino7/issues\">here</"
-                "a>.");
+                "a>."));
             descriptionLabel->setWordWrap(true);
             descriptionLabel->setOpenExternalLinks(true);
             descriptionLabel->setSizePolicy(QSizePolicy::Preferred,
@@ -377,8 +378,8 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
             layout->addWidget(descriptionLabel);
 
             auto *header = new QWidget;
-            auto *add = new QPushButton("Add");
-            auto *remove = new QPushButton("Remove");
+            auto *add = new QPushButton(uiText("Add"));
+            auto *remove = new QPushButton(uiText("Remove"));
             auto *headerLayout = new QHBoxLayout(header);
             headerLayout->addWidget(add, 1);
             headerLayout->addWidget(remove, 1);
@@ -406,7 +407,7 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
         ui.multiView->setSizeAdjustPolicy(QListView::AdjustToContents);
         layout->addWidget(ui.multiView, 1);
 
-        layout->addWidget(new QLabel("Channel indicator:"));
+        layout->addWidget(new QLabel(uiText("Channel indicator:")));
         {
             using Mode = MultiChannelIndicatorMode;
 
@@ -425,19 +426,19 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
         layout->addWidget(ui.multiIndicatorMode);
 
         ui.multiTintByPlatform->setToolTip(
-            "Give each message a faint background tint in its platform's color "
+            uiText("Give each message a faint background tint in its platform's color "
             "(Twitch purple, YouTube red, Kick green) so the chats are easy to "
-            "tell apart.");
+            "tell apart."));
         layout->addWidget(ui.multiTintByPlatform);
 
         ui.multiShowTwitchOverlays->setToolTip(
-            "Show the Twitch pinned message, poll and prediction banners from "
-            "the Twitch channel in this multi split.");
+            uiText("Show the Twitch pinned message, poll and prediction banners from "
+            "the Twitch channel in this multi split."));
         layout->addWidget(ui.multiShowTwitchOverlays);
 
         ui.multiCombinedViewerCount->setToolTip(
-            "Show the summed live viewer count of all channels in this multi "
-            "split's header.");
+            uiText("Show the summed live viewer count of all channels in this multi "
+            "split's header."));
         layout->addWidget(ui.multiCombinedViewerCount);
 
         ui.notebook->addPage(ui.multiPage, "Multi");

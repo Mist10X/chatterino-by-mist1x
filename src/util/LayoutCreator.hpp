@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "common/UiLanguage.hpp"
+
 #include <QHBoxLayout>
 #include <QScrollArea>
 #include <QTabWidget>
@@ -113,7 +115,7 @@ public:
         auto *widget = new QWidget;
         widget->setLayout(item);
 
-        this->item_->addTab(widget, title);
+        this->item_->addTab(widget, uiText(title));
 
         return LayoutCreator<U>(item);
     }

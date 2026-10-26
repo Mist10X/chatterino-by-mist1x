@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "messages/MessageBuilder.hpp"
+#include "widgets/helper/HighlightToast.hpp"
+#include "util/PostToThread.hpp"
 
 #include "Application.hpp"
 #include "common/LinkParser.hpp"
@@ -43,10 +45,12 @@
 #include "providers/moltorino/MoltorinoSupporterBadges.hpp"
 #include "providers/repetitions/RepeatedMessageDetector.hpp"
 #include "providers/seventv/SeventvBadges.hpp"
+#include "providers/seventv/SeventvPaints.hpp"
 #include "providers/seventv/SeventvEmotes.hpp"
 #include "providers/seventv/SeventvPersonalEmotes.hpp"
 #include "providers/twitch/api/Helix.hpp"
 #include "providers/twitch/ChannelPointReward.hpp"
+#include "providers/twitch/ClipPreview.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchBadge.hpp"
 #include "providers/twitch/TwitchBadges.hpp"
@@ -1450,7 +1454,12 @@ MessagePtrMut MessageBuilder::release()
     if (this->message_ != nullptr)
     {
         this->flushPendingModifiers();
+        for (auto &[slug, url] : this->clipCards_)
+        {
+            this->emplace<ClipCardElement>(std::move(slug), std::move(url));
+        }
     }
+    this->clipCards_.clear();
     std::shared_ptr<Message> ptr;
     this->message_.swap(ptr);
     return ptr;
@@ -1511,7 +1520,25 @@ void MessageBuilder::addLink(const linkparser::Parsed &parsedLink,
                                    MessageElementFlag::Text, this->textColor_);
     }
 
-    getApp()->getLinkResolver()->resolve(el->linkInfo());
+    // Titles in chat and unshortening need the page info up front;
+    // otherwise previews load on hover.
+    if (getSettings()->unshortLinks || getSettings()->showLinkTitles)
+    {
+        getApp()->getLinkResolver()->resolve(el->linkInfo());
+    }
+
+    // A Twitch clip also gets a card under the message (two at most).
+    if (this->clipCards_.size() < 2)
+    {
+        auto slug = clippreview::clipSlug(fullUrl);
+        if (!slug.isEmpty() &&
+            std::ranges::none_of(this->clipCards_, [&](const auto &card) {
+                return card.first == slug;
+            }))
+        {
+            this->clipCards_.emplace_back(std::move(slug), fullUrl);
+        }
+    }
 }
 
 bool MessageBuilder::isIgnored(const QString &originalMessage,
@@ -1591,6 +1618,15 @@ void MessageBuilder::triggerHighlights(const Channel *channel,
 
     actuallyTriggerHighlights(channelName, alert.playSound, alert.customSound,
                               alert.windowAlert);
+
+    // «Мигать на панели задач» also shows a card at the top of the window
+    // (like Chatterino+), unless that channel is on the open tab.
+    if (alert.windowAlert && message)
+    {
+        runInGuiThread([channelName, message] {
+            showHighlightToast(channelName, message);
+        });
+    }
 
     if (alert.playSound)
     {
@@ -1785,6 +1821,7 @@ MessagePtr MessageBuilder::makeDeletionMessageFromIRC(
     builder.message().flags.set(MessageFlag::System);
     builder.message().flags.set(MessageFlag::DoNotTriggerNotification);
     builder.message().flags.set(MessageFlag::ModerationAction);
+    builder.message().flags.set(MessageFlag::Deletion);
     // TODO(mm2pl): If or when jumping to a single message gets implemented a link,
     // add a link to the originalMessage
     builder.emplace<TextElement>("A message from", MessageElementFlag::Text,
@@ -1816,6 +1853,7 @@ MessagePtr MessageBuilder::makeDeletionMessageFromIRC(
                               MessageColor::Text)
         ->setLink({Link::JumpToMessage, originalMessage->id});
     builder.message().timeoutUser = originalMessage->loginName;
+    builder.message().timeoutUserID = originalMessage->userID;
 
     const auto deletionText =
         QString("A message from %1 was deleted: %2")
@@ -2557,7 +2595,12 @@ void MessageBuilder::addTwitchGif(const QString &id, QStringView originalText)
             },
             link, MessageElementFlag::Text, MessageColor::Link);
 
-        getApp()->getLinkResolver()->resolve(el->linkInfo());
+        // Titles in chat and unshortening need the page info up front;
+        // otherwise previews load on hover.
+        if (getSettings()->unshortLinks || getSettings()->showLinkTitles)
+        {
+            getApp()->getLinkResolver()->resolve(el->linkInfo());
+        }
     }
 }
 
@@ -3742,6 +3785,8 @@ void MessageBuilder::appendBttvBadges(const QString &userID)
 
 void MessageBuilder::appendSeventvBadges(const QString &userID)
 {
+    // badges remembered on disk are registered on the first look
+    getApp()->getSeventvPaints()->ensureLoaded();
     if (auto badge = getApp()->getSeventvBadges()->getBadge({userID}))
     {
         this->emplace<BadgeElement>(*badge, MessageElementFlag::BadgeSevenTV);

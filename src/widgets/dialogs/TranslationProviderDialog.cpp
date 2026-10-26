@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/TranslationProviderDialog.hpp"
 
 #include "providers/translation/TranslationRequest.hpp"
@@ -36,28 +37,28 @@ QString providerDescription(TranslationProvider provider)
     switch (provider)
     {
         case TranslationProvider::GoogleBuiltIn:
-            return QStringLiteral(
+            return uiText(QStringLiteral(
                 "Works without setup. Google Translate handles the "
-                "translation.");
+                "translation."));
         case TranslationProvider::MicrosoftFree:
-            return QStringLiteral(
+            return uiText(QStringLiteral(
                 "Works without setup. Microsoft Translator handles the "
-                "translation.");
+                "translation."));
         case TranslationProvider::DeepL:
-            return QStringLiteral(
-                "Enter a DeepL API key. Your key is stored on this device.");
+            return uiText(QStringLiteral(
+                "Enter a DeepL API key. Your key is stored on this device."));
         case TranslationProvider::LibreTranslate:
-            return QStringLiteral(
+            return uiText(QStringLiteral(
                 "Use libretranslate.com or enter your own server address. "
-                "Some private servers do not need a key.");
+                "Some private servers do not need a key."));
         case TranslationProvider::GoogleCloud:
-            return QStringLiteral(
+            return uiText(QStringLiteral(
                 "Use an API key from a project with Cloud Translation Basic "
-                "enabled. Your key is stored on this device.");
+                "enabled. Your key is stored on this device."));
         case TranslationProvider::MicrosoftAzure:
-            return QStringLiteral(
+            return uiText(QStringLiteral(
                 "Enter an Azure Translator key and its region. Leave the "
-                "region empty for a global resource.");
+                "region empty for a global resource."));
     }
     return {};
 }
@@ -70,7 +71,7 @@ TranslationProviderDialog::TranslationProviderDialog(QWidget *parent)
           getSettings()->translationProvider.getValue()))
 {
     const auto &descriptor = descriptorFor(this->provider_);
-    this->setWindowTitle(QStringLiteral("Set up translation"));
+    this->setWindowTitle(uiText(QStringLiteral("Set up translation")));
     this->setModal(true);
     this->setMinimumWidth(520);
 
@@ -86,13 +87,13 @@ TranslationProviderDialog::TranslationProviderDialog(QWidget *parent)
     this->description_->setWordWrap(true);
     layout->addWidget(this->description_);
 
-    auto *settings = new QGroupBox(QStringLiteral("Connection"), this);
+    auto *settings = new QGroupBox(uiText(QStringLiteral("Connection")), this);
     auto *form = new QFormLayout(settings);
 
     this->apiKey_ = new QLineEdit(settings);
     this->apiKey_->setEchoMode(QLineEdit::Password);
-    this->apiKey_->setPlaceholderText(QStringLiteral("Enter a new key"));
-    this->removeKey_ = new QPushButton(QStringLiteral("Remove key"), settings);
+    this->apiKey_->setPlaceholderText(uiText(QStringLiteral("Enter a new key")));
+    this->removeKey_ = new QPushButton(uiText(QStringLiteral("Remove key")), settings);
     this->removeKey_->setEnabled(false);
     auto *keyRow = new QWidget(settings);
     auto *keyLayout = new QHBoxLayout(keyRow);
@@ -100,8 +101,8 @@ TranslationProviderDialog::TranslationProviderDialog(QWidget *parent)
     keyLayout->addWidget(this->apiKey_, 1);
     keyLayout->addWidget(this->removeKey_);
     this->keyLabel_ = new QLabel(descriptor.apiKeyOptional
-                                     ? QStringLiteral("API key (optional):")
-                                     : QStringLiteral("API key:"),
+                                     ? uiText(QStringLiteral("API key (optional):"))
+                                     : uiText(QStringLiteral("API key:")),
                                  settings);
     form->addRow(this->keyLabel_, keyRow);
 
@@ -109,24 +110,24 @@ TranslationProviderDialog::TranslationProviderDialog(QWidget *parent)
         getSettings()->translationLibreEndpoint.getValue(), settings);
     this->libreEndpoint_->setPlaceholderText(
         QStringLiteral("https://libretranslate.com"));
-    this->endpointLabel_ = new QLabel(QStringLiteral("Server:"), settings);
+    this->endpointLabel_ = new QLabel(uiText(QStringLiteral("Server:")), settings);
     form->addRow(this->endpointLabel_, this->libreEndpoint_);
 
     this->azureRegion_ = new QLineEdit(
         getSettings()->translationAzureRegion.getValue(), settings);
     this->azureRegion_->setPlaceholderText(
-        QStringLiteral("Optional, for example eastus"));
-    this->regionLabel_ = new QLabel(QStringLiteral("Region:"), settings);
+        uiText(QStringLiteral("Optional, for example eastus")));
+    this->regionLabel_ = new QLabel(uiText(QStringLiteral("Region:")), settings);
     form->addRow(this->regionLabel_, this->azureRegion_);
 
     this->azureEndpoint_ = new QLineEdit(
         getSettings()->translationAzureEndpoint.getValue(), settings);
     this->azureEndpoint_->setPlaceholderText(
-        QStringLiteral("Use global endpoint"));
+        uiText(QStringLiteral("Use global endpoint")));
     this->azureEndpoint_->setToolTip(
-        QStringLiteral("Optional. Paste the resource endpoint from Azure."));
+        uiText(QStringLiteral("Optional. Paste the resource endpoint from Azure.")));
     this->azureEndpointLabel_ =
-        new QLabel(QStringLiteral("Endpoint:"), settings);
+        new QLabel(uiText(QStringLiteral("Endpoint:")), settings);
     form->addRow(this->azureEndpointLabel_, this->azureEndpoint_);
 
     const bool hasKey = descriptor.usesApiKey;
@@ -154,14 +155,14 @@ TranslationProviderDialog::TranslationProviderDialog(QWidget *parent)
     layout->addWidget(this->status_);
 
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
-    this->test_ = buttons->addButton(QStringLiteral("Test"),
+    this->test_ = buttons->addButton(uiText(QStringLiteral("Test")),
                                      QDialogButtonBox::ActionRole);
     this->save_ = buttons->addButton(QDialogButtonBox::Save);
     this->save_->setVisible(hasKey || this->provider_ ==
                                           TranslationProvider::LibreTranslate);
     if (hasKey)
     {
-        this->test_->setText(QStringLiteral("Save and test"));
+        this->test_->setText(uiText(QStringLiteral("Save and test")));
     }
     QObject::connect(buttons, &QDialogButtonBox::rejected, this,
                      &QDialog::close);
@@ -186,8 +187,8 @@ void TranslationProviderDialog::save(bool testAfter)
         credential.isEmpty() && !this->credentialSaved_)
     {
         this->setStatus(testAfter
-                            ? QStringLiteral("Enter an API key before testing.")
-                            : QStringLiteral("Enter an API key before saving."),
+                            ? uiText(QStringLiteral("Enter an API key before testing."))
+                            : uiText(QStringLiteral("Enter an API key before saving.")),
                         true);
         this->apiKey_->setFocus(Qt::OtherFocusReason);
         return;
@@ -218,13 +219,13 @@ void TranslationProviderDialog::save(bool testAfter)
         }
         else
         {
-            this->setStatus(QStringLiteral("Saved."));
+            this->setStatus(uiText(QStringLiteral("Saved.")));
         }
         return;
     }
 
     this->setBusy(true);
-    this->setStatus(QStringLiteral("Saving key..."));
+    this->setStatus(uiText(QStringLiteral("Saving key...")));
     const QPointer<TranslationProviderDialog> self(this);
     writeTranslationProviderCredential(
         this->provider_, credential,
@@ -241,7 +242,7 @@ void TranslationProviderDialog::save(bool testAfter)
             }
             self->saveConnectionSettings();
             self->apiKey_->clear();
-            self->apiKey_->setPlaceholderText(QStringLiteral("Saved key"));
+            self->apiKey_->setPlaceholderText(uiText(QStringLiteral("Saved key")));
             self->credentialSaved_ = true;
             self->setBusy(false);
             if (testAfter)
@@ -250,7 +251,7 @@ void TranslationProviderDialog::save(bool testAfter)
             }
             else
             {
-                self->setStatus(QStringLiteral("Key saved."));
+                self->setStatus(uiText(QStringLiteral("Key saved.")));
             }
         });
 }
@@ -289,11 +290,11 @@ void TranslationProviderDialog::saveConnectionSettings()
 void TranslationProviderDialog::testConnection()
 {
     this->setBusy(true);
-    this->setStatus(QStringLiteral("Testing..."));
+    this->setStatus(uiText(QStringLiteral("Testing...")));
     requestTextTranslation(
         QStringLiteral("Hello World!"), QStringLiteral("es"), this,
         [this](const TranslationResult &result) {
-            this->setStatus(QStringLiteral("Connected. Test result: %1")
+            this->setStatus(uiText(QStringLiteral("Connected. Test result: %1"))
                                 .arg(result.translatedText));
         },
         [this](const QString &error) {
@@ -308,10 +309,10 @@ void TranslationProviderDialog::testConnection()
 void TranslationProviderDialog::removeCredential()
 {
     QMessageBox box(this);
-    box.setWindowTitle(QStringLiteral("Remove saved key?"));
-    box.setText(QStringLiteral("Remove the saved %1 key?")
+    box.setWindowTitle(uiText(QStringLiteral("Remove saved key?")));
+    box.setText(uiText(QStringLiteral("Remove the saved %1 key?"))
                     .arg(translationProviderName(this->provider_)));
-    auto *remove = box.addButton(QStringLiteral("Remove key"),
+    auto *remove = box.addButton(uiText(QStringLiteral("Remove key")),
                                  QMessageBox::DestructiveRole);
     box.addButton(QMessageBox::Cancel);
     box.exec();
@@ -335,10 +336,10 @@ void TranslationProviderDialog::removeCredential()
                 return;
             }
             self->apiKey_->clear();
-            self->apiKey_->setPlaceholderText(QStringLiteral("No saved key"));
+            self->apiKey_->setPlaceholderText(uiText(QStringLiteral("No saved key")));
             self->credentialSaved_ = false;
             self->setBusy(false);
-            self->setStatus(QStringLiteral("Key removed."));
+            self->setStatus(uiText(QStringLiteral("Key removed.")));
         });
 }
 
@@ -347,12 +348,12 @@ void TranslationProviderDialog::refreshCredentialStatus()
     const auto &descriptor = descriptorFor(this->provider_);
     if (!descriptor.usesApiKey)
     {
-        this->setStatus(QStringLiteral("Ready to use. No setup needed."));
+        this->setStatus(uiText(QStringLiteral("Ready to use. No setup needed.")));
         return;
     }
 
     this->setBusy(true);
-    this->setStatus(QStringLiteral("Checking for a saved key..."));
+    this->setStatus(uiText(QStringLiteral("Checking for a saved key...")));
     const QPointer<TranslationProviderDialog> self(this);
     readTranslationProviderCredential(
         this->provider_,
@@ -366,7 +367,7 @@ void TranslationProviderDialog::refreshCredentialStatus()
             {
                 self->credentialSaved_ = false;
                 self->apiKey_->setPlaceholderText(
-                    QStringLiteral("Unable to check saved key"));
+                    uiText(QStringLiteral("Unable to check saved key")));
                 self->setStatus(credential.error(), true);
                 self->setBusy(false);
                 return;
@@ -374,20 +375,20 @@ void TranslationProviderDialog::refreshCredentialStatus()
             if (!credential->trimmed().isEmpty())
             {
                 self->credentialSaved_ = true;
-                self->apiKey_->setPlaceholderText(QStringLiteral("Saved key"));
-                self->setStatus(QStringLiteral("A key is already saved."));
+                self->apiKey_->setPlaceholderText(uiText(QStringLiteral("Saved key")));
+                self->setStatus(uiText(QStringLiteral("A key is already saved.")));
                 self->setBusy(false);
                 return;
             }
             self->credentialSaved_ = false;
             self->apiKey_->setPlaceholderText(
-                optional ? QStringLiteral("Optional")
-                         : QStringLiteral("No saved key"));
+                optional ? uiText(QStringLiteral("Optional"))
+                         : uiText(QStringLiteral("No saved key")));
             self->setStatus(optional
-                                ? QStringLiteral("A key is optional for many "
-                                                 "private servers.")
-                                : QStringLiteral("Enter an API key to use "
-                                                 "this service."));
+                                ? uiText(QStringLiteral("A key is optional for many "
+                                                 "private servers."))
+                                : uiText(QStringLiteral("Enter an API key to use "
+                                                 "this service.")));
             self->setBusy(false);
         },
         true);

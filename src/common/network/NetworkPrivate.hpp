@@ -8,6 +8,7 @@
 #include "common/network/NetworkCommon.hpp"
 #include "util/DebugCount.hpp"
 
+#include <QDeadlineTimer>
 #include <QHttpMultiPart>
 #include <QNetworkRequest>
 #include <QPointer>
@@ -58,6 +59,10 @@ public:
     std::unique_ptr<QHttpMultiPart, DeleteLater> multiPartPayload;
 
     std::optional<std::chrono::milliseconds> timeout{};
+    std::optional<QDeadlineTimer> deadline;
+    // Start when dispatched, so time in the worker/cache queue counts too.
+    // Explicit timeouts apply to every method; finite GETs default to 30 s.
+    void startDeadline();
 #ifndef NDEBUG
     bool ignoreSslErrors = false;
 #endif

@@ -90,6 +90,16 @@ void loadCached(std::shared_ptr<NetworkData> &&data)
 
     QByteArray bytes = cachedFile.readAll();
 
+    // A cache hit must not silently extend a deadline while waiting in the
+    // concurrent file-reader queue, either.
+    if (data->deadline && data->deadline->hasExpired())
+    {
+        data->emitError(
+            {NetworkResult::NetworkError::TimeoutError, {}, {}});
+        data->emitFinally();
+        return;
+    }
+
     qCDebug(chatterinoHTTP).noquote() << data->typeString() << "[CACHED] 200"
                                       << data->request.url().toString();
 
@@ -105,6 +115,22 @@ namespace chatterino {
 NetworkData::NetworkData()
 {
     DebugCount::increase(DebugObject::NetworkData);
+}
+
+void NetworkData::startDeadline()
+{
+    if (this->deadline)
+    {
+        return;
+    }
+    if (this->timeout)
+    {
+        this->deadline.emplace(std::max(qint64(0), qint64(this->timeout->count())), Qt::PreciseTimer);
+    }
+    else if (this->requestType == NetworkRequestType::Get)
+    {
+        this->deadline.emplace(30000, Qt::PreciseTimer);
+    }
 }
 
 NetworkData::~NetworkData()
@@ -233,6 +259,7 @@ QString NetworkData::typeString() const
 
 void load(std::shared_ptr<NetworkData> &&data)
 {
+    data->startDeadline();
     if (data->cache)
     {
         std::ignore = QtConcurrent::run([data = std::move(data)]() mutable {

@@ -2,9 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 
 #include "Application.hpp"
+#include "common/ArchiveChatPolicy.hpp"
 #include "common/Common.hpp"
 #include "common/network/NetworkRequest.hpp"
 #include "common/network/NetworkResult.hpp"  // IWYU pragma: keep
@@ -635,7 +637,7 @@ MessagePtr makeChatWarningMessage(const TwitchChannel &channel,
         "Acknowledge", MessageElementFlag::Text,
         MessageColor(QColor("#00C853")), FontStyle::ChatMediumBold);
     acknowledge->setLink({Link::AcknowledgeChatWarning, warning.channelId});
-    acknowledge->setTooltip("Acknowledge this warning");
+    acknowledge->setTooltip(uiText("Acknowledge this warning"));
 
     return builder.release();
 }
@@ -663,6 +665,7 @@ TwitchChannel::TwitchChannel(const QString &name, bool anonymous)
     , mod_(getApp()->getTwitch()->isModeratorIn(name))
     , nextSharedChatSessionProbe_(QDateTime::currentDateTime())
 {
+    followArchiveChatPolicy(*this);
     qCDebug(chatterinoTwitch) << "[TwitchChannel" << name << "] Opened";
 
     auto clearPersonalAuthState = [this](bool clearFollowingStatus) {
@@ -723,6 +726,8 @@ TwitchChannel::TwitchChannel(const QString &name, bool anonymous)
         getApp()->getAccounts()->twitch.currentUserChanged.connect(
             [this, clearPersonalAuthState] {
                 this->setMod(false);
+                // the input shows the new account's own timeout, if any
+                this->ownRestrictionChanged.invoke();
                 clearPersonalAuthState(true);
                 this->refreshPubSub();
                 this->refreshTwitchChannelEmotes(false);
@@ -901,6 +906,28 @@ TwitchChannel::TwitchChannel(const QString &name, bool anonymous)
             }
         });
 
+    this->ownRestrictionProbe_.setSingleShot(true);
+    QObject::connect(&this->ownRestrictionProbe_, &QTimer::timeout, [this] {
+        // No "timed out" / "banned" answer since that send: it went through.
+        const auto it =
+            this->ownRestrictions_.find(this->ownRestrictionProbeUser_);
+        if (it != this->ownRestrictions_.end() &&
+            it->second.confirmedAtMs < this->ownRestrictionProbeAtMs_)
+        {
+            this->liftOwnRestriction(this->ownRestrictionProbeUser_);
+        }
+    });
+    // "X unbanned / untimed out Y" in this chat lifts Y's restriction, also
+    // for an account that is not signed in right now.
+    std::ignore = this->messageAppended.connect(
+        [this](MessagePtr &message, auto) {
+            if (message && message->flags.has(MessageFlag::Untimeout) &&
+                !message->timeoutUserID.isEmpty() &&
+                this->ownRestrictions_.contains(message->timeoutUserID))
+            {
+                this->liftOwnRestriction(message->timeoutUserID);
+            }
+        });
     QObject::connect(&this->sendWaitTimer_, &QTimer::timeout,
                      &this->lifetimeGuard_, [this] {
                          this->syncSendWaitTimer();
@@ -1570,6 +1597,41 @@ void TwitchChannel::roomIdChanged()
     this->refreshBTTVChannelEmotes(false);
     this->refreshSevenTVChannelEmotes(false);
     this->refreshPinnedMessage();
+    this->checkOwnBan();
+}
+
+void TwitchChannel::checkOwnBan()
+{
+    if (this->isAnonymous() || !getSettings()->readChatWhileBanned ||
+        this->roomId().isEmpty())
+    {
+        return;
+    }
+    auto current = getApp()->getAccounts()->twitch.getCurrent();
+    if (!current || current->isAnon())
+    {
+        return;
+    }
+    // Only the account's own web login may ask about itself.
+    const auto token = MoltorinoAuth::resolveCurrentUserToken();
+    if (!token.hasToken() || token.userId != current->getUserId())
+    {
+        return;
+    }
+    TwitchGql::getOwnChatBan(
+        this->roomId(), current->getUserId(), token.token,
+        [weak = this->weakFromThis(), userId = current->getUserId()](
+            bool banned) {
+            auto self = weak.lock();
+            if (self && banned)
+            {
+                self->setOwnBanned(userId);
+            }
+        },
+        [name = this->getName()](const QString &error) {
+            qCDebug(chatterinoTwitch)
+                << "Own ban check failed in" << name << error;
+        });
 }
 
 QString TwitchChannel::prepareMessage(const QString &message,
@@ -4328,6 +4390,162 @@ void TwitchChannel::syncSendWaitTimer()
     }
 }
 
+namespace {
+
+QString currentTwitchUserId()
+{
+    auto current = getApp()->getAccounts()->twitch.getCurrent();
+    return current && !current->isAnon() ? current->getUserId() : QString();
+}
+
+}  // namespace
+
+bool TwitchChannel::isOwnAccountId(const QString &userId)
+{
+    if (userId.isEmpty())
+    {
+        return false;
+    }
+    for (const auto &account :
+         *getApp()->getAccounts()->twitch.accounts.readOnly())
+    {
+        if (account && !account->isAnon() && account->getUserId() == userId)
+        {
+            return true;
+        }
+    }
+    return userId == currentTwitchUserId();
+}
+
+const TwitchChannel::OwnRestriction &TwitchChannel::ownRestriction() const
+{
+    return this->ownRestrictionOf(currentTwitchUserId());
+}
+
+const TwitchChannel::OwnRestriction &TwitchChannel::ownRestrictionOf(
+    const QString &userId) const
+{
+    static const OwnRestriction none{};
+    const auto it = this->ownRestrictions_.find(userId);
+    return it == this->ownRestrictions_.end() ? none : it->second;
+}
+
+void TwitchChannel::setOwnTimedOut(const QDateTime &until,
+                                   const QString &userId)
+{
+    const auto id = userId.isEmpty() ? currentTwitchUserId() : userId;
+    const auto now = QDateTime::currentDateTimeUtc();
+    if (!until.isValid() || until <= now)
+    {
+        return;
+    }
+    auto &own = this->ownRestrictions_[id];
+    own.confirmedAtMs = now.toMSecsSinceEpoch();
+    // Repeated notices about the same timeout differ by a second or so.
+    if (own.kind == OwnRestriction::Kind::TimedOut &&
+        std::abs(own.until.secsTo(until)) < 3)
+    {
+        return;
+    }
+    own.kind = OwnRestriction::Kind::TimedOut;
+    own.until = until.toUTC();
+    own.liftedBan = false;
+    this->ownRestrictionChanged.invoke();
+}
+
+void TwitchChannel::setOwnBanned(const QString &userId)
+{
+    const auto id = userId.isEmpty() ? currentTwitchUserId() : userId;
+    auto &own = this->ownRestrictions_[id];
+    own.confirmedAtMs = QDateTime::currentMSecsSinceEpoch();
+    if (own.kind == OwnRestriction::Kind::Banned)
+    {
+        return;
+    }
+    own.kind = OwnRestriction::Kind::Banned;
+    own.until = {};
+    own.liftedBan = false;
+    this->ownRestrictionChanged.invoke();
+}
+
+void TwitchChannel::liftOwnRestriction(const QString &userId)
+{
+    const auto id = userId.isEmpty() ? currentTwitchUserId() : userId;
+    const auto it = this->ownRestrictions_.find(id);
+    if (it == this->ownRestrictions_.end())
+    {
+        return;
+    }
+    auto &own = it->second;
+    if (own.kind != OwnRestriction::Kind::TimedOut &&
+        own.kind != OwnRestriction::Kind::Banned)
+    {
+        return;
+    }
+    own.liftedBan = own.kind == OwnRestriction::Kind::Banned;
+    own.kind = OwnRestriction::Kind::Lifted;
+    own.until = {};
+    if (id == currentTwitchUserId())
+    {
+        this->setSendWait(0);
+    }
+    this->ownRestrictionChanged.invoke();
+}
+
+void TwitchChannel::acknowledgeOwnRestrictionLifted()
+{
+    const auto it = this->ownRestrictions_.find(currentTwitchUserId());
+    if (it == this->ownRestrictions_.end() ||
+        it->second.kind != OwnRestriction::Kind::Lifted)
+    {
+        return;
+    }
+    this->ownRestrictions_.erase(it);
+    this->ownRestrictionChanged.invoke();
+}
+
+void TwitchChannel::noteSendWhileRestricted()
+{
+    const auto kind = this->ownRestriction().kind;
+    if (kind != OwnRestriction::Kind::TimedOut &&
+        kind != OwnRestriction::Kind::Banned)
+    {
+        return;
+    }
+    this->ownRestrictionProbeUser_ = currentTwitchUserId();
+    this->ownRestrictionProbeAtMs_ = QDateTime::currentMSecsSinceEpoch();
+    this->ownRestrictionProbe_.start(5000);
+}
+
+void TwitchChannel::handleOwnModerationPubSub(const QJsonObject &data)
+{
+    const auto action = data.value("action").toString();
+    // The topic is per user: target_id is that user.
+    const auto userId = data.value("target_id").toString();
+    if (action == "timeout")
+    {
+        auto until = QDateTime::fromString(data.value("expires_at").toString(),
+                                           Qt::ISODateWithMs);
+        if (!until.isValid())
+        {
+            const auto ms = data.value("expires_in_ms").toVariant().toLongLong();
+            if (ms > 0)
+            {
+                until = QDateTime::currentDateTimeUtc().addMSecs(ms);
+            }
+        }
+        this->setOwnTimedOut(until, userId);
+    }
+    else if (action == "ban")
+    {
+        this->setOwnBanned(userId);
+    }
+    else if (action == "untimeout" || action == "unban")
+    {
+        this->liftOwnRestriction(userId);
+    }
+}
+
 void TwitchChannel::setSendWait(int seconds)
 {
     if (seconds <= 0)
@@ -5873,8 +6091,8 @@ void TwitchChannel::refreshChannelPoints()
 
     TwitchGql::getChannelPoints(
         this->getName(), auth.token,
-        [weak, requestToken](qint64 points) {
-            runInGuiThread([weak, requestToken, points]() {
+        [weak, requestToken](qint64 points, QString iconUrl) {
+            runInGuiThread([weak, requestToken, points, iconUrl]() {
                 auto shared = weak.lock();
                 if (!shared)
                 {
@@ -5901,6 +6119,7 @@ void TwitchChannel::refreshChannelPoints()
                     << channel->getName();
                 */
                 channel->setChannelPointBalance(points);
+                channel->channelPointsIconUrl_ = iconUrl;
                 ChannelPointsChartStore::recordSample(channel->roomId(),
                                                       points);
                 channel->lastChannelPointsError_.clear();
@@ -5942,6 +6161,11 @@ void TwitchChannel::refreshChannelPoints()
 qint64 TwitchChannel::channelPointBalance() const
 {
     return this->channelPoints_.load();
+}
+
+const QString &TwitchChannel::channelPointsIconUrl() const
+{
+    return this->channelPointsIconUrl_;
 }
 
 bool TwitchChannel::isChannelPointsFetchInFlight() const

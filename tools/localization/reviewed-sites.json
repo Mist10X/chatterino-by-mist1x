@@ -1,0 +1,142 @@
+[
+  {
+    "file": "src/widgets/ChatterListWidget.cpp",
+    "sites": 17
+  },
+  {
+    "file": "src/widgets/dialogs/ChannelManagementDialog.cpp",
+    "sites": 14
+  },
+  {
+    "file": "src/widgets/dialogs/ChannelPointsChartView.cpp",
+    "sites": 3
+  },
+  {
+    "file": "src/widgets/dialogs/ChannelPointsDialog.cpp",
+    "sites": 25
+  },
+  {
+    "file": "src/widgets/dialogs/CrossBanDialog.cpp",
+    "sites": 21
+  },
+  {
+    "file": "src/widgets/dialogs/EditHotkeyDialog.cpp",
+    "sites": 2
+  },
+  {
+    "file": "src/widgets/dialogs/EmotePopup.cpp",
+    "sites": 1
+  },
+  {
+    "file": "src/widgets/dialogs/font/PreviewWidget.cpp",
+    "sites": 1
+  },
+  {
+    "file": "src/widgets/dialogs/GifPickerDialog.cpp",
+    "sites": 5
+  },
+  {
+    "file": "src/widgets/dialogs/KickLoginPage.cpp",
+    "sites": 1
+  },
+  {
+    "file": "src/widgets/dialogs/LastRunCrashDialog.cpp",
+    "sites": 15
+  },
+  {
+    "file": "src/widgets/dialogs/MoltorinoAuthPage.cpp",
+    "sites": 8
+  },
+  {
+    "file": "src/widgets/dialogs/PredictionDialog.cpp",
+    "sites": 4
+  },
+  {
+    "file": "src/widgets/dialogs/ReplyThreadPopup.cpp",
+    "sites": 2
+  },
+  {
+    "file": "src/widgets/dialogs/RestoreBackupsDialog.cpp",
+    "sites": 2
+  },
+  {
+    "file": "src/widgets/dialogs/RewardQueueDialog.cpp",
+    "sites": 15
+  },
+  {
+    "file": "src/widgets/dialogs/TranslationProviderDialog.cpp",
+    "sites": 19
+  },
+  {
+    "file": "src/widgets/dialogs/TwitchBadgePickerDialog.cpp",
+    "sites": 15
+  },
+  {
+    "file": "src/widgets/dialogs/UserBadgesDialog.cpp",
+    "sites": 2
+  },
+  {
+    "file": "src/widgets/dialogs/UserInfoPopup.cpp",
+    "sites": 12
+  },
+  {
+    "file": "src/widgets/helper/ChannelView.cpp",
+    "sites": 2
+  },
+  {
+    "file": "src/widgets/helper/MessageView.cpp",
+    "sites": 2
+  },
+  {
+    "file": "src/widgets/helper/PinnedMessageBanner.cpp",
+    "sites": 7
+  },
+  {
+    "file": "src/widgets/helper/PollBanner.cpp",
+    "sites": 8
+  },
+  {
+    "file": "src/widgets/helper/PredictionBanner.cpp",
+    "sites": 11
+  },
+  {
+    "file": "src/widgets/OverlayWindow.cpp",
+    "sites": 1
+  },
+  {
+    "file": "src/widgets/PluginRepl.cpp",
+    "sites": 6
+  },
+  {
+    "file": "src/widgets/settingspages/CommandPage.cpp",
+    "sites": 1
+  },
+  {
+    "file": "src/widgets/settingspages/FiltersPage.cpp",
+    "sites": 2
+  },
+  {
+    "file": "src/widgets/settingspages/HighlightingPage.cpp",
+    "sites": 2
+  },
+  {
+    "file": "src/widgets/settingspages/ModerationPage.cpp",
+    "sites": 1
+  },
+  {
+    "file": "src/widgets/splits/Split.cpp",
+    "sites": 1
+  },
+  {
+    "file": "src/widgets/splits/SplitHeader.cpp",
+    "sites": 13
+  },
+  {
+    "file": "src/widgets/splits/SplitInput.cpp",
+    "sites": 32
+  },
+  {
+    "file": "src/widgets/Window.cpp",
+    "sites": 1
+  }
+]

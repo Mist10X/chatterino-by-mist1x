@@ -68,6 +68,11 @@ public:
         Signal<const QJsonObject &> updated;
     } chatWarning;
 
+    /// Timeout / untimeout / ban / unban of the signed-in user (data object).
+    struct {
+        Signal<const QJsonObject &> updated;
+    } ownModeration;
+
     struct {
         Signal<const QJsonObject &> updated;
     } raid;

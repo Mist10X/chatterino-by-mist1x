@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "widgets/helper/PinnedMessageBanner.hpp"
 
 #include "Application.hpp"
@@ -252,7 +253,7 @@ PinnedMessageBanner::PinnedMessageBanner(Split *split, QWidget *parent)
             .light = ":/buttons/switchDark.svg",
         },
         this, QSize(2, 2));
-    this->toggleButton_->setToolTip("Switch banner");
+    this->toggleButton_->setToolTip(uiText("Switch banner"));
     this->toggleButton_->setFixedSize(BASE_ICON_SIZE, BASE_ICON_SIZE);
     auto *toggleOpacity = new QGraphicsOpacityEffect(this);
     toggleOpacity->setOpacity(0.5);
@@ -266,7 +267,7 @@ PinnedMessageBanner::PinnedMessageBanner(Split *split, QWidget *parent)
             .light = ":/buttons/cancelDark.svg",
         },
         this, QSize(2, 2));
-    this->unpinButton_->setToolTip("Dismiss");
+    this->unpinButton_->setToolTip(uiText("Dismiss"));
     this->unpinButton_->setFixedSize(BASE_ICON_SIZE, BASE_ICON_SIZE);
     this->unpinButton_->setGraphicsEffect(new QGraphicsOpacityEffect);
     static_cast<QGraphicsOpacityEffect *>(this->unpinButton_->graphicsEffect())
@@ -539,7 +540,7 @@ void PinnedMessageBanner::setPinnedMessage(
 
     this->pinnerName_ =
         pin->pinnerName.isEmpty() ? "Moderator" : pin->pinnerName;
-    this->pinnerLabel_->setText("Pinned by " + this->pinnerName_);
+    this->pinnerLabel_->setText(uiText("Pinned by ") + this->pinnerName_);
 
     int displayMode = getSettings()->pinTimerDisplay;
 
@@ -549,7 +550,7 @@ void PinnedMessageBanner::setPinnedMessage(
     }
     else if (!this->endsAt_.has_value())
     {
-        this->icon_->setToolTip(QString("Pinned by %1\nPinned indefinitely")
+        this->icon_->setToolTip(uiText(QString("Pinned by %1\nPinned indefinitely"))
                                     .arg(this->pinnerName_));
     }
     else
@@ -592,8 +593,8 @@ void PinnedMessageBanner::setPinnedMessage(
                   });
     this->unpinButton_->setToolTip(
         (getSettings()->pinCloseButtonAction == 1 && hasModRights)
-            ? "Unpin message"
-            : "Dismiss");
+            ? uiText("Unpin message")
+            : uiText("Dismiss"));
 
     this->icon_->disconnect();
     if (hasModRights)
@@ -604,14 +605,14 @@ void PinnedMessageBanner::setPinnedMessage(
                           auto *menu = new QMenu(this);
                           menu->setAttribute(Qt::WA_DeleteOnClose);
 
-                          menu->addAction("Unpin Message", [channel]() {
+                          menu->addAction(uiText("Unpin Message"), [channel]() {
                               channel->unpinMessage();
                           });
 
                           if (pin->endsAt.has_value())
                           {
                               menu->addSeparator();
-                              menu->addAction("Pin Indefinitely", [channel]() {
+                              menu->addAction(uiText("Pin Indefinitely"), [channel]() {
                                   channel->keepPinned();
                               });
                           }
@@ -930,12 +931,12 @@ void PinnedMessageBanner::updateScaling()
         {
             this->messageView_->setFixedHeight(
                 std::min(contentHeight, MAX_EXPANDED_HEIGHT));
-            this->moreLabel_->setText(QString::fromUtf8("\xE2\x96\xB2 Less"));
+            this->moreLabel_->setText(uiText(QString::fromUtf8("\xE2\x96\xB2 Less")));
         }
         else
         {
             this->messageView_->setFixedHeight(firstLineHeight);
-            this->moreLabel_->setText(QString::fromUtf8("\xE2\x96\xBC More"));
+            this->moreLabel_->setText(uiText(QString::fromUtf8("\xE2\x96\xBC More")));
         }
 
         this->moreLabel_->setVisible(isTruncated);
@@ -991,15 +992,15 @@ QString formatElapsed(qint64 totalSecs)
     if (totalSecs < 60)
         return "just now";
     if (totalSecs < 3600)
-        return QString("%1m ago").arg(totalSecs / 60);
+        return uiText(QString("%1m ago")).arg(totalSecs / 60);
     if (totalSecs < 86400)
     {
         int h = totalSecs / 3600;
         int m = (totalSecs % 3600) / 60;
-        return m > 0 ? QString("%1h %2m ago").arg(h).arg(m)
-                     : QString("%1h ago").arg(h);
+        return m > 0 ? uiText(QString("%1h %2m ago")).arg(h).arg(m)
+                     : uiText(QString("%1h ago")).arg(h);
     }
-    return QString("%1d ago").arg(totalSecs / 86400);
+    return uiText(QString("%1d ago")).arg(totalSecs / 86400);
 }
 
 QString formatRemaining(qint64 secs)
@@ -1060,12 +1061,12 @@ void PinnedMessageBanner::updateTimer()
 
     if ((displayMode == 0 || displayMode == 1) && !timeStr.isEmpty())
     {
-        this->pinnerLabel_->setText(QString("Pinned by %1 \xC2\xB7 %2")
+        this->pinnerLabel_->setText(uiText(QString("Pinned by %1 \xC2\xB7 %2"))
                                         .arg(this->pinnerName_, timeStr));
     }
     else
     {
-        this->pinnerLabel_->setText("Pinned by " + this->pinnerName_);
+        this->pinnerLabel_->setText(uiText("Pinned by ") + this->pinnerName_);
     }
 
     if ((displayMode == 0 || displayMode == 2) && !countdownStr.isEmpty())
@@ -1075,7 +1076,7 @@ void PinnedMessageBanner::updateTimer()
     }
     else if (displayMode == 2 && !this->endsAt_.has_value())
     {
-        this->timerLabel_->setText("Indefinitely");
+        this->timerLabel_->setText(uiText("Indefinitely"));
         this->timerLabel_->show();
     }
     else
@@ -1088,9 +1089,9 @@ void PinnedMessageBanner::updateTimer()
         QString tooltip;
         if (!timeStr.isEmpty() && !countdownStr.isEmpty())
             tooltip =
-                QString("%1 \xC2\xB7 %2 remaining").arg(timeStr, countdownStr);
+                uiText(QString("%1 \xC2\xB7 %2 remaining")).arg(timeStr, countdownStr);
         else if (!countdownStr.isEmpty())
-            tooltip = QString("%1 remaining").arg(countdownStr);
+            tooltip = uiText(QString("%1 remaining")).arg(countdownStr);
         else if (!timeStr.isEmpty())
             tooltip = timeStr;
         else
@@ -1105,7 +1106,7 @@ void PinnedMessageBanner::updateTimer()
     {
         QToolTip::showText(
             this->icon_->mapToGlobal(QPoint(0, this->icon_->height() + 4)),
-            QString("%1 remaining").arg(countdownStr), this->icon_);
+            uiText(QString("%1 remaining")).arg(countdownStr), this->icon_);
     }
     else if (displayMode == 2 && this->icon_->underMouse() &&
              !timeStr.isEmpty())

@@ -24,12 +24,22 @@ public:
 
     pajlada::Signals::NoArgSignal heartbeat;
 
-    void smartReconnect();
+    /// Schedules a reconnect; returns its delay, or 0 if one is already queued.
+    std::chrono::milliseconds smartReconnect();
+
+    /// Name used in Logs/connection.log ("read", "write", ...).
+    void setDiagnosticsLabel(const QString &label);
+    /// Readable reason of the last failure ("" while none).
+    QString lastError() const;
 
     virtual void open();
     virtual void close();
 
 private:
+    void logEvent(const QString &text) const;
+
+    QString label_ = QStringLiteral("irc");
+    QString lastError_;
     QTimer pingTimer_;
     QTimer reconnectTimer_;
     std::atomic<bool> recentlyReceivedMessage_{true};

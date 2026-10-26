@@ -5,6 +5,7 @@
 #include "util/WindowsHelper.hpp"
 
 #include "Application.hpp"
+#include "common/Isolation.hpp"
 #include "common/Literals.hpp"
 
 #include <QApplication>
@@ -66,7 +67,9 @@ bool isRegisteredForStartup()
 {
     QSettings settings(RUN_KEY, QSettings::NativeFormat);
 
-    return !settings.value("Chatterino").toString().isEmpty();
+    return !settings.value(isolation::AUTOSTART_VALUE_NAME)
+                .toString()
+                .isEmpty();
 }
 
 void setRegisteredForStartup(bool isRegistered)
@@ -85,11 +88,12 @@ void setRegisteredForStartup(bool isRegistered)
                            .absoluteFilePath()
                            .replace('/', '\\');
 
-        settings.setValue("Chatterino", "\"" + exePath + "\" --autorun");
+        settings.setValue(isolation::AUTOSTART_VALUE_NAME,
+                          "\"" + exePath + "\" --autorun");
     }
     else
     {
-        settings.remove("Chatterino");
+        settings.remove(isolation::AUTOSTART_VALUE_NAME);
     }
 }
 

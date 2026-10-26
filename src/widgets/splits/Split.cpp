@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/splits/Split.hpp"
 
 #include "Application.hpp"
@@ -38,6 +39,7 @@
 #include "widgets/helper/MessageView.hpp"
 #include "widgets/helper/NotebookTab.hpp"
 #include "widgets/helper/PinnedMessageBanner.hpp"
+#include "widgets/helper/CornerBanners.hpp"
 #include "widgets/helper/PollBanner.hpp"
 #include "widgets/helper/PredictionBanner.hpp"
 #include "widgets/helper/ResizingTextEdit.hpp"
@@ -118,7 +120,7 @@ void showTutorialVideo(QWidget *parent, const QString &source,
             BaseWindow::BoundsCheckOnShow,
         },
         parent);
-    window->setWindowTitle("Leafyrino - " + title);
+    window->setWindowTitle(uiText("Leafyrino - ") + title);
     window->setAttribute(Qt::WA_DeleteOnClose);
     auto *layout = new QVBoxLayout();
     layout->addWidget(new QLabel(description));
@@ -150,6 +152,7 @@ Split::Split(QWidget *parent)
     , overlay_(new SplitOverlay(this))
 {
     this->setMouseTracking(true);
+    this->cornerBanners_ = new CornerBannerStack(this->view_);
     this->view_->setPausable(true);
     this->view_->setFocusProxy(this->input_->ui_.textEdit);
     this->setFocusProxy(this->input_->ui_.textEdit);
@@ -399,7 +402,7 @@ void Split::addShortcuts()
          [](const std::vector<QString> &) -> QString {
              auto *popup = new DebugPopup;
              popup->setAttribute(Qt::WA_DeleteOnClose);
-             popup->setWindowTitle("Leafyrino - Debug popup");
+             popup->setWindowTitle(uiText("Leafyrino - Debug popup"));
              popup->show();
              return "";
          }},
@@ -1074,7 +1077,13 @@ void Split::updateInputPlaceholder()
     if (soloYouTube)
     {
         this->input_->ui_.textEdit->setPlaceholderText(
-            u"This YouTube chat is read-only"_s);
+            uiText(u"This YouTube chat is read-only"_s));
+        return;
+    }
+
+    // Own timeout / ban (red with a countdown) and "it is over" (green).
+    if (this->input_->applyOwnRestrictionPlaceholder())
+    {
         return;
     }
 
@@ -1094,7 +1103,7 @@ void Split::updateInputPlaceholder()
         else
         {
             this->input_->ui_.textEdit->setPlaceholderText(
-                u"Send message in " % active->channel->getName() % u"...");
+                uiText(u"Send message in ") % active->channel->getName() % u"...");
         }
         return;
     }
@@ -1125,7 +1134,7 @@ void Split::updateInputPlaceholder()
         if (twitchChannel->isAnonymous())
         {
             this->input_->ui_.textEdit->setPlaceholderText(
-                "Anonymous channel - read only");
+                uiText("Anonymous channel - read only"));
             return;
         }
     }
@@ -1140,7 +1149,7 @@ void Split::updateInputPlaceholder()
     else
     {
         placeholderText =
-            QString("Send message as %1 in %2...")
+            uiText(QString("Send message as %1 in %2..."))
                 .arg(
                     getApp()->getAccounts()->twitch.getCurrent()->getUserName(),
                     this->getChannel()->getName());
@@ -2003,6 +2012,44 @@ void Split::setChannel(IndirectChannel newChannel)
 
     this->updateChannelConnections();
 
+    this->cornerBanners_->clear();
+    if (tc != nullptr)
+    {
+        this->channelSignalHolder_.managedConnect(
+            tc->incomingRaid,
+            [this](const QString &login, const QString &name, int viewers) {
+                if (!getSettings()->showIncomingRaidBanner)
+                {
+                    return;
+                }
+                this->cornerBanners_->setScale(this->scale());
+                this->cornerBanners_->show({
+                    .kind = CornerBannerData::Kind::Raid,
+                    .login = login,
+                    .displayName = name,
+                    .amount = viewers,
+                    .seconds = getSettings()->incomingRaidBannerSeconds,
+                });
+            });
+        this->channelSignalHolder_.managedConnect(
+            tc->massGiftSubs,
+            [this](const QString &login, const QString &name, int count) {
+                if (!getSettings()->showMassGiftBanner ||
+                    count < getSettings()->massGiftBannerMinimum)
+                {
+                    return;
+                }
+                this->cornerBanners_->setScale(this->scale());
+                this->cornerBanners_->show({
+                    .kind = CornerBannerData::Kind::GiftSubs,
+                    .login = login,
+                    .displayName = name,
+                    .amount = count,
+                    .seconds = getSettings()->massGiftBannerSeconds,
+                });
+            });
+    }
+
     this->primingBannerState_ = false;
 
     this->indirectChannelChangedConnection_ =
@@ -2626,7 +2673,7 @@ void Split::openSubPage()
 void Split::setFiltersDialog()
 {
     SelectChannelFiltersDialog d(this->getFilters(), this);
-    d.setWindowTitle("Select filters");
+    d.setWindowTitle(uiText("Select filters"));
 
     if (d.exec() == QDialog::Accepted)
     {

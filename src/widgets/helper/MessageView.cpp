@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/helper/MessageView.hpp"
 
 #include "Application.hpp"
@@ -490,7 +491,15 @@ void MessageView::showUserInfoPopup(const QString &userName)
         contextChannel = getApp()->getTwitch()->getChannelOrEmpty(
             this->message_->channelName);
     }
-    userPopup->setData(userName, contextChannel, openingChannel);
+    // Only an author link may use this message's UID. Mentions/replies refer
+    // to a different person and must retain their normal name-resolution path.
+    const auto authorId =
+        this->message_->platform == MessagePlatform::AnyOrTwitch &&
+                userName.compare(this->message_->loginName,
+                                 Qt::CaseInsensitive) == 0
+            ? this->message_->userID
+            : QString{};
+    userPopup->setData(userName, contextChannel, openingChannel, authorId);
 
     QPoint offset(userPopup->width() / 3, userPopup->height() / 5);
     userPopup->moveTo(QCursor::pos() - offset,
@@ -635,19 +644,19 @@ void MessageView::contextMenuEvent(QContextMenuEvent *event)
     QMenu menu;
     if (!this->selection_.isEmpty())
     {
-        menu.addAction(QStringLiteral("&Copy selection"), [this] {
+        menu.addAction(uiText(QStringLiteral("&Copy selection")), [this] {
             this->copySelectedText();
         });
     }
 
-    menu.addAction(QStringLiteral("Copy &message"), [this] {
+    menu.addAction(uiText(QStringLiteral("Copy &message")), [this] {
         QString copyString;
         this->messageLayout_->addSelectionText(copyString, 0, UINT32_MAX,
                                                CopyMode::OnlyTextAndEmotes);
         crossPlatformCopy(copyString);
     });
 
-    menu.addAction(QStringLiteral("Copy &full message"), [this] {
+    menu.addAction(uiText(QStringLiteral("Copy &full message")), [this] {
         QString copyString;
         this->messageLayout_->addSelectionText(copyString, 0, UINT32_MAX,
                                                CopyMode::EverythingButReplies);
@@ -664,11 +673,11 @@ void MessageView::contextMenuEvent(QContextMenuEvent *event)
             QString actionText =
                 searchName.isEmpty()
                     ? QStringLiteral("&Search")
-                    : QStringLiteral("&Search with %1").arg(searchName);
+                    : uiText(QStringLiteral("&Search with %1")).arg(searchName);
 
             if (getSettings()->searchIncognito && supportsIncognitoLinks())
             {
-                actionText += QStringLiteral(" in private mode");
+                actionText += uiText(QStringLiteral(" in private mode"));
             }
 
             menu.addAction(actionText, [this, searchURL] {

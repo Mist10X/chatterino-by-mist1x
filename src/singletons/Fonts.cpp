@@ -19,6 +19,27 @@ namespace {
 
 using namespace chatterino;
 
+// A portable profile can name this app-local family even when Windows has
+// never registered it. Keep the selected family/size/weight; make its bundled
+// faces available privately before resolving or caching any chat fonts.
+void ensureSelectedBundledFont(const QString &family)
+{
+    if (family.compare(QStringLiteral("Archive Montserrat"), Qt::CaseInsensitive) != 0 ||
+        QFontDatabase::families().contains(QStringLiteral("Archive Montserrat"), Qt::CaseInsensitive))
+    {
+        return;
+    }
+    for (const auto *style : {"Regular", "SemiBold", "Bold"})
+    {
+        const auto resource = QStringLiteral(":/fonts/ArchiveMontserrat-") +
+                              QLatin1String(style) + QStringLiteral(".ttf");
+        if (QFontDatabase::addApplicationFont(resource) < 0)
+        {
+            qWarning() << "Could not load bundled chat font" << resource;
+        }
+    }
+}
+
 int getUsernameBoldness()
 {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
@@ -76,8 +97,18 @@ float fontSize(FontStyle style)
         case FontStyle::ChatMediumItalic:
         case FontStyle::ChatMediumMono:
         case FontStyle::ChatMediumStrikethrough:
-        case FontStyle::TimestampMedium:
             return chatSize();
+        case FontStyle::TimestampMedium:
+            switch (getSettings()->timestampSize.getEnum())
+            {
+                case TimestampSize::Small:
+                    return 0.8F * chatSize();
+                case TimestampSize::Smaller:
+                    return 0.7F * chatSize();
+                case TimestampSize::SameAsText:
+                default:
+                    return chatSize();
+            }
         case FontStyle::ChatLarge:
             return 1.2F * chatSize();
         case FontStyle::ChatVeryLarge:
@@ -192,10 +223,12 @@ namespace chatterino {
 
 Fonts::Fonts(Settings &settings)
 {
+    ensureSelectedBundledFont(settings.chatFontFamily.getValue());
     this->fontsByType_.resize(size_t(FontStyle::EndType));
 
-    this->fontChangedListener.setCB([this] {
+    this->fontChangedListener.setCB([this, &settings] {
         assertInGuiThread();
+        ensureSelectedBundledFont(settings.chatFontFamily.getValue());
 
         for (auto &map : this->fontsByType_)
         {
@@ -207,6 +240,7 @@ Fonts::Fonts(Settings &settings)
     this->fontChangedListener.addSetting(settings.chatFontSize);
     this->fontChangedListener.addSetting(settings.chatFontWeight);
     this->fontChangedListener.addSetting(settings.boldScale);
+    this->fontChangedListener.addSetting(settings.timestampSize);
 }
 
 QFont Fonts::getFont(FontStyle type, float scale)

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "singletons/WindowManager.hpp"
 
 #include "Application.hpp"
@@ -129,9 +130,9 @@ void WindowManager::showSettingsDialog(QWidget *parent,
 
     if (this->appArgs.dontSaveSettings)
     {
-        QMessageBox::critical(parent, "Leafyrino - Editing Settings Forbidden",
-                              "Settings cannot be edited when running with\n"
-                              "commandline arguments such as '-c'.");
+        QMessageBox::critical(parent, uiText("Leafyrino - Editing Settings Forbidden"),
+                              uiText("Settings cannot be edited when running with\n"
+                              "commandline arguments such as '-c'."));
     }
     else
     {

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/RestoreBackupsDialog.hpp"
 
 #include "common/QLogging.hpp"
@@ -55,22 +56,22 @@ RestoreBackupsDialog::RestoreBackupsDialog(backup::FileData fileData,
               })
     , fileData(std::move(fileData))
     , backupCombo(new QComboBox)
-    , showButton(u"Show"_s)
+    , showButton(uiText(u"Show"_s))
     , corruptedBackupsWarning(
-          u"Some backups are damaged or otherwise unreadable."_s)
+          uiText(u"Some backups are damaged or otherwise unreadable."_s))
 {
     this->setAttribute(Qt::WA_DeleteOnClose);
-    this->setWindowTitle(u"Leafyrino - Restore Backup of " %
+    this->setWindowTitle(uiText(u"Leafyrino - Restore Backup of ") %
                          this->fileData.fileKind % '?');
 
     auto *layout = new QVBoxLayout(this);
 
     auto *description =
-        new QLabel(u"Chatterino " % this->fileData.fileKind.toLower() %
-                   u" failed to load: " % prevError % u"<p>" %
+        new QLabel(uiText(u"Chatterino ") % this->fileData.fileKind.toLower() %
+                   uiText(u" failed to load: ") % prevError % u"<p>" %
                    this->fileData.fileDescription %
-                   u"<p>There are backups of this file.<br>Do you want to "
-                   u"restore the selected backup?");
+                   uiText(u"<p>There are backups of this file.<br>Do you want to "
+                   u"restore the selected backup?"));
     layout->addWidget(description);
 
     auto *hbox = new QHBoxLayout;
@@ -86,10 +87,10 @@ RestoreBackupsDialog::RestoreBackupsDialog(backup::FileData fileData,
     auto *buttons = new QDialogButtonBox;
     layout->addWidget(buttons);
     auto *restoreButton = buttons->addButton(QDialogButtonBox::Yes);
-    restoreButton->setText(u"Restore Backup"_s);
+    restoreButton->setText(uiText(u"Restore Backup"_s));
     auto *ignoreBtn = buttons->addButton(QDialogButtonBox::No);
 
-    ignoreBtn->setText(u"Ignore"_s);
+    ignoreBtn->setText(uiText(u"Ignore"_s));
     auto *abortBtn = buttons->addButton(QDialogButtonBox::Abort);
 
     QObject::connect(restoreButton, &QAbstractButton::clicked, this, [this] {
@@ -113,8 +114,8 @@ RestoreBackupsDialog::RestoreBackupsDialog(backup::FileData fileData,
                     std::filesystem::copy_options::overwrite_existing, ec))
             {
                 retry = QMessageBox::critical(
-                            this, "Failed to restore file",
-                            u"Failed to copy '%1' to '%2': %3"_s.arg(
+                            this, uiText("Failed to restore file"),
+                            uiText(u"Failed to copy '%1' to '%2': %3"_s).arg(
                                 stdPathToQString(data->path),
                                 stdPathToQString(data->dstPath),
                                 QString::fromStdString(ec.message())),
@@ -128,9 +129,9 @@ RestoreBackupsDialog::RestoreBackupsDialog(backup::FileData fileData,
     });
     QObject::connect(ignoreBtn, &QAbstractButton::clicked, this, [this] {
         auto res = QMessageBox::question(
-            this, u"Leafyrino - Discard Backup?"_s,
-            u"Are you sure you want to discard the backup? Doing so will "_s
-            "overwrite and discard any previous settings.");
+            this, uiText(u"Leafyrino - Discard Backup?"_s),
+            uiText(u"Are you sure you want to discard the backup? Doing so will "_s
+            "overwrite and discard any previous settings."));
         if (res == QMessageBox::Yes)
         {
             this->hasChosenAnything = true;

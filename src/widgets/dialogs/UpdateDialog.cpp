@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/UpdateDialog.hpp"
 
 #include "Application.hpp"
@@ -42,7 +43,7 @@ UpdateDialog::UpdateDialog()
     auto *install =
         buttons->addButton(installText, QDialogButtonBox::AcceptRole);
     this->ui_.installButton = install;
-    auto *dismiss = buttons->addButton("Dismiss", QDialogButtonBox::RejectRole);
+    auto *dismiss = buttons->addButton(uiText("Dismiss"), QDialogButtonBox::RejectRole);
 
     QObject::connect(install, &QPushButton::clicked, this, [this] {
         getApp()->getUpdates().installUpdates();
@@ -77,40 +78,40 @@ void UpdateDialog::updateStatusChanged(Updates::Status status)
         break;
 
         case Updates::SearchFailed: {
-            this->ui_.label->setText("Failed to load version information.");
+            this->ui_.label->setText(uiText("Failed to load version information."));
         }
         break;
 
         case Updates::Downloading: {
-            this->ui_.label->setText("Downloading update...");
+            this->ui_.label->setText(uiText("Downloading update..."));
         }
         break;
 
         case Updates::DownloadFailed: {
-            this->ui_.label->setText("Failed to download update.");
+            this->ui_.label->setText(uiText("Failed to download update."));
         }
         break;
 
         case Updates::WriteFileFailed: {
-            this->ui_.label->setText("Failed to write update to disk.");
+            this->ui_.label->setText(uiText("Failed to write update to disk."));
         }
         break;
 
         case Updates::MissingPortableUpdater: {
             this->ui_.label->setText(
-                "The portable updater (expected in " %
+                uiText("The portable updater (expected in ") %
                 Updates::portableUpdaterPath(getApp()->getPaths()) %
-                ") was not found.");
+                uiText(") was not found."));
         }
         break;
 
         case Updates::RunUpdaterFailed: {
-            this->ui_.label->setText("Failed to run updater.");
+            this->ui_.label->setText(uiText("Failed to run updater."));
         }
         break;
 
         default: {
-            this->ui_.label->setText("You shouldn't be seeing this dialog.");
+            this->ui_.label->setText(uiText("You shouldn't be seeing this dialog."));
         }
         break;
     }

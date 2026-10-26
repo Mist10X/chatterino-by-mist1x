@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/helper/ChannelView.hpp"
 
 #include "Application.hpp"
@@ -53,6 +54,7 @@
 #include "widgets/dialogs/ReplyThreadPopup.hpp"
 #include "widgets/dialogs/SettingsDialog.hpp"
 #include "widgets/dialogs/UserInfoPopup.hpp"
+#include "widgets/helper/ArchiveActions.hpp"
 #include "widgets/helper/ScrollbarHighlight.hpp"
 #include "widgets/helper/SearchPopup.hpp"
 #include "widgets/Notebook.hpp"
@@ -146,10 +148,10 @@ QString translationTooltip(const TranslationResult &translation,
 
     if (detectedLanguageName.isEmpty() || detectedLanguage == targetLanguage)
     {
-        return QStringLiteral("Translated to %1").arg(targetLanguageName);
+        return uiText(QStringLiteral("Translated to %1")).arg(targetLanguageName);
     }
 
-    return QStringLiteral("Translated from %1 to %2")
+    return uiText(QStringLiteral("Translated from %1 to %2"))
         .arg(detectedLanguageName, targetLanguageName);
 }
 
@@ -738,11 +740,11 @@ ScrollbarHighlight scrollbarHighlightForMessage(
 QMenu *addEmoteContextMenuItems(QMenu *menu, const Emote &emote,
                                 QStringView kind)
 {
-    auto *openAction = menu->addAction("&Open");
+    auto *openAction = menu->addAction(uiText("&Open"));
     auto *openMenu = new QMenu(menu);
     openAction->setMenu(openMenu);
 
-    auto *copyAction = menu->addAction("&Copy");
+    auto *copyAction = menu->addAction(uiText("&Copy"));
     auto *copyMenu = new QMenu(menu);
     copyAction->setMenu(copyMenu);
 
@@ -775,10 +777,10 @@ QMenu *addEmoteContextMenuItems(QMenu *menu, const Emote &emote,
                     static_cast<int>(*baseScale / image->scale()));
             }
 
-            copyMenu->addAction("&" + factor + "x link", [url = image->url()] {
+            copyMenu->addAction("&" + factor + uiText("x link"), [url = image->url()] {
                 crossPlatformCopy(url.string);
             });
-            openMenu->addAction("&" + factor + "x link", [url = image->url()] {
+            openMenu->addAction("&" + factor + uiText("x link"), [url = image->url()] {
                 QDesktopServices::openUrl(QUrl(url.string));
             });
         }
@@ -806,11 +808,11 @@ QMenu *addEmoteContextMenuItems(QMenu *menu, const Emote &emote,
         copyMenu->addSeparator();
         ensureOpenPageSection();
 
-        copyMenu->addAction(u"Copy &" % kind % u" link",
+        copyMenu->addAction(uiText(u"Copy &") % kind % uiText(u" link"),
                             [url = emote.homePage] {
                                 crossPlatformCopy(url.string);
                             });
-        openMenu->addAction(u"Open &" % kind % u" link",
+        openMenu->addAction(uiText(u"Open &") % kind % uiText(u" link"),
                             [url = emote.homePage] {
                                 QDesktopServices::openUrl(QUrl(url.string));
                             });
@@ -821,13 +823,13 @@ QMenu *addEmoteContextMenuItems(QMenu *menu, const Emote &emote,
         ensureOpenPageSection();
         if (auto url = chatVaultEmoteUrl(*ref))
         {
-            openMenu->addAction("Open in &ChatVault", [url = *url] {
+            openMenu->addAction(uiText("Open in &ChatVault"), [url = *url] {
                 QDesktopServices::openUrl(QUrl(url));
             });
         }
         if (auto url = lurkologyEmoteUrl(*ref))
         {
-            openMenu->addAction("Open in Lur&kology", [url = *url] {
+            openMenu->addAction(uiText("Open in Lur&kology"), [url = *url] {
                 QDesktopServices::openUrl(QUrl(url));
             });
         }
@@ -864,7 +866,7 @@ void addImageContextMenuItems(QMenu *menu,
                 if (auto url = chatVaultBadgeUrl(slug, version, twitchChannel))
                 {
                     openMenu->addSeparator();
-                    openMenu->addAction("Open in &Chat Vault", [url = *url] {
+                    openMenu->addAction(uiText("Open in &Chat Vault"), [url = *url] {
                         QDesktopServices::openUrl(QUrl(url));
                     });
                 }
@@ -921,17 +923,17 @@ void addLinkContextMenuItems(QMenu *menu,
     QString url = link.value;
 
     // open link
-    menu->addAction("&Open link", [url] {
+    menu->addAction(uiText("&Open link"), [url] {
         QDesktopServices::openUrl(QUrl(url));
     });
     // open link default
     if (supportsIncognitoLinks())
     {
-        menu->addAction("Open link &incognito", [url] {
+        menu->addAction(uiText("Open link &incognito"), [url] {
             openLinkIncognito(url);
         });
     }
-    menu->addAction("&Copy link", [url] {
+    menu->addAction(uiText("&Copy link"), [url] {
         crossPlatformCopy(url);
     });
 
@@ -956,7 +958,7 @@ void addHiddenContextMenuItems(QMenu *menu,
 
     if (!layout->getMessage()->id.isEmpty())
     {
-        menu->addAction("Copy message &ID",
+        menu->addAction(uiText("Copy message &ID"),
                         [messageID = layout->getMessage()->id] {
                             crossPlatformCopy(messageID);
                         });
@@ -966,7 +968,7 @@ void addHiddenContextMenuItems(QMenu *menu,
 
     if (message)
     {
-        menu->addAction("Copy message &JSON", [message] {
+        menu->addAction(uiText("Copy message &JSON"), [message] {
             auto jsonString = QJsonDocument{message->toJson()}.toJson(
                 QJsonDocument::Indented);
             crossPlatformCopy(QString::fromUtf8(jsonString));
@@ -1029,6 +1031,7 @@ ChannelView::ChannelView(InternalCtor /*tag*/, QWidget *parent, Split *split,
     , highlightAnimation_(this)
     , context_(context)
     , messages_(messagesLimit)
+    , defaultMessageLimit_(messagesLimit)
     , tooltipWidget_(new TooltipWidget(this))
 {
     this->setMouseTracking(true);
@@ -1062,6 +1065,12 @@ ChannelView::ChannelView(InternalCtor /*tag*/, QWidget *parent, Split *split,
 
     this->clickTimer_.setSingleShot(true);
     this->clickTimer_.setInterval(500);
+
+    this->linkHoverTimer_.setSingleShot(true);
+    this->linkHoverTimer_.setInterval(350);
+    QObject::connect(&this->linkHoverTimer_, &QTimer::timeout, this, [this] {
+        this->showHoveredLinkPreview();
+    });
 
     this->scrollTimer_.setInterval(20);
     QObject::connect(&this->scrollTimer_, &QTimer::timeout, this, [this] {
@@ -1939,6 +1948,9 @@ void ChannelView::refreshScrollbarHighlights()
 
 void ChannelView::setChannel(const ChannelPtr &underlyingChannel)
 {
+    this->forgetHoveredLink();
+    this->tooltipWidget_->hide();
+
     /// Clear connections from the last channel
     this->channelConnections_.clear();
 
@@ -1948,6 +1960,28 @@ void ChannelView::setChannel(const ChannelPtr &underlyingChannel)
     /// make copy of channel and expose
     this->channel_ = std::make_unique<Channel>(underlyingChannel->getName(),
                                                underlyingChannel->getType());
+
+    if (this->context_ == Context::None && underlyingChannel->archiveHistoryManaged())
+    {
+        const auto limit = underlyingChannel->messageLimit();
+        this->messages_.setLimit(limit);
+        this->scrollBar_->setMessageLimit(limit);
+        this->channel_->setMessageLimit(limit);
+        this->channelConnections_.managedConnect(underlyingChannel->messageLimitChanged,
+            [this, weak = std::weak_ptr<Channel>(underlyingChannel)] {
+                if (auto source = weak.lock())
+                {
+                    this->clearSelection();
+                    this->setChannel(source);
+                }
+            });
+    }
+
+    else
+    {
+        this->messages_.setLimit(this->defaultMessageLimit_);
+        this->scrollBar_->setMessageLimit(this->defaultMessageLimit_);
+    }
 
     //
     // Proxy channel connections
@@ -2857,6 +2891,12 @@ void ChannelView::drawMessages(QPainter &painter, const QRegion &area)
 
 void ChannelView::wheelEvent(QWheelEvent *event)
 {
+    if (this->hoveredLinkInfo_)
+    {
+        this->forgetHoveredLink();
+        this->tooltipWidget_->hide();
+    }
+
     if (event->angleDelta().y() == 0)
     {
         // Ignore any scrolls where no vertical scrolling has taken place
@@ -3001,6 +3041,7 @@ void ChannelView::enterEvent(QEvent * /*event*/)
 
 void ChannelView::leaveEvent(QEvent * /*event*/)
 {
+    this->forgetHoveredLink();
     this->tooltipWidget_->hide();
 
     this->unpause(PauseReason::Mouse);
@@ -3091,6 +3132,7 @@ void ChannelView::mouseMoveEvent(QMouseEvent *event)
     if (!this->tryGetMessageAt(event->pos(), layout, relativePos, messageIndex))
     {
         this->setCursor(Qt::ArrowCursor);
+        this->forgetHoveredLink();
         this->tooltipWidget_->hide();
         return;
     }
@@ -3136,12 +3178,17 @@ void ChannelView::mouseMoveEvent(QMouseEvent *event)
     if (hoverLayoutElement == nullptr)
     {
         this->setCursor(Qt::ArrowCursor);
+        this->forgetHoveredLink();
         this->tooltipWidget_->hide();
         return;
     }
 
     auto *element = &hoverLayoutElement->getCreator();
     bool isLinkValid = hoverLayoutElement->getLink().isValid();
+    if (dynamic_cast<const LinkElement *>(element) == nullptr)
+    {
+        this->forgetHoveredLink();
+    }
     const auto *emoteElement = dynamic_cast<const EmoteElement *>(element);
     const auto *emoteLinkElement =
         dynamic_cast<const EmoteLinkElement *>(element);
@@ -3272,16 +3319,14 @@ void ChannelView::mouseMoveEvent(QMouseEvent *event)
         }
         else if (auto *linkElement = dynamic_cast<LinkElement *>(element))
         {
-            auto thumbnailSize = getSettings()->thumbnailSize;
-            if (linkElement)
+            auto *info = linkElement->linkInfo();
+            this->hoveredLinkInfo_ = info;
+            this->hoveredLinkPos_ = event->globalPosition().toPoint();
+            if (info->isPending())
             {
-                if (linkElement->linkInfo()->isPending())
-                {
-                    getApp()->getLinkResolver()->resolve(
-                        linkElement->linkInfo());
-                }
-                this->setLinkInfoTooltip(linkElement->linkInfo());
+                getApp()->getLinkResolver()->resolve(info);
             }
+            this->setLinkInfoTooltip(info);
         }
         else
         {
@@ -3806,12 +3851,12 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
     // Copy actions
     if (!this->selection_.isEmpty())
     {
-        menu->addAction("&Copy selection", [this] {
+        menu->addAction(uiText("&Copy selection"), [this] {
             crossPlatformCopy(this->getSelectedText());
         });
     }
 
-    menu->addAction("Copy &message", [layout] {
+    menu->addAction(uiText("Copy &message"), [layout] {
         QString copyString;
         layout->addSelectionText(copyString, 0, INT_MAX,
                                  CopyMode::OnlyTextAndEmotes);
@@ -3819,7 +3864,7 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
         crossPlatformCopy(copyString);
     });
 
-    menu->addAction("Copy &full message", [layout] {
+    menu->addAction(uiText("Copy &full message"), [layout] {
         QString copyString;
         layout->addSelectionText(copyString, 0, INT_MAX,
                                  CopyMode::EverythingButReplies);
@@ -3828,9 +3873,16 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
     });
 
     auto contextMessage = layout->getMessagePtr();
+    if (contextMessage->platform == MessagePlatform::AnyOrTwitch &&
+        !contextMessage->loginName.isEmpty())
+    {
+        addArchiveActions(menu, this, contextMessage->userID,
+                          contextMessage->loginName,
+                          contextMessage->channelName, contextMessage->id);
+    }
     if (contextMessage->translatedFrom != nullptr)
     {
-        menu->addAction("Show &original", [this, contextMessage] {
+        menu->addAction(uiText("Show &original"), [this, contextMessage] {
             auto channel = this->underlyingChannel_;
             if (channel != nullptr)
             {
@@ -3844,7 +3896,7 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
         if (getSettings()->showTranslateMessageContextAction)
         {
             auto *translateAction =
-                menu->addAction("&Translate message", [this, contextMessage] {
+                menu->addAction(uiText("&Translate message"), [this, contextMessage] {
                     this->translateMessage(contextMessage);
                 });
             translateAction->setEnabled(
@@ -3859,7 +3911,7 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
         switch (messagePtr->isReplyable())
         {
             case Message::ReplyStatus::Replyable: {
-                menu->addAction("&Reply to message", [this, &messagePtr] {
+                menu->addAction(uiText("&Reply to message"), [this, &messagePtr] {
                     this->setInputReply(messagePtr);
                 });
                 break;
@@ -3867,7 +3919,7 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
 
             case Message::ReplyStatus::NotReplyable: {
                 const auto &replyAction =
-                    menu->addAction("&Reply to message", [this, &messagePtr] {
+                    menu->addAction(uiText("&Reply to message"), [this, &messagePtr] {
                         this->setInputReply(messagePtr);
                     });
                 replyAction->setEnabled(false);
@@ -3875,11 +3927,11 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
             }
 
             case Message::ReplyStatus::ReplyableWithThread: {
-                menu->addAction("&Reply to message", [this, &messagePtr] {
+                menu->addAction(uiText("&Reply to message"), [this, &messagePtr] {
                     this->setInputReply(messagePtr);
                 });
                 menu->addAction(
-                    "Reply to &original thread", [this, &messagePtr] {
+                    uiText("Reply to &original thread"), [this, &messagePtr] {
                         this->setInputReply(messagePtr->replyThread->root());
                     });
                 break;
@@ -3887,13 +3939,13 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
 
             case Message::ReplyStatus::NotReplyableWithThread: {
                 const auto &replyAction =
-                    menu->addAction("&Reply to message", [this, &messagePtr] {
+                    menu->addAction(uiText("&Reply to message"), [this, &messagePtr] {
                         this->setInputReply(messagePtr);
                     });
                 replyAction->setEnabled(false);
 
                 menu->addAction(
-                    "Reply to &original thread", [this, &messagePtr] {
+                    uiText("Reply to &original thread"), [this, &messagePtr] {
                         this->setInputReply(messagePtr->replyThread->root());
                     });
                 break;
@@ -3901,13 +3953,13 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
 
             case Message::ReplyStatus::NotReplyableDueToThread: {
                 const auto &replyAction =
-                    menu->addAction("&Reply to message", [this, &messagePtr] {
+                    menu->addAction(uiText("&Reply to message"), [this, &messagePtr] {
                         this->setInputReply(messagePtr);
                     });
                 replyAction->setEnabled(false);
 
                 const auto &replyThreadAction = menu->addAction(
-                    "Reply to &original thread", [this, &messagePtr] {
+                    uiText("Reply to &original thread"), [this, &messagePtr] {
                         this->setInputReply(messagePtr->replyThread->root());
                     });
 
@@ -3919,7 +3971,7 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
         if (const auto threadMessagePtr = layout->getMessagePtr();
             threadMessagePtr->replyThread != nullptr)
         {
-            menu->addAction("View &thread", [this, threadMessagePtr] {
+            menu->addAction(uiText("View &thread"), [this, threadMessagePtr] {
                 this->showReplyThreadPopup(threadMessagePtr);
             });
         }
@@ -3938,13 +3990,13 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
             auto pinnedMessage = twitchChannel->accessPinnedMessage();
             if (pinnedMessage->has_value() && (*pinnedMessage)->messageId == id)
             {
-                menu->addAction("&Unpin message", [twitchChannel] {
+                menu->addAction(uiText("&Unpin message"), [twitchChannel] {
                     twitchChannel->unpinMessage();
                 });
             }
             else
             {
-                menu->addAction("&Pin message", [twitchChannel, id] {
+                menu->addAction(uiText("&Pin message"), [twitchChannel, id] {
                     twitchChannel->pinMessage(
                         id, getSettings()->defaultPinDuration);
                 });
@@ -3988,7 +4040,7 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
     if (!layout->getMessage()->id.isEmpty() && chan->hasModRights())
     {
         menu->addSeparator();
-        auto *moderateAction = menu->addAction("Mo&derate");
+        auto *moderateAction = menu->addAction(uiText("Mo&derate"));
         auto *moderateMenu = new QMenu(menu);
         moderateAction->setMenu(moderateMenu);
 
@@ -4003,14 +4055,14 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
                 if (pinnedMessage->has_value() &&
                     (*pinnedMessage)->messageId == id)
                 {
-                    moderateMenu->addAction("&Unpin message", [twitchChannel] {
+                    moderateMenu->addAction(uiText("&Unpin message"), [twitchChannel] {
                         twitchChannel->unpinMessage();
                     });
                 }
                 else
                 {
                     moderateMenu->addAction(
-                        "&Pin message", [twitchChannel, id] {
+                        uiText("&Pin message"), [twitchChannel, id] {
                             twitchChannel->pinMessage(
                                 id, getSettings()->defaultPinDuration);
                         });
@@ -4019,7 +4071,7 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
         }
 
         moderateMenu->addAction(
-            "&Delete message", [chan, id = layout->getMessage()->id] {
+            uiText("&Delete message"), [chan, id = layout->getMessage()->id] {
                 auto *twitchChannel = dynamic_cast<TwitchChannel *>(chan.get());
                 if (twitchChannel)
                 {
@@ -4043,7 +4095,7 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
     if (isSearch || isMentions || isReplyOrUserCard || isAutomod)
     {
         const auto &messagePtr = layout->getMessagePtr();
-        menu->addAction("&Go to message", [this, &messagePtr, isSearch,
+        menu->addAction(uiText("&Go to message"), [this, &messagePtr, isSearch,
                                            isMentions, isReplyOrUserCard,
                                            isAutomod] {
             if (isSearch)
@@ -4080,7 +4132,7 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
     if (!msg->channelName.isEmpty())
     {
         menu->addAction(
-            "Open in &logs",
+            uiText("Open in &logs"),
             [messageID = msg->id, channelName = msg->channelName,
              dateTime = QDateTime(msg->serverReceivedTime).toUTC()] {
                 QString logsDate = dateTime.toString("yyyy-MM-dd");
@@ -4196,28 +4248,28 @@ void ChannelView::addTwitchLinkContextMenuItems(
     if (!twitchUsername.isEmpty() && !ignoredUsernames.contains(twitchUsername))
     {
         menu->addSeparator();
-        menu->addAction("&Open in new split", [twitchUsername, this] {
+        menu->addAction(uiText("&Open in new split"), [twitchUsername, this] {
             this->openChannelIn.invoke(twitchUsername,
                                        FromTwitchLinkOpenChannelIn::Split);
         });
-        menu->addAction("Open in new &tab", [twitchUsername, this] {
+        menu->addAction(uiText("Open in new &tab"), [twitchUsername, this] {
             this->openChannelIn.invoke(twitchUsername,
                                        FromTwitchLinkOpenChannelIn::Tab);
         });
 
         menu->addSeparator();
-        menu->addAction("Open player in &browser", [twitchUsername, this] {
+        menu->addAction(uiText("Open player in &browser"), [twitchUsername, this] {
             this->openChannelIn.invoke(
                 twitchUsername, FromTwitchLinkOpenChannelIn::BrowserPlayer);
         });
-        menu->addAction("Open in &streamlink", [twitchUsername, this] {
+        menu->addAction(uiText("Open in &streamlink"), [twitchUsername, this] {
             this->openChannelIn.invoke(twitchUsername,
                                        FromTwitchLinkOpenChannelIn::Streamlink);
         });
 
         if (!getSettings()->customURIScheme.getValue().isEmpty())
         {
-            menu->addAction("Open in custom &player", [twitchUsername, this] {
+            menu->addAction(uiText("Open in custom &player"), [twitchUsername, this] {
                 this->openChannelIn.invoke(
                     twitchUsername, FromTwitchLinkOpenChannelIn::CustomPlayer);
             });
@@ -4246,7 +4298,7 @@ void ChannelView::addCommandExecutionContextMenuItems(
     }
 
     menu->addSeparator();
-    auto *executeAction = menu->addAction("&Execute command");
+    auto *executeAction = menu->addAction(uiText("&Execute command"));
     auto *cmdMenu = new QMenu(menu);
     executeAction->setMenu(cmdMenu);
 
@@ -4356,7 +4408,8 @@ void ChannelView::hideEvent(QHideEvent * /*event*/)
 
 void ChannelView::showUserInfoPopup(const QString &userName,
                                     MessagePlatform platform,
-                                    const QString &alternativePopoutChannel)
+                                    const QString &alternativePopoutChannel,
+                                    const QString &expectedUserId)
 {
     if (!this->split_)
     {
@@ -4395,7 +4448,8 @@ void ChannelView::showUserInfoPopup(const QString &userName,
         contextChannel =
             getApp()->getTwitch()->getChannelOrEmpty(alternativePopoutChannel);
     }
-    userPopup->setData(userName, contextChannel, openingChannel);
+    userPopup->setData(userName, contextChannel, openingChannel,
+                       expectedUserId);
 
     QPoint offset(userPopup->width() / 3, userPopup->height() / 5);
     userPopup->moveTo(QCursor::pos() - offset,
@@ -4445,8 +4499,15 @@ void ChannelView::handleLinkClick(QMouseEvent *event, const Link &link,
         case Link::UserInfo: {
             auto user = link.value;
             const auto *message = layout->getMessage();
+            // A mention or reply target is not necessarily the message author.
+            const auto authorId =
+                message->platform == MessagePlatform::AnyOrTwitch &&
+                        user.compare(message->loginName, Qt::CaseInsensitive) ==
+                            0
+                    ? message->userID
+                    : QString{};
             this->showUserInfoPopup(user, message->platform,
-                                    message->channelName);
+                                    message->channelName, authorId);
         }
         break;
 
@@ -4906,6 +4967,32 @@ void ChannelView::setLinkInfoTooltip(LinkInfo *info)
     QObject::connect(info, &LinkInfo::stateChanged, this,
                      &ChannelView::pendingLinkInfoStateChanged);
     this->pendingLinkInfo_ = info;
+}
+
+void ChannelView::showHoveredLinkPreview()
+{
+    auto *info = this->hoveredLinkInfo_.data();
+    // Leaving the link or the view already forgets it (leaveEvent/mouseMove).
+    if (info == nullptr || !this->isVisible() ||
+        !getSettings()->linkInfoTooltip)
+    {
+        return;
+    }
+    if (info->isPending())
+    {
+        getApp()->getLinkResolver()->resolve(info);
+    }
+    this->setLinkInfoTooltip(info);
+    this->tooltipWidget_->moveTo(this->hoveredLinkPos_ + QPoint(16, 16),
+                                 widgets::BoundsChecking::CursorPosition);
+    this->tooltipWidget_->setWordWrap(true);
+    this->tooltipWidget_->show();
+}
+
+void ChannelView::forgetHoveredLink()
+{
+    this->linkHoverTimer_.stop();
+    this->hoveredLinkInfo_.clear();
 }
 
 void ChannelView::pendingLinkInfoStateChanged()

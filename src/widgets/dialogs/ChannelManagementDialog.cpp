@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/ChannelManagementDialog.hpp"
 
 #include "Application.hpp"
@@ -112,14 +113,14 @@ QWidget *makeSection(QWidget *parent, QVBoxLayout **bodyLayout)
 
 QLabel *makeFieldLabel(const QString &text, QWidget *parent)
 {
-    auto *label = new QLabel(text, parent);
+    auto *label = new QLabel(uiText(text), parent);
     label->setObjectName("ChannelManagementFieldLabel");
     return label;
 }
 
 QLabel *makeHelperLabel(const QString &text, QWidget *parent)
 {
-    auto *label = new QLabel(text, parent);
+    auto *label = new QLabel(uiText(text), parent);
     label->setObjectName("ChannelManagementHelper");
     label->setWordWrap(true);
     label->setTextFormat(Qt::PlainText);
@@ -232,7 +233,7 @@ ChannelManagementDialog::ChannelManagementDialog(
 {
     this->setAttribute(Qt::WA_DeleteOnClose);
     this->setObjectName("ChannelManagementDialog");
-    this->setWindowTitle("Edit stream info");
+    this->setWindowTitle(uiText("Edit stream info"));
 
     auto *container = this->getLayoutContainer();
     container->setObjectName("ChannelManagementRoot");
@@ -251,10 +252,10 @@ ChannelManagementDialog::ChannelManagementDialog(
     auto *headerText = new QVBoxLayout;
     headerText->setContentsMargins(0, 0, 0, 0);
     this->headerTitleLabel_ =
-        new QLabel("Edit stream info", this->headerWidget_);
+        new QLabel(uiText("Edit stream info"), this->headerWidget_);
     this->headerTitleLabel_->setObjectName("ChannelManagementHeaderTitle");
     this->headerSubtitleLabel_ = new QLabel(
-        QString("#%1  •  Loading stream info").arg(this->channel_->getName()),
+        uiText(QString("#%1  •  Loading stream info")).arg(this->channel_->getName()),
         this->headerWidget_);
     this->headerSubtitleLabel_->setObjectName(
         "ChannelManagementHeaderSubtitle");
@@ -263,7 +264,7 @@ ChannelManagementDialog::ChannelManagementDialog(
     headerLayout->addLayout(headerText, 1);
 
     this->pinButton_ = this->createPinButton();
-    this->pinButton_->setToolTip("Pin stream editor");
+    this->pinButton_->setToolTip(uiText("Pin stream editor"));
     this->pinButton_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     headerLayout->addWidget(this->pinButton_);
 
@@ -274,7 +275,7 @@ ChannelManagementDialog::ChannelManagementDialog(
         },
         this, QSize{3, 3});
     this->closeButton_->setScaleIndependentSize(18, 18);
-    this->closeButton_->setToolTip("Close");
+    this->closeButton_->setToolTip(uiText("Close"));
     this->closeButton_->setCursor(Qt::PointingHandCursor);
     QObject::connect(this->closeButton_, &Button::leftClicked, this,
                      &QWidget::close);
@@ -316,7 +317,7 @@ ChannelManagementDialog::ChannelManagementDialog(
 
     auto *titleHeader = new QHBoxLayout;
     titleHeader->setContentsMargins(0, 0, 0, 0);
-    titleHeader->addWidget(makeFieldLabel("Title", broadcastSection));
+    titleHeader->addWidget(makeFieldLabel(uiText("Title"), broadcastSection));
     this->titleValidationLabel_ = makeHelperLabel({}, broadcastSection);
     this->titleValidationLabel_->setObjectName(
         "ChannelManagementTitleValidation");
@@ -333,19 +334,19 @@ ChannelManagementDialog::ChannelManagementDialog(
 
     this->titleEdit_ = new QPlainTextEdit(broadcastSection);
     this->titleEdit_->setObjectName("ChannelManagementTitleInput");
-    this->titleEdit_->setPlaceholderText("Tell viewers what you're streaming");
+    this->titleEdit_->setPlaceholderText(uiText("Tell viewers what you're streaming"));
     this->titleEdit_->setTabChangesFocus(true);
     this->titleEdit_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->titleEdit_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->titleEdit_->setFixedHeight(72);
-    this->titleEdit_->setAccessibleName("Title");
+    this->titleEdit_->setAccessibleName(uiText("Title"));
     broadcastLayout->addWidget(this->titleEdit_);
 
     auto *categoryAndLanguage = new QHBoxLayout;
     categoryAndLanguage->setObjectName("ChannelManagementFieldColumns");
     auto *categoryColumn = new QVBoxLayout;
     auto *categoryHeader = new QHBoxLayout;
-    categoryHeader->addWidget(makeFieldLabel("Category", broadcastSection));
+    categoryHeader->addWidget(makeFieldLabel(uiText("Category"), broadcastSection));
     categoryHeader->addStretch(1);
     this->categoryStatusLabel_ = new QLabel(broadcastSection);
     this->categoryStatusLabel_->setObjectName("ChannelManagementHelper");
@@ -358,17 +359,17 @@ ChannelManagementDialog::ChannelManagementDialog(
     categoryAndLanguage->addLayout(categoryColumn, 2);
 
     auto *languageColumn = new QVBoxLayout;
-    languageColumn->addWidget(makeFieldLabel("Language", broadcastSection));
+    languageColumn->addWidget(makeFieldLabel(uiText("Language"), broadcastSection));
     this->languageCombo_ = new NoWheelComboBox(broadcastSection);
     this->languageCombo_->setObjectName("ChannelManagementLanguageInput");
     this->languageCombo_->setSizeAdjustPolicy(
         QComboBox::AdjustToMinimumContentsLengthWithIcon);
     this->languageCombo_->setMinimumContentsLength(8);
     this->languageCombo_->setMaxVisibleItems(12);
-    this->languageCombo_->setAccessibleName("Stream language");
+    this->languageCombo_->setAccessibleName(uiText("Stream language"));
     for (const auto &language : LANGUAGES)
     {
-        this->languageCombo_->addItem(language.name, language.code);
+        this->languageCombo_->addItem(uiText(language.name), language.code);
     }
     this->languageCombo_->setCurrentIndex(-1);
     languageColumn->addWidget(this->languageCombo_);
@@ -385,7 +386,7 @@ ChannelManagementDialog::ChannelManagementDialog(
 
     auto *tagsHeader = new QHBoxLayout;
     tagsHeader->setContentsMargins(0, 0, 0, 0);
-    tagsHeader->addWidget(makeFieldLabel("Tags", discoverySection));
+    tagsHeader->addWidget(makeFieldLabel(uiText("Tags"), discoverySection));
     tagsHeader->addStretch(1);
     this->tagCountLabel_ = new QLabel("0/10", discoverySection);
     this->tagCountLabel_->setObjectName("ChannelManagementCounter");
@@ -408,10 +409,10 @@ ChannelManagementDialog::ChannelManagementDialog(
     tagInputRow->setSpacing(6);
     this->tagInput_ = new QLineEdit(this->tagEditor_);
     this->tagInput_->setObjectName("ChannelManagementTagInput");
-    this->tagInput_->setPlaceholderText("Add a tag");
-    this->tagInput_->setAccessibleName("New tag");
+    this->tagInput_->setPlaceholderText(uiText("Add a tag"));
+    this->tagInput_->setAccessibleName(uiText("New tag"));
     tagInputRow->addWidget(this->tagInput_, 1);
-    this->addTagButton_ = new QPushButton("Add", this->tagEditor_);
+    this->addTagButton_ = new QPushButton(uiText("Add"), this->tagEditor_);
     this->addTagButton_->setObjectName("ChannelManagementSecondaryButton");
     tagInputRow->addWidget(this->addTagButton_);
     tagEditorLayout->addLayout(tagInputRow);
@@ -428,7 +429,7 @@ ChannelManagementDialog::ChannelManagementDialog(
     this->contentLabelsToggle_ = new QToolButton(classificationSection);
     this->contentLabelsToggle_->setObjectName(
         "ChannelManagementContentLabelsToggle");
-    this->contentLabelsToggle_->setText("Content classification");
+    this->contentLabelsToggle_->setText(uiText("Content classification"));
     this->contentLabelsToggle_->setToolButtonStyle(
         Qt::ToolButtonTextBesideIcon);
     this->contentLabelsToggle_->setArrowType(Qt::RightArrow);
@@ -462,7 +463,7 @@ ChannelManagementDialog::ChannelManagementDialog(
                          this->contentLabelsWidget_->setVisible(expanded);
                      });
 
-    this->rerunCheck_ = new QCheckBox("Rerun", this->contentLabelsWidget_);
+    this->rerunCheck_ = new QCheckBox(uiText("Rerun"), this->contentLabelsWidget_);
     this->rerunCheck_->setObjectName("ChannelManagementRerunCheck");
     classificationOptions->addWidget(this->rerunCheck_);
     this->contentLayout_->addWidget(classificationSection);
@@ -477,7 +478,7 @@ ChannelManagementDialog::ChannelManagementDialog(
     auto *commercialRow = new QBoxLayout(QBoxLayout::LeftToRight);
     commercialRow->setObjectName("ChannelManagementCommercialRow");
     commercialRow->addWidget(
-        makeFieldLabel("Commercial break", commercialSection));
+        makeFieldLabel(uiText("Commercial break"), commercialSection));
     auto *commercialControlsWidget = new QWidget(commercialSection);
     auto *commercialControls = new QHBoxLayout(commercialControlsWidget);
     commercialControls->setContentsMargins(0, 0, 0, 0);
@@ -490,14 +491,14 @@ ChannelManagementDialog::ChannelManagementDialog(
     for (const auto seconds : {30, 60, 90, 120, 150, 180})
     {
         this->commercialLengthCombo_->addItem(
-            seconds == 60 ? QStringLiteral("1 minute")
-                          : QString("%1 seconds").arg(seconds),
+            seconds == 60 ? uiText(QStringLiteral("1 minute"))
+                          : uiText(QString("%1 seconds")).arg(seconds),
             seconds);
     }
-    this->commercialLengthCombo_->setAccessibleName("Commercial length");
+    this->commercialLengthCombo_->setAccessibleName(uiText("Commercial length"));
     commercialControls->addWidget(this->commercialLengthCombo_);
     this->runCommercialButton_ =
-        new QPushButton("Run commercial", commercialControlsWidget);
+        new QPushButton(uiText("Run commercial"), commercialControlsWidget);
     this->runCommercialButton_->setObjectName(
         "ChannelManagementCommercialButton");
     commercialControls->addWidget(this->runCommercialButton_);
@@ -528,12 +529,12 @@ ChannelManagementDialog::ChannelManagementDialog(
     auto *footerActions = new QHBoxLayout;
     footerActions->setContentsMargins(0, 0, 0, 0);
     footerActions->setSpacing(7);
-    this->cancelButton_ = new QPushButton("Cancel", this->footerWidget_);
+    this->cancelButton_ = new QPushButton(uiText("Cancel"), this->footerWidget_);
     this->cancelButton_->setObjectName("ChannelManagementSecondaryButton");
     this->cancelButton_->setSizePolicy(QSizePolicy::Expanding,
                                        QSizePolicy::Fixed);
     footerActions->addWidget(this->cancelButton_, 1);
-    this->saveButton_ = new QPushButton("Save", this->footerWidget_);
+    this->saveButton_ = new QPushButton(uiText("Save"), this->footerWidget_);
     this->saveButton_->setObjectName("ChannelManagementPrimaryButton");
     this->saveButton_->setSizePolicy(QSizePolicy::Expanding,
                                      QSizePolicy::Fixed);
@@ -609,7 +610,7 @@ ChannelManagementDialog::ChannelManagementDialog(
             this->saveMetadata();
         }
     });
-    this->saveButton_->setToolTip("Save changes (Ctrl+Enter)");
+    this->saveButton_->setToolTip(uiText("Save changes (Ctrl+Enter)"));
 
     this->streamStatusConnection_ =
         this->channel_->streamStatusChanged.connect([this] {
@@ -673,13 +674,13 @@ void ChannelManagementDialog::prepareLoadingState()
     this->setCategoryHint({});
     this->setCommercialMessage({});
     this->headerSubtitleLabel_->setText(
-        QString("#%1  •  Loading stream info").arg(this->channel_->getName()));
+        uiText(QString("#%1  •  Loading stream info")).arg(this->channel_->getName()));
 
     const auto streamStatus = this->channel_->accessStreamStatus();
     {
         const QSignalBlocker blocker(this->titleEdit_);
         this->titleEdit_->setPlainText(streamStatus->title.trimmed());
-        this->titleEdit_->setPlaceholderText("Loading stream title");
+        this->titleEdit_->setPlaceholderText(uiText("Loading stream title"));
     }
     this->updateTitleCounter();
 
@@ -687,7 +688,7 @@ void ChannelManagementDialog::prepareLoadingState()
     this->stagedTags_.clear();
     this->categoryPicker_->setCategory({});
     this->categoryPicker_->setText(streamStatus->game.trimmed());
-    this->categoryPicker_->setPlaceholderText("Loading category");
+    this->categoryPicker_->setPlaceholderText(uiText("Loading category"));
 
     this->rebuildTagChips();
     this->rebuildContentLabels();
@@ -717,22 +718,22 @@ void ChannelManagementDialog::applyState(ChannelManagementState state)
     this->refreshParentHeaderIcons();
 
     this->headerSubtitleLabel_->setText(
-        QString("#%1  •  %2 access")
+        uiText(QString("#%1  •  %2 access"))
             .arg(this->channel_->getName(),
                  state.access == ChannelManagementAccess::Broadcaster
-                     ? QStringLiteral("Broadcaster")
-                     : QStringLiteral("Editor")));
+                     ? uiText(QStringLiteral("Broadcaster"))
+                     : uiText(QStringLiteral("Editor"))));
 
     {
         const QSignalBlocker blocker(this->titleEdit_);
         this->titleEdit_->setPlaceholderText(
-            "Tell viewers what you're streaming");
+            uiText("Tell viewers what you're streaming"));
         this->titleEdit_->setPlainText(this->originalMetadata_.title);
     }
     this->updateTitleCounter();
 
     this->categoryPicker_->setCategory(this->originalMetadata_.category);
-    this->categoryPicker_->setPlaceholderText("Search categories");
+    this->categoryPicker_->setPlaceholderText(uiText("Search categories"));
     this->setCategoryHint({});
 
     this->rebuildTagChips();
@@ -773,8 +774,8 @@ void ChannelManagementDialog::applyState(ChannelManagementState state)
                     }));
     this->rerunCheck_->setToolTip(
         this->originalMetadata_.canEditRerun
-            ? QStringLiteral("Previously recorded stream")
-            : QStringLiteral("Could not load Twitch's rerun setting."));
+            ? uiText(QStringLiteral("Previously recorded stream"))
+            : uiText(QStringLiteral("Could not load Twitch's rerun setting.")));
 }
 
 void ChannelManagementDialog::refreshParentHeaderIcons() const
@@ -805,7 +806,7 @@ void ChannelManagementDialog::saveMetadata()
     if (this->hasInvalidCategoryText())
     {
         this->setStatus(
-            "Choose a Twitch category from the search results before saving",
+            uiText("Choose a Twitch category from the search results before saving"),
             true);
         this->categoryPicker_->setFocus();
         return;
@@ -819,7 +820,7 @@ void ChannelManagementDialog::saveMetadata()
 
     this->categoryPicker_->stopSearch();
     this->saveInFlight_ = true;
-    this->setStatus("Saving stream info");
+    this->setStatus(uiText("Saving stream info"));
     this->updateControls();
 
     QPointer<ChannelManagementDialog> self(this);
@@ -831,7 +832,7 @@ void ChannelManagementDialog::saveMetadata()
                 return;
             }
             self->saveInFlight_ = false;
-            self->setStatus("Stream information updated");
+            self->setStatus(uiText("Stream information updated"));
             self->close();
         },
         [self](const QString &error) {
@@ -904,7 +905,7 @@ void ChannelManagementDialog::rebuildTagChips()
 
     if (!this->loaded_)
     {
-        auto *placeholder = new QLabel("Loading tags", this->tagChipsWidget_);
+        auto *placeholder = new QLabel(uiText("Loading tags"), this->tagChipsWidget_);
         placeholder->setObjectName("ChannelManagementPlaceholder");
         this->tagFlow_->addWidget(placeholder);
     }
@@ -929,7 +930,7 @@ void ChannelManagementDialog::rebuildTagChips()
             remove->setFixedSize(int(22 * this->scale()),
                                  int(24 * this->scale()));
             remove->setCursor(Qt::PointingHandCursor);
-            remove->setAccessibleName(QString("Remove %1").arg(tag));
+            remove->setAccessibleName(uiText(QString("Remove %1")).arg(tag));
             remove->setToolTip(remove->accessibleName());
             layout->addWidget(remove);
             QWidget::setTabOrder(previous, remove);
@@ -968,7 +969,7 @@ void ChannelManagementDialog::rebuildContentLabels()
     if (!this->loaded_)
     {
         auto *placeholder =
-            new QLabel("Loading content labels",
+            new QLabel(uiText("Loading content labels"),
                        this->contentLabelsLayout_->parentWidget());
         placeholder->setObjectName("ChannelManagementPlaceholder");
         this->contentLabelsLayout_->addWidget(placeholder);
@@ -978,7 +979,7 @@ void ChannelManagementDialog::rebuildContentLabels()
     if (this->originalMetadata_.contentLabels.empty())
     {
         this->contentLabelsLayout_->addWidget(
-            makeHelperLabel("No content labels are available for this channel",
+            makeHelperLabel(uiText("No content labels are available for this channel"),
                             this->contentLabelsLayout_->parentWidget()));
         return;
     }
@@ -1008,11 +1009,11 @@ void ChannelManagementDialog::rebuildContentLabels()
         }
         else if (label.isLocked)
         {
-            state = QStringLiteral("Locked");
+            state = uiText(QStringLiteral("Locked"));
         }
         else if (!label.isSelectable)
         {
-            state = QStringLiteral("Read only");
+            state = uiText(QStringLiteral("Read only"));
         }
         if (!state.isEmpty())
         {
@@ -1025,9 +1026,9 @@ void ChannelManagementDialog::rebuildContentLabels()
         auto tooltip = label.description.trimmed();
         if (isAutomatic)
         {
-            const auto automaticText = QStringLiteral(
+            const auto automaticText = uiText(QStringLiteral(
                 "Twitch controls this label automatically from the selected "
-                "category");
+                "category"));
             tooltip = tooltip.isEmpty()
                           ? automaticText
                           : tooltip + QStringLiteral("\n\n") + automaticText;
@@ -1036,8 +1037,8 @@ void ChannelManagementDialog::rebuildContentLabels()
         {
             const auto lockText =
                 label.lockedUntil.isEmpty()
-                    ? QStringLiteral("Twitch has locked this label")
-                    : QString("Locked by Twitch until %1")
+                    ? uiText(QStringLiteral("Twitch has locked this label"))
+                    : uiText(QString("Locked by Twitch until %1"))
                           .arg(label.lockedUntil);
             tooltip = tooltip.isEmpty()
                           ? lockText
@@ -1046,7 +1047,7 @@ void ChannelManagementDialog::rebuildContentLabels()
         else if (!label.isSelectable)
         {
             const auto readOnlyText =
-                QStringLiteral("Twitch marks this label as read only");
+                uiText(QStringLiteral("Twitch marks this label as read only"));
             tooltip = tooltip.isEmpty()
                           ? readOnlyText
                           : tooltip + QStringLiteral("\n\n") + readOnlyText;
@@ -1126,7 +1127,7 @@ void ChannelManagementDialog::startCommercial()
             else
             {
                 self->setCommercialMessage(
-                    QString("Commercial started for %1 seconds")
+                    uiText(QString("Commercial started for %1 seconds"))
                         .arg(result.lengthSeconds));
             }
             self->updateCommercialAvailability();
@@ -1175,15 +1176,15 @@ void ChannelManagementDialog::updateCommercialAvailability()
     auto statusIsError = false;
     if (!this->loaded_)
     {
-        statusText = QStringLiteral("Loading commercial controls");
+        statusText = uiText(QStringLiteral("Loading commercial controls"));
     }
     else if (this->commercialInFlight_)
     {
-        statusText = QStringLiteral("Starting commercial");
+        statusText = uiText(QStringLiteral("Starting commercial"));
     }
     else if (this->channel_->isLive() && cooldownSeconds > 0)
     {
-        statusText = QString("Available again in %1")
+        statusText = uiText(QString("Available again in %1"))
                          .arg(formatCooldown(cooldownSeconds));
     }
     else if (!this->commercialMessage_.isEmpty())
@@ -1195,7 +1196,7 @@ void ChannelManagementDialog::updateCommercialAvailability()
     this->commercialAvailabilityLabel_->setVisible(!statusText.isEmpty());
     this->runCommercialButton_->setToolTip(
         this->loaded_ && !this->channel_->isLive()
-            ? QStringLiteral("Available when the channel is live")
+            ? uiText(QStringLiteral("Available when the channel is live"))
             : QString());
     setStateProperty(this->commercialAvailabilityLabel_, "error",
                      statusIsError);
@@ -1216,16 +1217,16 @@ void ChannelManagementDialog::updateCommercialAvailability()
     {
         const auto length = this->commercialLengthCombo_->currentData().toInt();
         this->commercialConfirmationLabel_->setText(
-            QString("Run a commercial for %1 seconds in #%2?")
+            uiText(QString("Run a commercial for %1 seconds in #%2?"))
                 .arg(length)
                 .arg(this->channel_->getName()));
         this->commercialConfirmationLabel_->show();
-        this->runCommercialButton_->setText("Confirm commercial");
+        this->runCommercialButton_->setText(uiText("Confirm commercial"));
     }
     else
     {
         this->commercialConfirmationLabel_->hide();
-        this->runCommercialButton_->setText("Run commercial");
+        this->runCommercialButton_->setText(uiText("Run commercial"));
     }
 }
 
@@ -1240,10 +1241,10 @@ void ChannelManagementDialog::updateTitleCounter()
     setStateProperty(this->titleCounterLabel_, "invalid", overflow);
     setStateProperty(this->titleEdit_, "invalid", overflow || empty);
     this->titleValidationLabel_->setText(
-        overflow ? QString("Shorten by %1 character%2")
+        overflow ? uiText(QString("Shorten by %1 character%2"))
                        .arg(size - TITLE_LIMIT)
                        .arg(size - TITLE_LIMIT == 1 ? "" : "s")
-        : empty ? QStringLiteral("Enter a title")
+        : empty ? uiText(QStringLiteral("Enter a title"))
                 : QString());
     this->titleValidationLabel_->setToolTip(
         this->titleValidationLabel_->text());
@@ -1316,8 +1317,8 @@ void ChannelManagementDialog::updateControls()
                           return check->isChecked();
                       });
     this->contentLabelsSummary_->setText(
-        enabledLabels == 0 ? QStringLiteral("None selected")
-                           : QString("%1 selected").arg(enabledLabels));
+        enabledLabels == 0 ? uiText(QStringLiteral("None selected"))
+                           : uiText(QString("%1 selected")).arg(enabledLabels));
     QString tagHint;
     bool invalidTag = false;
     if (this->stagedTags_.size() >= TAG_LIMIT)

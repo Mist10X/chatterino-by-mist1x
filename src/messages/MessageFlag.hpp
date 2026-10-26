@@ -87,6 +87,9 @@ enum class MessageFlag : std::int64_t {
     AsciiArt = (1LL << 49),
     /// The message is a Twitch Gigantify reward. The trailing emote is enlarged.
     GigantifiedEmote = (1LL << 50),
+    /// A system notice for a specific deleted message, not the disabled
+    /// original chat message or a channel-wide clear.
+    Deletion = (1LL << 51),
 };
 using MessageFlags = FlagsEnum<MessageFlag>;
 

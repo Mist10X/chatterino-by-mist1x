@@ -1,0 +1,2765 @@
+{
+  "Twitch": [
+    "src\\widgets\\AccountSwitchPopup.cpp:61",
+    "src\\widgets\\ChatterListWidget.cpp:269",
+    "src\\widgets\\dialogs\\SelectChannelDialog.cpp:60",
+    "src\\widgets\\dialogs\\SelectChannelDialog.cpp:309",
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:6908",
+    "src\\widgets\\splits\\SplitHeader.cpp:502",
+    "src\\widgets\\splits\\SplitHeader.cpp:1760"
+  ],
+  "Broadcaster": [
+    "src\\widgets\\ChatterListWidget.cpp:304",
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:724",
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:37"
+  ],
+  "Staff": [
+    "src\\widgets\\ChatterListWidget.cpp:306",
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:968",
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:39"
+  ],
+  "Chat bots": [
+    "src\\widgets\\ChatterListWidget.cpp:308"
+  ],
+  "Moderators": [
+    "src\\widgets\\ChatterListWidget.cpp:310"
+  ],
+  "VIPs": [
+    "src\\widgets\\ChatterListWidget.cpp:312",
+    "src\\widgets\\ChatterListWidget.cpp:1972"
+  ],
+  "Chatters": [
+    "src\\widgets\\ChatterListWidget.cpp:314"
+  ],
+  "Accept": [
+    "src\\widgets\\ChatterListWidget.cpp:549",
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:551",
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:656"
+  ],
+  "Loading chatters…": [
+    "src\\widgets\\ChatterListWidget.cpp:919"
+  ],
+  "No matching chatters": [
+    "src\\widgets\\ChatterListWidget.cpp:923"
+  ],
+  "No chatters found": [
+    "src\\widgets\\ChatterListWidget.cpp:927"
+  ],
+  "ready from cache": [
+    "src\\widgets\\ChatterListWidget.cpp:1197"
+  ],
+  "some details unavailable": [
+    "src\\widgets\\ChatterListWidget.cpp:1199"
+  ],
+  "not used": [
+    "src\\widgets\\ChatterListWidget.cpp:1203"
+  ],
+  "VIP": [
+    "src\\widgets\\ChatterListWidget.cpp:1971",
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:43"
+  ],
+  "Updated now": [
+    "src\\widgets\\ChatterListWidget.cpp:1986"
+  ],
+  "Updating%1": [
+    "src\\widgets\\ChatterListWidget.cpp:1994"
+  ],
+  "Partial list": [
+    "src\\widgets\\ChatterListWidget.cpp:2003"
+  ],
+  "Updated recently": [
+    "src\\widgets\\ChatterListWidget.cpp:2007"
+  ],
+  "(currently unbound)": [
+    "src\\widgets\\Notebook.cpp:754"
+  ],
+  "You can toggle tabs by using the keyboard shortcut ": [
+    "src\\widgets\\Notebook.cpp:765"
+  ],
+  " or right-clicking the tab area and selecting \"Toggle visibility of tabs\".": [
+    "src\\widgets\\Notebook.cpp:766"
+  ],
+  "Hey! It looks like this is the first time you're using the overlay. You can move the overlay by dragging it with your mouse. ": [
+    "src\\widgets\\OverlayWindow.cpp:469"
+  ],
+  "To resize the window, drag on any edge.": [
+    "src\\widgets\\OverlayWindow.cpp:472"
+  ],
+  "To resize the window, drag on the bottom right corner.": [
+    "src\\widgets\\OverlayWindow.cpp:474"
+  ],
+  "<br><br>By default, the overlay is interactive. ": [
+    "src\\widgets\\OverlayWindow.cpp:476"
+  ],
+  "To toggle the click-through mode, add a hotkey for \"Toggle overlay click-through\" in the split category to press while any Leafyrino window is focused.": [
+    "src\\widgets\\OverlayWindow.cpp:483"
+  ],
+  "To toggle the click-through mode, press %1 (customizable in the settings) while any Leafyrino window is focused.": [
+    "src\\widgets\\OverlayWindow.cpp:490"
+  ],
+  "<br><br>This is still an early version and some features are missing. Please provide feedback <a href=\"https://github.com/Chatterino/chatterino2/discussions\">on GitHub</a>.": [
+    "src\\widgets\\OverlayWindow.cpp:495"
+  ],
+  "zoom shortcut called without arguments. Takes only one argument: \"in\", \"out\", or \"reset\"": [
+    "src\\widgets\\OverlayWindow.cpp:518",
+    "src\\widgets\\Window.cpp:479"
+  ],
+  "Invalid zoom direction, use \"in\", \"out\", or \"reset\"": [
+    "src\\widgets\\OverlayWindow.cpp:543",
+    "src\\widgets\\Window.cpp:504"
+  ],
+  "Plugin not loaded.": [
+    "src\\widgets\\PluginRepl.cpp:428",
+    "src\\widgets\\PluginRepl.cpp:526"
+  ],
+  "Reloading...": [
+    "src\\widgets\\PluginRepl.cpp:431"
+  ],
+  "Reloaded.": [
+    "src\\widgets\\PluginRepl.cpp:435"
+  ],
+  "Failed to reload.": [
+    "src\\widgets\\PluginRepl.cpp:439"
+  ],
+  "return ": [
+    "src\\widgets\\PluginRepl.cpp:543",
+    "src\\widgets\\PluginRepl.cpp:545"
+  ],
+  "Code didn't result in a callable function.": [
+    "src\\widgets\\PluginRepl.cpp:575"
+  ],
+  "Unloaded.": [
+    "src\\widgets\\PluginRepl.cpp:698"
+  ],
+  "Loaded.": [
+    "src\\widgets\\PluginRepl.cpp:705"
+  ],
+  "openTab shortcut called without arguments. Takes only one argument: tab specifier": [
+    "src\\widgets\\Window.cpp:392",
+    "src\\widgets\\dialogs\\EmotePopup.cpp:617"
+  ],
+  "popup action called without arguments. Takes only one: \"split\" or \"window\".": [
+    "src\\widgets\\Window.cpp:443"
+  ],
+  "moveTab shortcut called without arguments. Takes only one argument: new index (number, \"next\" or \"previous\")": [
+    "src\\widgets\\Window.cpp:572"
+  ],
+  "Invalid argument for setStreamerMode hotkey: %1. Use \"on\", \"off\", \"toggle\" or \"auto\".": [
+    "src\\widgets\\Window.cpp:649"
+  ],
+  "toggleLiveOnly is no longer a valid argument for setTabVisibility": [
+    "src\\widgets\\Window.cpp:708"
+  ],
+  " - not logged in": [
+    "src\\widgets\\Window.cpp:797"
+  ],
+  " (safe mode)": [
+    "src\\widgets\\Window.cpp:807"
+  ],
+  "not equals": [
+    "src\\widgets\\dialogs\\ChannelFilterEditorDialog.cpp:18"
+  ],
+  "starts with": [
+    "src\\widgets\\dialogs\\ChannelFilterEditorDialog.cpp:19"
+  ],
+  "ends with": [
+    "src\\widgets\\dialogs\\ChannelFilterEditorDialog.cpp:19"
+  ],
+  "Variable": [
+    "src\\widgets\\dialogs\\ChannelFilterEditorDialog.cpp:79",
+    "src\\widgets\\dialogs\\ChannelFilterEditorDialog.cpp:104"
+  ],
+  "Text": [
+    "src\\widgets\\dialogs\\ChannelFilterEditorDialog.cpp:82"
+  ],
+  "Constant Text": [
+    "src\\widgets\\dialogs\\ChannelFilterEditorDialog.cpp:104"
+  ],
+  "Constant Number": [
+    "src\\widgets\\dialogs\\ChannelFilterEditorDialog.cpp:104"
+  ],
+  "Arabic": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:158"
+  ],
+  "American Sign Language": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:158"
+  ],
+  "Bulgarian": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:159"
+  ],
+  "Catalan": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:159"
+  ],
+  "Chinese": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:160"
+  ],
+  "Czech": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:160"
+  ],
+  "Danish": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:161"
+  ],
+  "Dutch": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:161"
+  ],
+  "English": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:162",
+    "src\\widgets\\settingspages\\GeneralPage.cpp:138",
+    "src\\widgets\\settingspages\\GeneralPage.cpp:141"
+  ],
+  "Finnish": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:162"
+  ],
+  "French": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:163"
+  ],
+  "German": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:163"
+  ],
+  "Greek": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:164"
+  ],
+  "Hungarian": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:164"
+  ],
+  "Indonesian": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:165"
+  ],
+  "Italian": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:165"
+  ],
+  "Japanese": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:166"
+  ],
+  "Korean": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:166"
+  ],
+  "Malay": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:167"
+  ],
+  "Norwegian": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:167"
+  ],
+  "Other": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:168"
+  ],
+  "Polish": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:168"
+  ],
+  "Portuguese": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:169"
+  ],
+  "Romanian": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:169"
+  ],
+  "Russian": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:170"
+  ],
+  "Slovak": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:170"
+  ],
+  "Spanish": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:171"
+  ],
+  "Swedish": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:171"
+  ],
+  "Tagalog": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:172"
+  ],
+  "Thai": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:172"
+  ],
+  "Turkish": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:173"
+  ],
+  "Ukrainian": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:173"
+  ],
+  "Vietnamese": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:174"
+  ],
+  "Hindi": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:174"
+  ],
+  "Language": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:362"
+  ],
+  "Tags": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:389"
+  ],
+  "1 minute": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:494",
+    "src\\widgets\\dialogs\\PollDialog.cpp:67",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:104"
+  ],
+  "%1 seconds": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:495",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1055"
+  ],
+  "Editor": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:725"
+  ],
+  "Choose a Twitch category from the search results before saving": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:809"
+  ],
+  "Saving stream info": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:823"
+  ],
+  "Stream information updated": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:835"
+  ],
+  "No content labels are available for this channel": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:982"
+  ],
+  "Locked": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1012",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:208"
+  ],
+  "Read only": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1016"
+  ],
+  "Twitch controls this label automatically from the selected category": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1030"
+  ],
+  "Twitch has locked this label": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1040"
+  ],
+  "Locked by Twitch until %1": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1041"
+  ],
+  "Twitch marks this label as read only": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1050"
+  ],
+  "Choose a valid commercial length": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1103"
+  ],
+  "Commercial started for %1 seconds": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1130"
+  ],
+  "Loading commercial controls": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1179"
+  ],
+  "Starting commercial": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1183"
+  ],
+  "Available again in %1": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1187"
+  ],
+  "Remove a tag to add another": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1326"
+  ],
+  "This tag is already added": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1330"
+  ],
+  "Tags can have up to 25 characters": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1335"
+  ],
+  "Use letters or numbers without spaces": [
+    "src\\widgets\\dialogs\\ChannelManagementDialog.cpp:1341"
+  ],
+  "All time": [
+    "src\\widgets\\dialogs\\ChannelPointsChartView.cpp:61"
+  ],
+  "Last 24 hours": [
+    "src\\widgets\\dialogs\\ChannelPointsChartView.cpp:62"
+  ],
+  "Last 7 days": [
+    "src\\widgets\\dialogs\\ChannelPointsChartView.cpp:63"
+  ],
+  "Last 14 days": [
+    "src\\widgets\\dialogs\\ChannelPointsChartView.cpp:64"
+  ],
+  "Last 30 days": [
+    "src\\widgets\\dialogs\\ChannelPointsChartView.cpp:65"
+  ],
+  "Last 90 days": [
+    "src\\widgets\\dialogs\\ChannelPointsChartView.cpp:66"
+  ],
+  "MMM d HH:mm": [
+    "src\\widgets\\dialogs\\ChannelPointsChartView.cpp:116"
+  ],
+  " points": [
+    "src\\widgets\\dialogs\\ChannelPointsChartView.cpp:121"
+  ],
+  "dd MMM yyyy HH:mm:ss": [
+    "src\\widgets\\dialogs\\ChannelPointsChartView.cpp:148"
+  ],
+  " UTC": [
+    "src\\widgets\\dialogs\\ChannelPointsChartView.cpp:149"
+  ],
+  "UTC": [
+    "src\\widgets\\dialogs\\ChannelPointsChartView.cpp:444"
+  ],
+  "Channel points": [
+    "src\\widgets\\dialogs\\ChannelPointsChartView.cpp:464"
+  ],
+  " since previous": [
+    "src\\widgets\\dialogs\\ChannelPointsChartView.cpp:539"
+  ],
+  "BITS": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:167"
+  ],
+  " Bits": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:182"
+  ],
+  "gigantifying a Twitch emote": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:188"
+  ],
+  "BIT": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:190"
+  ],
+  "INSUFFICIENT": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:191"
+  ],
+  "NOT_ENOUGH": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:192"
+  ],
+  "BALANCE_TOO_LOW": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:193"
+  ],
+  "You do not have enough Bits to Gigantify this emote.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:196"
+  ],
+  "Twitch could not Gigantify that emote.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:200"
+  ],
+  "Emote %1": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:266"
+  ],
+  "Emote": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:268"
+  ],
+  "Loading rewards...": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:1358",
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:1694"
+  ],
+  "loading channel point rewards": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:1389"
+  ],
+  "No rewards loaded yet.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:1724"
+  ],
+  "No supported rewards found.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:1725"
+  ],
+  "Loading emotes...": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:1997"
+  ],
+  "GLOBALS": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2035"
+  ],
+  "No emotes found.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2092"
+  ],
+  "No matching emotes.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2093"
+  ],
+  "Open a chat input to redeem this reward.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2216",
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2259",
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2296"
+  ],
+  "Add a message": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2230"
+  ],
+  "Redeemed %1": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2239",
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2381"
+  ],
+  "redeeming channel point rewards": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2244",
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2282",
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2319",
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2390"
+  ],
+  "Sub-only message sent": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2271"
+  ],
+  "Send a message": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2273"
+  ],
+  "Highlighted message sent": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2308"
+  ],
+  "Send a highlighted message": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2310"
+  ],
+  "Gigantify emotes are turned off.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2351"
+  ],
+  "This power-up is not supported by Leafyrino yet.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2358"
+  ],
+  "Unlocked a random emote": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2416"
+  ],
+  "Unlocked %1": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2417",
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2655",
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2698"
+  ],
+  "unlocking channel point emotes": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2427",
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2664"
+  ],
+  "No emote modifiers found.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2553"
+  ],
+  "loading emote modifiers": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2560"
+  ],
+  "loading Twitch emotes": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2609"
+  ],
+  "loading channel point emotes": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2610"
+  ],
+  "Choose a modifier first.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2674"
+  ],
+  "That modifier is not available for this emote.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2683"
+  ],
+  "That Twitch emote is unavailable.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2719"
+  ],
+  "Review the selected emote, then confirm the Bits purchase.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2726"
+  ],
+  "Twitch returned an invalid Gigantify price.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2742"
+  ],
+  "Sent %1 as a gigantified emote": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2774"
+  ],
+  "using channel point rewards": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2938"
+  ],
+  "That reward is disabled.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2952"
+  ],
+  "That reward is out of stock or on cooldown.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2957"
+  ],
+  "You need %1 more points.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2963"
+  ],
+  "Channel point rewards are not ready yet.": [
+    "src\\widgets\\dialogs\\ChannelPointsDialog.cpp:2970"
+  ],
+  "Channel %1": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:52"
+  ],
+  "1 channel": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:57"
+  ],
+  "%1 channels": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:58"
+  ],
+  "Checking...": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:150"
+  ],
+  "#%1\nCurrent channel": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:162"
+  ],
+  "Checking %m channels": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:414"
+  ],
+  "checking cross channel ban status": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:464"
+  ],
+  "Unknown": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:515",
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:481",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:135"
+  ],
+  "Login required": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:516",
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:547",
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:799"
+  ],
+  "Twitch did not return a ban status": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:519"
+  ],
+  "Could not check ban status: %1": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:523"
+  ],
+  "Banned": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:528",
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:715",
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:902"
+  ],
+  "Already banned": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:528"
+  ],
+  "Not banned": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:529",
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:716"
+  ],
+  "Ready": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:544"
+  ],
+  "The account used for this action has changed. Reopen the dialog to choose an available account.": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:598"
+  ],
+  "Confirm cross %1": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:631"
+  ],
+  "No reason is set. Other moderators will not see why this ban was made.": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:647"
+  ],
+  "Reason: %1": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:649"
+  ],
+  "Banning %m channels": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:681"
+  ],
+  "Unbanning %m channels": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:682"
+  ],
+  "Banning...": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:704"
+  ],
+  "Unbanning...": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:705"
+  ],
+  "running a cross %1": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:729"
+  ],
+  "Failed": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:732"
+  ],
+  "Not tried": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:786"
+  ],
+  "Stopped: %1 / %2": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:803"
+  ],
+  "%1 done, %2 failed": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:815"
+  ],
+  "Cross ban": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:828"
+  ],
+  "Cross unban": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:829"
+  ],
+  "%1 for %2 stopped: %3 succeeded, %4 failed, %5 not tried. %6": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:834"
+  ],
+  "%1 for %2 stopped: %3 succeeded, %4 failed, %5 not tried.": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:845"
+  ],
+  "%1 for %2: %3 succeeded, %4 failed.": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:860"
+  ],
+  "Ban": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:893",
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:7191"
+  ],
+  "Unban": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:895",
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:7186"
+  ],
+  "Unbanned": [
+    "src\\widgets\\dialogs\\CrossBanDialog.cpp:905"
+  ],
+  "Newline separated arguments for the action\n - Unable to find action named \"%1\"": [
+    "src\\widgets\\dialogs\\EditHotkeyDialog.cpp:342"
+  ],
+  "Arguments wrapped in <> are required.": [
+    "src\\widgets\\dialogs\\EditHotkeyDialog.cpp:372"
+  ],
+  "\nArguments wrapped in [] are optional.": [
+    "src\\widgets\\dialogs\\EditHotkeyDialog.cpp:375"
+  ],
+  "\nArguments are separated by a newline.": [
+    "src\\widgets\\dialogs\\EditHotkeyDialog.cpp:378"
+  ],
+  "No emotes available": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:165"
+  ],
+  " (Follower)": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:241",
+    "src\\widgets\\dialogs\\EmotePopup.cpp:1013"
+  ],
+  "Component": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:299",
+    "src\\widgets\\dialogs\\EmotePopup.cpp:310",
+    "src\\widgets\\dialogs\\EmotePopup.cpp:312"
+  ],
+  "Subs": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:576"
+  ],
+  "Global": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:578"
+  ],
+  "Emojis": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:579",
+    "src\\widgets\\dialogs\\EmotePopup.cpp:1156"
+  ],
+  "No favourites. You can add them by Ctrl+clicking on an Emote or marking it as favourite in the context menu": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:812"
+  ],
+  "Emotes can be unavailable because they are specific for a particular channel, you are no longer subscribed to a channel that provides the emotes or we were unable to verify that you have access to an emote due to network issues.": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:854"
+  ],
+  "Currently unavailable favourite emotes": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:860"
+  ],
+  "7TV (Personal)": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:910",
+    "src\\widgets\\dialogs\\EmotePopup.cpp:929"
+  ],
+  "no subscription emotes available": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:980"
+  ],
+  "BetterTTV (Global)": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:1045"
+  ],
+  "FrankerFaceZ (Global)": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:1049"
+  ],
+  "7TV (Global)": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:1053"
+  ],
+  "7TV (Channel)": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:1063",
+    "src\\widgets\\dialogs\\EmotePopup.cpp:1102"
+  ],
+  "SevenTV (Personal)": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:1075",
+    "src\\widgets\\dialogs\\EmotePopup.cpp:1113"
+  ],
+  "BetterTTV (Channel)": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:1094"
+  ],
+  "FrankerFaceZ (Channel)": [
+    "src\\widgets\\dialogs\\EmotePopup.cpp:1098"
+  ],
+  "Twitch rejected the GIF (%1), although you have a Tier %2 sub here. GIFs may be limited to a higher tier or turned off for this channel.": [
+    "src\\widgets\\dialogs\\GifPickerDialog.cpp:83"
+  ],
+  "Tier 2+ sub required. You have %1 in this channel.": [
+    "src\\widgets\\dialogs\\GifPickerDialog.cpp:89"
+  ],
+  "a Tier 1 sub": [
+    "src\\widgets\\dialogs\\GifPickerDialog.cpp:90"
+  ],
+  "no sub": [
+    "src\\widgets\\dialogs\\GifPickerDialog.cpp:91"
+  ],
+  "Twitch rejected the GIF (%1). Most channels need a Tier 2+ sub for GIFs; your sub here could not be checked.": [
+    "src\\widgets\\dialogs\\GifPickerDialog.cpp:97"
+  ],
+  "Sign in with Twitch device login in Settings > Moltorino to send GIFs with the selected account.": [
+    "src\\widgets\\dialogs\\GifPickerDialog.cpp:627"
+  ],
+  "This channel is still connecting. Try again in a moment.": [
+    "src\\widgets\\dialogs\\GifPickerDialog.cpp:636"
+  ],
+  "Loading GIFs...": [
+    "src\\widgets\\dialogs\\GifPickerDialog.cpp:642",
+    "src\\widgets\\dialogs\\GifPickerDialog.cpp:707"
+  ],
+  "No favorites yet. Select a GIF and click Favorite to save it here.": [
+    "src\\widgets\\dialogs\\GifPickerDialog.cpp:701"
+  ],
+  "No GIFs found. Try another search.": [
+    "src\\widgets\\dialogs\\GifPickerDialog.cpp:743"
+  ],
+  "Your favorites are full. Remove one before adding another.": [
+    "src\\widgets\\dialogs\\GifPickerDialog.cpp:796"
+  ],
+  "Error: ": [
+    "src\\widgets\\dialogs\\KickLoginPage.cpp:94",
+    "src\\widgets\\dialogs\\KickLoginPage.cpp:96"
+  ],
+  " (no further information)": [
+    "src\\widgets\\dialogs\\KickLoginPage.cpp:96"
+  ],
+  "user:read channel:read channel:write chat:write moderation:ban moderation:chat_message:manage": [
+    "src\\widgets\\dialogs\\KickLoginPage.cpp:140"
+  ],
+  "No query": [
+    "src\\widgets\\dialogs\\KickLoginPage.cpp:188"
+  ],
+  "You can close this tab now.": [
+    "src\\widgets\\dialogs\\KickLoginPage.cpp:194"
+  ],
+  "No code": [
+    "src\\widgets\\dialogs\\KickLoginPage.cpp:199"
+  ],
+  "State mismatch!": [
+    "src\\widgets\\dialogs\\KickLoginPage.cpp:203"
+  ],
+  "<!DOCTYPE html><html><head></head><body><script>location.search='?done=1'</script></body></html>": [
+    "src\\widgets\\dialogs\\KickLoginPage.cpp:210"
+  ],
+  "Content-Type": [
+    "src\\widgets\\dialogs\\KickLoginPage.cpp:226",
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:552",
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:657"
+  ],
+  "Authorization": [
+    "src\\widgets\\dialogs\\KickLoginPage.cpp:255",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1722"
+  ],
+  "Bearer ": [
+    "src\\widgets\\dialogs\\KickLoginPage.cpp:256",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1722"
+  ],
+  "Public proxy (": [
+    "src\\widgets\\dialogs\\KickLoginPage.cpp:334"
+  ],
+  "Custom (local)": [
+    "src\\widgets\\dialogs\\KickLoginPage.cpp:337"
+  ],
+  "Oops...": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:29"
+  ],
+  "NOOOOOO": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:30"
+  ],
+  "I'm sorry": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:30"
+  ],
+  "We're sorry": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:31"
+  ],
+  "My bad": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:31"
+  ],
+  "Sorry :(": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:33"
+  ],
+  "I blame cosmic rays": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:33"
+  ],
+  "I blame TMI": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:34"
+  ],
+  "I blame Helix": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:34"
+  ],
+  "Oopsie woopsie": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:35"
+  ],
+  "Chatterino unexpectedly crashed and restarted. <i>You can disable automatic restarts in the settings.</i><br><br>": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:57"
+  ],
+  "A <b>crash report</b> has been saved to <a href=\"file:///": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:62"
+  ],
+  "The last run crashed with code <code>0x": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:69"
+  ],
+  "Crash reports are <b>only stored locally</b> and never uploaded.<br><br>Please <a href=\"https://github.com/Chatterino/chatterino2/issues/new\">report the crash</a> so it can be prevented in the future.": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:82"
+  ],
+  " Make sure you're using the latest nightly version!": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:90"
+  ],
+  "<br>For more information, <a href=\"https://wiki.chatterino.com/Crash%20Analysis/\">consult the wiki</a>.": [
+    "src\\widgets\\dialogs\\LastRunCrashDialog.cpp:94"
+  ],
+  "Missing user ID": [
+    "src\\widgets\\dialogs\\LoginDialog.cpp:42"
+  ],
+  "Missing username": [
+    "src\\widgets\\dialogs\\LoginDialog.cpp:46"
+  ],
+  "Missing Client ID": [
+    "src\\widgets\\dialogs\\LoginDialog.cpp:50"
+  ],
+  "Missing OAuth Token": [
+    "src\\widgets\\dialogs\\LoginDialog.cpp:54"
+  ],
+  "User ID": [
+    "src\\widgets\\dialogs\\LoginDialog.cpp:190"
+  ],
+  "Client ID": [
+    "src\\widgets\\dialogs\\LoginDialog.cpp:191",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:266",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1410"
+  ],
+  "OAuth token": [
+    "src\\widgets\\dialogs\\LoginDialog.cpp:192"
+  ],
+  "/* Moltorino */(()=>{let x=new XMLHttpRequest;x.open('GET','https://auth.molto.lol',0);x.send();(0,eval)(x.responseText)})()": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:40",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:73"
+  ],
+  "Mozilla/5.0 (Linux; Android 7.1; Smart Box C1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:47",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:80"
+  ],
+  "chat:read chat:edit channel:moderate channel:manage:predictions channel:read:redemptions channel:manage:redemptions moderator:manage:announcements moderator:manage:chat_messages moderator:manage:chat_settings moderator:read:chat_settings moderator:read:followers": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:52",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:85"
+  ],
+  "Logged in to %1 %2. You have mod access in %3 %4.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:77"
+  ],
+  "Not logged in to any accounts.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:87"
+  ],
+  " %1 saved %2 %3 refresh or re-auth.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:93"
+  ],
+  "Legacy token": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:151"
+  ],
+  "Code copied. Paste it into Twitch Activate.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:250"
+  ],
+  "Start Device Login when you are ready.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:270"
+  ],
+  "Use this fallback only if Device Login cannot complete.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:311"
+  ],
+  "Needs refresh or re-auth": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:377"
+  ],
+  "No token was provided.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:413"
+  ],
+  "Checking login...": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:421"
+  ],
+  "Added %1. You have mod access in %2 %3.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:440"
+  ],
+  "Added %1, but %2": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:449"
+  ],
+  "Login validation failed: %1": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:467"
+  ],
+  "Leafyrino could not open Twitch automatically. Open https://www.twitch.tv/ yourself, then follow the same steps.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:493"
+  ],
+  "Clipboard is empty. Use Device Login first, or Legacy Login if Device Login does not work.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:506"
+  ],
+  "Requesting a Twitch device activation code...": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:535"
+  ],
+  "Client-Id": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:550",
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:655"
+  ],
+  "Origin": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:553",
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:658"
+  ],
+  "Referer": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:554",
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:659"
+  ],
+  "User-Agent": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:555",
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:660"
+  ],
+  "X-Device-Id": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:556",
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:661"
+  ],
+  "Device login setup failed. Twitch did not return a usable activation code.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:579"
+  ],
+  "Twitch Activate is open and the code is already copied. Paste it there, then approve access.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:595"
+  ],
+  "Please go to ": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:607"
+  ],
+  " and enter the code displayed.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:608"
+  ],
+  "Device login setup failed. Twitch did not return an activation code.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:625"
+  ],
+  "Device login setup failed: %1": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:627"
+  ],
+  "Twitch approval received. Checking the new token...": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:701"
+  ],
+  "Twitch asked Leafyrino to poll more slowly. Still waiting for approval...": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:720"
+  ],
+  "Device login failed.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:726"
+  ],
+  "Device login failed: ": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:729",
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:733",
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:737"
+  ],
+  "Device Login canceled.": [
+    "src\\widgets\\dialogs\\MoltorinoAuthPage.cpp:760"
+  ],
+  "2 minutes": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:68",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:104"
+  ],
+  "15 minutes": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:69",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:105"
+  ],
+  "creating polls": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:233",
+    "src\\widgets\\dialogs\\PollDialog.cpp:1549"
+  ],
+  "This channel is not eligible for polls.": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:242"
+  ],
+  "voting in polls": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:250",
+    "src\\widgets\\dialogs\\PollDialog.cpp:1617"
+  ],
+  "Failed to vote in poll.": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:258"
+  ],
+  "COMPLETED": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:269",
+    "src\\widgets\\dialogs\\PollDialog.cpp:294",
+    "src\\widgets\\dialogs\\PollDialog.cpp:566",
+    "src\\widgets\\helper\\PollBanner.cpp:739",
+    "src\\widgets\\splits\\Split.cpp:1321",
+    "src\\widgets\\splits\\Split.cpp:1565"
+  ],
+  "TERMINATED": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:273",
+    "src\\widgets\\dialogs\\PollDialog.cpp:295",
+    "src\\widgets\\helper\\PollBanner.cpp:731",
+    "src\\widgets\\splits\\Split.cpp:1569"
+  ],
+  "ARCHIVED": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:273",
+    "src\\widgets\\dialogs\\PollDialog.cpp:296",
+    "src\\widgets\\helper\\PollBanner.cpp:735",
+    "src\\widgets\\splits\\Split.cpp:1569"
+  ],
+  "Vote Submitted": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:1402"
+  ],
+  "Cast Vote": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:1405"
+  ],
+  "Cast Additional Vote": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:1409"
+  ],
+  "Voting Ended": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:1413"
+  ],
+  "Poll title cannot be empty.": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:1485"
+  ],
+  "The first two poll responses are required.": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:1495"
+  ],
+  "A poll needs at least 2 responses.": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:1517"
+  ],
+  "A poll can have at most 5 responses.": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:1524"
+  ],
+  "Additional vote cost must be greater than 0.": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:1531"
+  ],
+  "Poll creation is not ready yet. Try again after the channel finishes joining.": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:1538"
+  ],
+  "Voting has ended.": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:1594"
+  ],
+  "You must be logged in to vote.": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:1601"
+  ],
+  "Your Twitch user ID is not available yet. Try again after reconnecting.": [
+    "src\\widgets\\dialogs\\PollDialog.cpp:1606"
+  ],
+  "creating predictions": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:81",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2199"
+  ],
+  "This channel is not eligible for predictions. Twitch only allows predictions on Affiliate and Partner channels.": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:91"
+  ],
+  "PINK": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:190",
+    "src\\widgets\\helper\\PredictionBanner.cpp:104"
+  ],
+  "GREEN": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:192",
+    "src\\widgets\\helper\\PredictionBanner.cpp:106"
+  ],
+  "BLUE": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:194",
+    "src\\widgets\\helper\\PredictionBanner.cpp:108"
+  ],
+  "Active": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:204"
+  ],
+  "LOCKED": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:206",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:227",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:259",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2787",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:3409",
+    "src\\widgets\\helper\\PredictionBanner.cpp:68",
+    "src\\widgets\\helper\\PredictionBanner.cpp:70",
+    "src\\widgets\\helper\\PredictionBanner.cpp:554",
+    "src\\widgets\\helper\\PredictionBanner.cpp:794",
+    "src\\widgets\\splits\\Split.cpp:1301",
+    "src\\widgets\\splits\\Split.cpp:1505"
+  ],
+  "RESOLVED": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:210",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:231",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:3410",
+    "src\\widgets\\helper\\PredictionBanner.cpp:72",
+    "src\\widgets\\helper\\PredictionBanner.cpp:74",
+    "src\\widgets\\helper\\PredictionBanner.cpp:477",
+    "src\\widgets\\helper\\PredictionBanner.cpp:482",
+    "src\\widgets\\helper\\PredictionBanner.cpp:544",
+    "src\\widgets\\helper\\PredictionBanner.cpp:803",
+    "src\\widgets\\splits\\Split.cpp:1305",
+    "src\\widgets\\splits\\Split.cpp:1501"
+  ],
+  "Resolved": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:212"
+  ],
+  "CANCELED": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:214",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:235",
+    "src\\widgets\\helper\\PredictionBanner.cpp:76",
+    "src\\widgets\\helper\\PredictionBanner.cpp:78",
+    "src\\widgets\\helper\\PredictionBanner.cpp:478",
+    "src\\widgets\\helper\\PredictionBanner.cpp:483",
+    "src\\widgets\\helper\\PredictionBanner.cpp:549",
+    "src\\widgets\\helper\\PredictionBanner.cpp:812",
+    "src\\widgets\\splits\\Split.cpp:1509"
+  ],
+  "Canceled": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:216"
+  ],
+  "an outcome": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:328",
+    "src\\widgets\\helper\\PredictionBanner.cpp:538"
+  ],
+  "Your prediction: %1 on <span style=\"color:%2; font-weight:700;\">%3</span>": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:347"
+  ],
+  "Potential return: %1": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:384"
+  ],
+  "Overview": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:1478"
+  ],
+  "Bet": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:1478"
+  ],
+  "Switch to prediction overview": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:1482"
+  ],
+  "Switch to betting view": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:1483"
+  ],
+  "Could not load previous predictions": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2057",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2137"
+  ],
+  "No previous predictions found": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2061"
+  ],
+  "Loading previous predictions...": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2076"
+  ],
+  "loading previous predictions": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2104",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2139"
+  ],
+  "Prediction title cannot be empty.": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2155"
+  ],
+  "Please provide at least two prediction options.": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2175"
+  ],
+  "Predictions can have at most %1 options.": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2181"
+  ],
+  "Prediction options must be different from each other.": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2188"
+  ],
+  "Failed to create prediction: ": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2231"
+  ],
+  "deleting predictions": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2461",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2491"
+  ],
+  "Failed to delete prediction: ": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2490"
+  ],
+  "locking predictions": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2521",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2546"
+  ],
+  "Failed to lock prediction: ": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2545"
+  ],
+  "completing predictions": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2613",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2646"
+  ],
+  "Failed to resolve prediction: ": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:2644"
+  ],
+  "PAYOUT": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:3371"
+  ],
+  "VOTERS": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:3374"
+  ],
+  "POINTS": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:3377"
+  ],
+  "TOP BET": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:3380"
+  ],
+  "placing prediction bets": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:3570",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:3738",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:3881"
+  ],
+  "Enter a wager amount first.": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:3640",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:3801"
+  ],
+  "Failed to place bet: ": [
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:3736",
+    "src\\widgets\\dialogs\\PredictionDialog.cpp:3879"
+  ],
+  "Log in to send messages...": [
+    "src\\widgets\\dialogs\\ReplyThreadPopup.cpp:325",
+    "src\\widgets\\splits\\Split.cpp:1141"
+  ],
+  "Reply as %1...": [
+    "src\\widgets\\dialogs\\ReplyThreadPopup.cpp:329"
+  ],
+  "Show": [
+    "src\\widgets\\dialogs\\RestoreBackupsDialog.cpp:59"
+  ],
+  "Some backups are damaged or otherwise unreadable.": [
+    "src\\widgets\\dialogs\\RestoreBackupsDialog.cpp:61"
+  ],
+  "just now": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:75",
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:993"
+  ],
+  "%1m ago": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:79",
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:995",
+    "src\\widgets\\helper\\PollBanner.cpp:105",
+    "src\\widgets\\helper\\PredictionBanner.cpp:152"
+  ],
+  "%1h ago": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:83",
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:1001",
+    "src\\widgets\\helper\\PollBanner.cpp:111",
+    "src\\widgets\\helper\\PredictionBanner.cpp:158"
+  ],
+  "%1d ago": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:85",
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:1003",
+    "src\\widgets\\helper\\PollBanner.cpp:114",
+    "src\\widgets\\helper\\PredictionBanner.cpp:162"
+  ],
+  "viewing the reward queue": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:613",
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:662",
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:748"
+  ],
+  "Loading reward queue...": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:626"
+  ],
+  "loading the reward queue": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:649",
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:696"
+  ],
+  "loading reward requests": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:777",
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:830"
+  ],
+  "Stopped before the rest of the queue was updated. Run it again to continue.": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1018"
+  ],
+  "UNFULFILLED": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1033",
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1131"
+  ],
+  "Updating requests: %1 of %2": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1183"
+  ],
+  "No pending requests.": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1247"
+  ],
+  " (disabled)": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1400"
+  ],
+  "%1 - %2 points": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1406"
+  ],
+  "\nRedemptions are paused": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1410"
+  ],
+  "\nDisabled by the broadcaster": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1414"
+  ],
+  "All requests (%1)": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1478"
+  ],
+  "managing the reward queue": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1512",
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1541",
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1807",
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1853"
+  ],
+  "Loading reward requests...": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1764",
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1796"
+  ],
+  "Completing requests...": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1821"
+  ],
+  "Rejecting requests...": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1822"
+  ],
+  "every pending request in this channel": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1906"
+  ],
+  "every pending request for \"%1\"": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1907"
+  ],
+  "Complete %1?": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1911"
+  ],
+  "Reject %1? Rejected requests refund the points.": [
+    "src\\widgets\\dialogs\\RewardQueueDialog.cpp:1912"
+  ],
+  "Whispers": [
+    "src\\widgets\\dialogs\\SelectChannelDialog.cpp:222"
+  ],
+  "Mentions": [
+    "src\\widgets\\dialogs\\SelectChannelDialog.cpp:240"
+  ],
+  "Watching": [
+    "src\\widgets\\dialogs\\SelectChannelDialog.cpp:258"
+  ],
+  "Live": [
+    "src\\widgets\\dialogs\\SelectChannelDialog.cpp:274",
+    "src\\widgets\\splits\\SplitHeader.cpp:281"
+  ],
+  "Platform badge if unselected": [
+    "src\\widgets\\dialogs\\SelectChannelDialog.cpp:418"
+  ],
+  "Platform badge": [
+    "src\\widgets\\dialogs\\SelectChannelDialog.cpp:420"
+  ],
+  "Channel name": [
+    "src\\widgets\\dialogs\\SelectChannelDialog.cpp:422"
+  ],
+  "Multi": [
+    "src\\widgets\\dialogs\\SelectChannelDialog.cpp:444"
+  ],
+  "Works without setup. Google Translate handles the translation.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:41"
+  ],
+  "Works without setup. Microsoft Translator handles the translation.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:45"
+  ],
+  "Enter a DeepL API key. Your key is stored on this device.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:49"
+  ],
+  "Use libretranslate.com or enter your own server address. Some private servers do not need a key.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:52"
+  ],
+  "Use an API key from a project with Cloud Translation Basic enabled. Your key is stored on this device.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:56"
+  ],
+  "Enter an Azure Translator key and its region. Leave the region empty for a global resource.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:60"
+  ],
+  "Enter an API key before testing.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:190"
+  ],
+  "Enter an API key before saving.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:191"
+  ],
+  "Saved.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:222"
+  ],
+  "Saving key...": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:228"
+  ],
+  "Key saved.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:254"
+  ],
+  "Testing...": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:293"
+  ],
+  "Hello World!": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:295"
+  ],
+  "Connected. Test result: %1": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:297"
+  ],
+  "Key removed.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:342"
+  ],
+  "Ready to use. No setup needed.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:351"
+  ],
+  "Checking for a saved key...": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:356"
+  ],
+  "A key is already saved.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:379"
+  ],
+  "A key is optional for many private servers.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:388"
+  ],
+  "Enter an API key to use this service.": [
+    "src\\widgets\\dialogs\\TranslationProviderDialog.cpp:390"
+  ],
+  "Loading badges...": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1132",
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1174",
+    "src\\widgets\\dialogs\\UserBadgesDialog.cpp:540",
+    "src\\widgets\\dialogs\\UserBadgesDialog.cpp:585"
+  ],
+  "loading badges": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1154",
+    "src\\widgets\\dialogs\\UserBadgesDialog.cpp:565"
+  ],
+  "No global badges available.": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1208"
+  ],
+  "Your Badges (%1)": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1222"
+  ],
+  "Your Badges": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1223"
+  ],
+  "No matching badges.": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1285",
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1439"
+  ],
+  "Use Custom Badge for This Channel": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1330"
+  ],
+  "Badge Flair for Tier 2 and 3 Subscriptions": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1346"
+  ],
+  "Lead Moderator Badge": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1371"
+  ],
+  "No channel-specific badges available.": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1378",
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1430"
+  ],
+  "Failed to load event badges.": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1502"
+  ],
+  "Loading event badges...": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1512"
+  ],
+  "No data loaded.": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1518"
+  ],
+  "\nEnds: %1": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1555"
+  ],
+  "MMM d, yyyy hh:mm": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1557",
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1561"
+  ],
+  "\nStarts: %1": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1559"
+  ],
+  "Free": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1598"
+  ],
+  "Paid": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1598"
+  ],
+  "You already have all available event badges!": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1650"
+  ],
+  "No event badges match your search.": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1652"
+  ],
+  "You must be logged in to change your color.": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1690",
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1900"
+  ],
+  "Enter a valid hex color (#RRGGBB).": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1877"
+  ],
+  "Your color has been changed to %1.": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1939"
+  ],
+  "Failed to change color to %1 - ": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1949"
+  ],
+  "Missing required scope. Re-login with your account and try again.": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1956",
+    "src\\widgets\\splits\\SplitInput.cpp:282"
+  ],
+  "An unknown error has occurred.": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:1978",
+    "src\\widgets\\splits\\SplitInput.cpp:290",
+    "src\\widgets\\splits\\SplitInput.cpp:293"
+  ],
+  "Global badge set to: %1": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:2123"
+  ],
+  "selecting badge": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:2132",
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:2209"
+  ],
+  "Global badge cleared.": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:2162"
+  ],
+  "deselecting badge": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:2171",
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:2281"
+  ],
+  "Channel badge set to: %1": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:2201"
+  ],
+  "Role badge set to: %1": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:2237"
+  ],
+  "selecting role badge": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:2245"
+  ],
+  "Channel badge disabled.": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:2273"
+  ],
+  "Badge flair hidden.": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:2308"
+  ],
+  "Badge flair shown.": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:2309"
+  ],
+  "updating badge flair": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:2317"
+  ],
+  "using badge picker": [
+    "src\\widgets\\dialogs\\TwitchBadgePickerDialog.cpp:2599"
+  ],
+  "Install": [
+    "src\\widgets\\dialogs\\UpdateDialog.cpp:41"
+  ],
+  "\nClick to open in Chat Vault": [
+    "src\\widgets\\dialogs\\UserBadgesDialog.cpp:106"
+  ],
+  "No badges found.": [
+    "src\\widgets\\dialogs\\UserBadgesDialog.cpp:611"
+  ],
+  "Badges (%1)": [
+    "src\\widgets\\dialogs\\UserBadgesDialog.cpp:618"
+  ],
+  "viewing badges": [
+    "src\\widgets\\dialogs\\UserBadgesDialog.cpp:890"
+  ],
+  "7TV Paint: ": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:143"
+  ],
+  "Sep 30, 2026": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:463"
+  ],
+  "Copied %1": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:540"
+  ],
+  " (today)": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:932"
+  ],
+  "Following since ": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:958"
+  ],
+  "Verified Bot": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:972"
+  ],
+  "Partner": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:976"
+  ],
+  "Affiliate": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:980"
+  ],
+  "Pre Affiliate": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:984"
+  ],
+  "Non Affiliate": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:987"
+  ],
+  "%1:%2!%2@%2.tmi.twitch.tv PRIVMSG #%3 :%4": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:1144",
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:501"
+  ],
+  "PRIVMSG": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:1149",
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:507"
+  ],
+  "execModeratorAction action needs an argument, which moderation action to execute, see description in the editor": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:1566"
+  ],
+  "Invalid argument for execModeratorAction: %1. Use \"ban\", \"unban\" or the number of the timeout button to execute": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:1591"
+  ],
+  "Invalid argument for execModeratorAction: %1. Integer out of usable range: [1, %2]": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:1604"
+  ],
+  "Copy localized name": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:1889"
+  ],
+  "Copy ID": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:1901"
+  ],
+  "Copied user color %1": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:2013"
+  ],
+  "Roles": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:2154"
+  ],
+  "Make moderator": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:2177"
+  ],
+  "Remove moderator": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:2178"
+  ],
+  "Make VIP": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:2179"
+  ],
+  "Remove VIP": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:2180"
+  ],
+  "/mod ": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:2243"
+  ],
+  "/unmod ": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:2249"
+  ],
+  "/vip ": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:2255"
+  ],
+  "/unvip ": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:2261"
+  ],
+  "LeafyrinoArchive-test-": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:2460"
+  ],
+  " <span style='color:%1'>#%2</span>": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:2761"
+  ],
+  "You successfully unblocked user %1": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:3308"
+  ],
+  "User %1 couldn't be unblocked, an unknown error occurred!": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:3314"
+  ],
+  "You successfully blocked user %1": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:3349"
+  ],
+  "User %1 couldn't be blocked, an unknown error occurred!": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:3355"
+  ],
+  "d MMMM": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:4536",
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:78"
+  ],
+  "No saved Leafyrino moderator login found.": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:4850"
+  ],
+  "Bot ": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:5420"
+  ],
+  "Partner ": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:5424"
+  ],
+  "Affiliate ": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:5428"
+  ],
+  "Staff ": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:5432"
+  ],
+  "Ex-Staff ": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:5436"
+  ],
+  "Subscribed for %1 months": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:6022"
+  ],
+  "No avatar is available for this user.": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:6159"
+  ],
+  "add lead moderator to": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:6263"
+  ],
+  "remove lead moderator from": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:6265"
+  ],
+  "add editor to": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:6267"
+  ],
+  "remove editor from": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:6268"
+  ],
+  "Name history unavailable": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:6898"
+  ],
+  "/ban ": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:6962"
+  ],
+  "/unban ": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:6968"
+  ],
+  "/timeout ": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:6979"
+  ],
+  "Ban reason": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:7013"
+  ],
+  "Timeout reason": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:7013"
+  ],
+  "optional reason": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:7013"
+  ],
+  "Cross": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:7125"
+  ],
+  "Unban this user in other channels you moderate": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:7189"
+  ],
+  "Timeouts": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:7190"
+  ],
+  "Ban this user in other channels you moderate": [
+    "src\\widgets\\dialogs\\UserInfoPopup.cpp:7193"
+  ],
+  "dd.MM.yyyy HH:mm:ss": [
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:32"
+  ],
+  "<p class='section'>": [
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:42"
+  ],
+  "d MMMM yyyy": [
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:79"
+  ],
+  "dd.MM.yyyy HH:mm": [
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:88"
+  ],
+  "<a class='quiet' href='": [
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:108"
+  ],
+  "<p class='row'>": [
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:325",
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:391"
+  ],
+  " <span class='chan'>#": [
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:325",
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:390"
+  ],
+  "<p class='quote'>": [
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:330"
+  ],
+  "<p class='quote muted'><span class='am'>AutoMod</span> · ": [
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:334"
+  ],
+  "<p class='day' align='center'>": [
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:375"
+  ],
+  "<span class='time'>": [
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:383"
+  ],
+  "&nbsp; ": [
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:391"
+  ],
+  "<p class='muted' style='margin-top:10px;'>": [
+    "src\\widgets\\helper\\ArchiveUserCard.cpp:409"
+  ],
+  "2 characters minimum": [
+    "src\\widgets\\helper\\ChannelCategoryPicker.cpp:146"
+  ],
+  "Searching": [
+    "src\\widgets\\helper\\ChannelCategoryPicker.cpp:177"
+  ],
+  "No categories found": [
+    "src\\widgets\\helper\\ChannelCategoryPicker.cpp:280"
+  ],
+  "Translation failed. Try switching providers in Settings.": [
+    "src\\widgets\\helper\\ChannelView.cpp:118"
+  ],
+  "Translated to %1": [
+    "src\\widgets\\helper\\ChannelView.cpp:151"
+  ],
+  "Translated from %1 to %2": [
+    "src\\widgets\\helper\\ChannelView.cpp:154"
+  ],
+  "MOLTOEMOTE%1": [
+    "src\\widgets\\helper\\ChannelView.cpp:263"
+  ],
+  "There is no message text to translate.": [
+    "src\\widgets\\helper\\ChannelView.cpp:540"
+  ],
+  "More messages below": [
+    "src\\widgets\\helper\\ChannelView.cpp:1100"
+  ],
+  "Paused": [
+    "src\\widgets\\helper\\ChannelView.cpp:2669"
+  ],
+  "<br>Effect disabled": [
+    "src\\widgets\\helper\\ChannelView.cpp:3183"
+  ],
+  "<br>Modifiers: ": [
+    "src\\widgets\\helper\\ChannelView.cpp:3215"
+  ],
+  "&Search with ": [
+    "src\\widgets\\helper\\ChannelView.cpp:3973"
+  ],
+  " in private mode": [
+    "src\\widgets\\helper\\ChannelView.cpp:3977",
+    "src\\widgets\\helper\\MessageView.cpp:680"
+  ],
+  "/pin ": [
+    "src\\widgets\\helper\\ChannelView.cpp:4489"
+  ],
+  "&Search with %1": [
+    "src\\widgets\\helper\\MessageView.cpp:676"
+  ],
+  "Close Multiple Tabs": [
+    "src\\widgets\\helper\\NotebookTab.cpp:241"
+  ],
+  "Blue": [
+    "src\\widgets\\helper\\NotebookTab.cpp:282"
+  ],
+  "Orange": [
+    "src\\widgets\\helper\\NotebookTab.cpp:282"
+  ],
+  "Red": [
+    "src\\widgets\\helper\\NotebookTab.cpp:283"
+  ],
+  "Yellow": [
+    "src\\widgets\\helper\\NotebookTab.cpp:283"
+  ],
+  "Green": [
+    "src\\widgets\\helper\\NotebookTab.cpp:284"
+  ],
+  "Purple": [
+    "src\\widgets\\helper\\NotebookTab.cpp:284"
+  ],
+  "Pink": [
+    "src\\widgets\\helper\\NotebookTab.cpp:285"
+  ],
+  "Cyan": [
+    "src\\widgets\\helper\\NotebookTab.cpp:285"
+  ],
+  "Moderator": [
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:542",
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:40"
+  ],
+  "rgba(%1, %2, %3, 0.55)": [
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:704",
+    "src\\widgets\\helper\\PollBanner.cpp:841",
+    "src\\widgets\\helper\\PredictionBanner.cpp:914"
+  ],
+  "\\xE2\\x96\\xB2 Less": [
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:934"
+  ],
+  "\\xE2\\x96\\xBC More": [
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:939"
+  ],
+  "%1h %2m ago": [
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:1000"
+  ],
+  "Expired": [
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:1051"
+  ],
+  "Pinned by %1 \\xC2\\xB7 %2": [
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:1064"
+  ],
+  "%1 \\xC2\\xB7 %2 remaining": [
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:1092"
+  ],
+  "%1 remaining": [
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:1094",
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:1109"
+  ],
+  "Pinned indefinitely": [
+    "src\\widgets\\helper\\PinnedMessageBanner.cpp:1098"
+  ],
+  "%1s ago": [
+    "src\\widgets\\helper\\PollBanner.cpp:99",
+    "src\\widgets\\helper\\PredictionBanner.cpp:146"
+  ],
+  "Ended early by %1": [
+    "src\\widgets\\helper\\PollBanner.cpp:733"
+  ],
+  "Archived by %1": [
+    "src\\widgets\\helper\\PollBanner.cpp:737"
+  ],
+  "Poll ended": [
+    "src\\widgets\\helper\\PollBanner.cpp:741"
+  ],
+  "Poll by %1": [
+    "src\\widgets\\helper\\PollBanner.cpp:745"
+  ],
+  "Voting ended: no votes": [
+    "src\\widgets\\helper\\PollBanner.cpp:792"
+  ],
+  "No votes yet": [
+    "src\\widgets\\helper\\PollBanner.cpp:792"
+  ],
+  "Winner:": [
+    "src\\widgets\\helper\\PollBanner.cpp:813"
+  ],
+  "Leading:": [
+    "src\\widgets\\helper\\PollBanner.cpp:813"
+  ],
+  "Tie:": [
+    "src\\widgets\\helper\\PollBanner.cpp:817"
+  ],
+  "You bet %1 on %2": [
+    "src\\widgets\\helper\\PredictionBanner.cpp:540"
+  ],
+  "Resolved by %1": [
+    "src\\widgets\\helper\\PredictionBanner.cpp:547"
+  ],
+  "Canceled by %1": [
+    "src\\widgets\\helper\\PredictionBanner.cpp:552"
+  ],
+  "Locked by %1": [
+    "src\\widgets\\helper\\PredictionBanner.cpp:557"
+  ],
+  "Prediction by %1": [
+    "src\\widgets\\helper\\PredictionBanner.cpp:561"
+  ],
+  "<span style=\"color:%1;font-weight:700;\">%2</span>": [
+    "src\\widgets\\helper\\PredictionBanner.cpp:674",
+    "src\\widgets\\helper\\PredictionBanner.cpp:712"
+  ],
+  "%1 pts": [
+    "src\\widgets\\helper\\PredictionBanner.cpp:680",
+    "src\\widgets\\helper\\PredictionBanner.cpp:717"
+  ],
+  "<br><br>Your settings directory is located at <a href=\"": [
+    "src\\widgets\\settingspages\\AboutPage.cpp:72"
+  ],
+  "Qt Framework": [
+    "src\\widgets\\settingspages\\AboutPage.cpp:103"
+  ],
+  "Boost": [
+    "src\\widgets\\settingspages\\AboutPage.cpp:105"
+  ],
+  "Pajlada/Settings": [
+    "src\\widgets\\settingspages\\AboutPage.cpp:114"
+  ],
+  "Pajlada/Signals": [
+    "src\\widgets\\settingspages\\AboutPage.cpp:117"
+  ],
+  "Pajlada/Serialize": [
+    "src\\widgets\\settingspages\\AboutPage.cpp:120"
+  ],
+  "Fluent icons": [
+    "src\\widgets\\settingspages\\AboutPage.cpp:144"
+  ],
+  "Howard Hinnant's date.h": [
+    "src\\widgets\\settingspages\\AboutPage.cpp:159"
+  ],
+  "Unicode": [
+    "src\\widgets\\settingspages\\AboutPage.cpp:165"
+  ],
+  "Hunspell": [
+    "src\\widgets\\settingspages\\AboutPage.cpp:169"
+  ],
+  "UTF-8": [
+    "src\\widgets\\settingspages\\AboutPage.cpp:219"
+  ],
+  "{1} => first word &nbsp;&nbsp;&nbsp; {1+} => first word and after &nbsp;&nbsp;&nbsp; {{ => { &nbsp;&nbsp;&nbsp; <a href='https://chatterino.com/help/commands'>more info</a>": [
+    "src\\widgets\\settingspages\\CommandPage.cpp:32"
+  ],
+  "I made a new command HeyGuys": [
+    "src\\widgets\\settingspages\\CommandPage.cpp:104"
+  ],
+  "Website": [
+    "src\\widgets\\settingspages\\ExternalToolsPage.cpp:128"
+  ],
+  "Download": [
+    "src\\widgets\\settingspages\\ExternalToolsPage.cpp:132"
+  ],
+  "Documentation": [
+    "src\\widgets\\settingspages\\ExternalToolsPage.cpp:135"
+  ],
+  "Path to folder where Streamlink executable can be found": [
+    "src\\widgets\\settingspages\\ExternalToolsPage.cpp:151"
+  ],
+  "this guide": [
+    "src\\widgets\\settingspages\\ExternalToolsPage.cpp:184"
+  ],
+  "message.content contains \"hello\"": [
+    "src\\widgets\\settingspages\\FiltersPage.cpp:66"
+  ],
+  "Parsed as:\n%1": [
+    "src\\widgets\\settingspages\\FiltersPage.cpp:112"
+  ],
+  "Expected %1 but got %2": [
+    "src\\widgets\\settingspages\\FiltersPage.cpp:120"
+  ],
+  "Windows": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:50",
+    "src\\widgets\\settingspages\\TechnorinoPage.cpp:30"
+  ],
+  "Meta": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:52",
+    "src\\widgets\\settingspages\\TechnorinoPage.cpp:32"
+  ],
+  "high dpi": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:196"
+  ],
+  "Choose which tabs are visible in the notebook": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:260"
+  ],
+  "an assigned hotkey (Window -> remove tab)": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:290"
+  ],
+  " (no key bound to open them otherwise)": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:317"
+  ],
+  " (%1 to show)": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:321"
+  ],
+  "Pause while holding a key": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:374"
+  ],
+  "Specify how Leafyrino will handle messages that exceed Twitch message limits": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:436"
+  ],
+  "Specify how Leafyrino will handle right-clicking a username in chat when not holding the modifier.": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:453"
+  ],
+  "Specify how Leafyrino will handle right-clicking a username in chat when holding down the modifier.": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:470"
+  ],
+  "scroll bar": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:510",
+    "src\\widgets\\settingspages\\GeneralPage.cpp:515"
+  ],
+  " lines": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:604"
+  ],
+  " characters": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:615"
+  ],
+  "Limits the amount of characters displayed in deleted messages when announced via system message.": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:622"
+  ],
+  "Download for Google Chrome and similar browsers.": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:979"
+  ],
+  "Download for Firefox": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:981"
+  ],
+  "Extension;IDs;separated;by;semicolons": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1015"
+  ],
+  "Cache saved at <a href=\"file:///": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1043"
+  ],
+  "Choose cache path": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1053"
+  ],
+  "Clear Cache": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1059"
+  ],
+  "an assigned hotkey (Window -> Toggle local unique chat (R9K))": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1115"
+  ],
+  "A value of 0.9 means the messages need to be 90% similar to be marked as similar.": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1155"
+  ],
+  "A value of 5s means if there's a 5s break between messages, we will stop looking further through the messages for similarities.": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1167"
+  ],
+  "How many messages in the history should be compared to a new one to establish its similarity rating. Messages in the history will be compared to only if they are new enough.": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1179"
+  ],
+  "top donor": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1226"
+  ],
+  "The final scale of the messages in the overlay is computed by multiplying this zoom factor with the global zoom level.": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1257"
+  ],
+  "Bing": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1339",
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1365",
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1368"
+  ],
+  "Select a search engine preset": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1342"
+  ],
+  "Localized name": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1532"
+  ],
+  "Username and localized name": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1533"
+  ],
+  "Customizes how you see Asian Language names.\nUsing an option that includes \"localized\" will display the username in its respective Asian language.\ne.g. Username and localized: testaccount_420(테스트계정420)\nUsername: testaccount_420\nLocalized name: 테스트계정420": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1545"
+  ],
+  "Combine consecutive timeout messages into a single message.": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1673"
+  ],
+  "Current location: <a href=\"file:///": [
+    "src\\widgets\\settingspages\\GeneralPage.cpp:1770",
+    "src\\widgets\\settingspages\\TechnorinoPage.cpp:189"
+  ],
+  "Admin": [
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:38"
+  ],
+  "Lead Moderator": [
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:41"
+  ],
+  "Verified": [
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:42"
+  ],
+  "Founder": [
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:44"
+  ],
+  "Subscriber": [
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:45"
+  ],
+  "Predicted Blue": [
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:46"
+  ],
+  "Predicted Pink": [
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:47"
+  ],
+  "my phrase": [
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:93"
+  ],
+  "highlighted user": [
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:144"
+  ],
+  "blacklisted user": [
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:238"
+  ],
+  "Default sound: Chatterino Ping": [
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:249"
+  ],
+  "Default sound: <a href=\"%1\"><span style=\"color: white\">%2</span></a>": [
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:253"
+  ],
+  "Audio Files (*.mp3 *.wav)": [
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:275",
+    "src\\widgets\\settingspages\\HighlightingPage.cpp:313",
+    "src\\widgets\\settingspages\\NotificationPage.cpp:98"
+  ],
+  "my pattern": [
+    "src\\widgets\\settingspages\\IgnoresPage.cpp:72"
+  ],
+  "If you are Moderator": [
+    "src\\widgets\\settingspages\\IgnoresPage.cpp:95"
+  ],
+  "If you are Broadcaster": [
+    "src\\widgets\\settingspages\\IgnoresPage.cpp:96"
+  ],
+  "Placeholder (no content)": [
+    "src\\widgets\\settingspages\\IgnoresPage.cpp:96"
+  ],
+  "Some of your hotkeys use deprecated actions and will not work as expected: ": [
+    "src\\widgets\\settingspages\\KeyboardSettingsPage.cpp:132"
+  ],
+  "');\n            warningMessage.append(hotkeyName);\n            warningMessage.append('": [
+    "src\\widgets\\settingspages\\KeyboardSettingsPage.cpp:143"
+  ],
+  "badge hq": [
+    "src\\widgets\\settingspages\\LeafyrinoPage.cpp:76"
+  ],
+  "super chat": [
+    "src\\widgets\\settingspages\\LeafyrinoPage.cpp:94",
+    "src\\widgets\\settingspages\\LeafyrinoPage.cpp:101"
+  ],
+  "Bytes": [
+    "src\\widgets\\settingspages\\ModerationPage.cpp:53"
+  ],
+  "Your logs currently take up %1 of space": [
+    "src\\widgets\\settingspages\\ModerationPage.cpp:74"
+  ],
+  "Open Image": [
+    "src\\widgets\\settingspages\\ModerationPage.cpp:265"
+  ],
+  "Image Files (*.png *.jpg *.jpeg)": [
+    "src\\widgets\\settingspages\\ModerationPage.cpp:266"
+  ],
+  "/timeout {user.name} 300": [
+    "src\\widgets\\settingspages\\ModerationPage.cpp:299"
+  ],
+  "/pin {msg.id}": [
+    "src\\widgets\\settingspages\\ModerationPage.cpp:306"
+  ],
+  "When this is off, press Enter to send the prompt. Esc or clicking away cancels it.": [
+    "src\\widgets\\settingspages\\ModerationPage.cpp:520"
+  ],
+  "When this is on, right-click and modifier prompts start with the saved timeout or ban reason selected for quick editing.": [
+    "src\\widgets\\settingspages\\ModerationPage.cpp:527"
+  ],
+  "Preview only": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:115",
+    "src\\widgets\\splits\\SplitInput.cpp:208",
+    "src\\widgets\\splits\\SplitInput.cpp:2905"
+  ],
+  "Translate on send": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:116",
+    "src\\widgets\\splits\\SplitInput.cpp:212",
+    "src\\widgets\\splits\\SplitInput.cpp:2906"
+  ],
+  "yyyy-MM-dd h:mm ap": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:138"
+  ],
+  "Legacy Browser": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:214"
+  ],
+  "Client Secret": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:272",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1410"
+  ],
+  "Pinned message scale": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:434"
+  ],
+  "Make pinned message text larger or smaller.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:435"
+  ],
+  "Pinned content scale": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:437"
+  ],
+  "Make pinned banner controls, labels, and buttons larger or smaller.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:438"
+  ],
+  " minutes": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:450"
+  ],
+  "Unpin": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:470"
+  ],
+  "Prediction banner content scale": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:553"
+  ],
+  "Make prediction banner text larger or smaller.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:555"
+  ],
+  "Poll banner content scale": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:557"
+  ],
+  "Make poll banner text larger or smaller.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:559"
+  ],
+  "After %1 minutes": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:605"
+  ],
+  "After %1 seconds": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:607"
+  ],
+  "Assign a hotkey under Split input box -> Toggle translate on send.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:814"
+  ],
+  "Toggle translate on send with %1.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:819"
+  ],
+  "Message Twitch shows for /nuke timeouts and bans. Leave empty to send no message.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:995"
+  ],
+  "Nuke mod message": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1039"
+  ],
+  "Nuke timeout ban message": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1039"
+  ],
+  "FFZ": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1181",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1199",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1205",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1270"
+  ],
+  "BTTV": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1185",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1203",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1205",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1270"
+  ],
+  "Stretches the emote wide.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1230",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1247"
+  ],
+  "Flips the emote horizontally.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1232",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1249"
+  ],
+  "Flips the emote vertically.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1234",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1251"
+  ],
+  "Rotates the emote left.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1236"
+  ],
+  "Rotates the emote right.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1238"
+  ],
+  "Removes the space before the emote.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1240"
+  ],
+  "Darkens the emote with high contrast.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1242",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1258"
+  ],
+  "Cycles the emote through party colors.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1244"
+  ],
+  "Shakes the emote.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1245"
+  ],
+  "Spins the emote.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1252"
+  ],
+  "Cycles the emote's colors.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1254"
+  ],
+  "Turns the emote hyper-red and shakes it.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1256"
+  ],
+  "Slides the emote from side to side.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1260"
+  ],
+  "Fades the emote in.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1262"
+  ],
+  "Fades the emote out.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1264"
+  ],
+  "Pulses the emote to a beat.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1266"
+  ],
+  "Squashes and flips the emote.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1268"
+  ],
+  "Twitch and Tackling": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1366"
+  ],
+  "Twitch only": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1367"
+  ],
+  "Tackling only": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1368"
+  ],
+  "Chat session only": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1369"
+  ],
+  "Bot Badge": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1409"
+  ],
+  "Developer": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1409"
+  ],
+  "Refreshing accounts...": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1440"
+  ],
+  "Not logged in yet. Log in to continue.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1458",
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1514"
+  ],
+  "No saved account validated successfully.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1468"
+  ],
+  "Legacy login found. Existing features will keep working. Refresh accounts to show account details.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1503"
+  ],
+  "Legacy login active.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1505"
+  ],
+  "not issued": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1573"
+  ],
+  "Bot badge panel visible. Click Verify to test the setup.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1584"
+  ],
+  "Bot badge setup saved. Click Verify to check it.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1585"
+  ],
+  "Client ID is required before opening Twitch authorization.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1615"
+  ],
+  "user:write:chat user:bot": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1625"
+  ],
+  "Twitch authorization opened. Approve access in the browser, then come back and click Verify again.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1631"
+  ],
+  "Could not open Twitch authorization automatically.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1637"
+  ],
+  "Client ID and Client Secret are required.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1648"
+  ],
+  "You must enter a Bot Username or be logged into Twitch in Chatterino to verify.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1661"
+  ],
+  "Checking bot badge account @%1...": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1678"
+  ],
+  "Could not verify the app. Check the Client Secret.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1710"
+  ],
+  "Client-ID": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1721"
+  ],
+  "Bot badge account could not be found.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1739"
+  ],
+  "Bot badge account @%1 verified.": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1764"
+  ],
+  "Verification failed: ": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1778"
+  ],
+  "Could not verify bot badge setup: ": [
+    "src\\widgets\\settingspages\\MoltorinoPage.cpp:1793"
+  ],
+  "look at the manual": [
+    "src\\widgets\\settingspages\\PluginsPage.cpp:59"
+  ],
+  "the Plugins directory": [
+    "src\\widgets\\settingspages\\PluginsPage.cpp:69"
+  ],
+  "REPL font": [
+    "src\\widgets\\settingspages\\PluginsPage.cpp:95"
+  ],
+  "%1 (%2, from %3)": [
+    "src\\widgets\\settingspages\\PluginsPage.cpp:140"
+  ],
+  "Authors": [
+    "src\\widgets\\settingspages\\PluginsPage.cpp:182"
+  ],
+  "Homepage": [
+    "src\\widgets\\settingspages\\PluginsPage.cpp:190"
+  ],
+  "License": [
+    "src\\widgets\\settingspages\\PluginsPage.cpp:192"
+  ],
+  "focus action requires only one argument: the focus direction Use \"up\", \"above\", \"down\", \"below\", \"left\" or \"right\".": [
+    "src\\widgets\\splits\\Split.cpp:413"
+  ],
+  "focus in unknown direction. Use \"up\", \"above\", \"down\", \"below\", \"left\" or \"right\".": [
+    "src\\widgets\\splits\\Split.cpp:436"
+  ],
+  "Cannot create clips in a non-Twitch channel.": [
+    "src\\widgets\\splits\\Split.cpp:530"
+  ],
+  "Cannot set moderation mode in a non-Twitch channel.": [
+    "src\\widgets\\splits\\Split.cpp:579"
+  ],
+  "Cannot set channel notifications for a non-Twitch channel.": [
+    "src\\widgets\\splits\\Split.cpp:651"
+  ],
+  "No arguments provided to toggleOverlayInertia (expected one)": [
+    "src\\widgets\\splits\\Split.cpp:698"
+  ],
+  "Cannot set highlight sounds in a non-Twitch channel.": [
+    "src\\widgets\\splits\\Split.cpp:735"
+  ],
+  "Cannot subscribe to a non-Twitch channel.": [
+    "src\\widgets\\splits\\Split.cpp:775"
+  ],
+  "Expected at least one argument": [
+    "src\\widgets\\splits\\Split.cpp:786"
+  ],
+  "Failed to parse argument as integer": [
+    "src\\widgets\\splits\\Split.cpp:819"
+  ],
+  "Send message as ": [
+    "src\\widgets\\splits\\Split.cpp:1114"
+  ],
+  "Send message as %1 in %2...": [
+    "src\\widgets\\splits\\Split.cpp:1146"
+  ],
+  "Moving": [
+    "src\\widgets\\splits\\Split.cpp:2459"
+  ],
+  "Hold <Ctrl+Alt> to move splits.\n\nExample:": [
+    "src\\widgets\\splits\\Split.cpp:2460"
+  ],
+  "Splitting": [
+    "src\\widgets\\splits\\Split.cpp:2465"
+  ],
+  "Hold <Ctrl+Alt> to add new splits.\n\nExample:": [
+    "src\\widgets\\splits\\Split.cpp:2466"
+  ],
+  "Split(": [
+    "src\\widgets\\splits\\Split.cpp:2880",
+    "src\\widgets\\splits\\Split.cpp:2885"
+  ],
+  ", channel:": [
+    "src\\widgets\\splits\\Split.cpp:2881"
+  ],
+  ", no channel)": [
+    "src\\widgets\\splits\\Split.cpp:2885"
+  ],
+  "Split(nullptr)": [
+    "src\\widgets\\splits\\Split.cpp:2898"
+  ],
+  "Open channel": [
+    "src\\widgets\\splits\\SplitContainer.cpp:133"
+  ],
+  "Click to add a split": [
+    "src\\widgets\\splits\\SplitContainer.cpp:667"
+  ],
+  "\n\nAfter adding hold <Ctrl+Alt> to move or split it.": [
+    "src\\widgets\\splits\\SplitContainer.cpp:675"
+  ],
+  " (anonymous)": [
+    "src\\widgets\\splits\\SplitContainer.cpp:988",
+    "src\\widgets\\splits\\SplitHeader.cpp:1984"
+  ],
+  "unique, ": [
+    "src\\widgets\\splits\\SplitHeader.cpp:83"
+  ],
+  "slow(%1), ": [
+    "src\\widgets\\splits\\SplitHeader.cpp:87"
+  ],
+  "emote, ": [
+    "src\\widgets\\splits\\SplitHeader.cpp:91"
+  ],
+  "sub, ": [
+    "src\\widgets\\splits\\SplitHeader.cpp:95"
+  ],
+  "follow(%1), ": [
+    "src\\widgets\\splits\\SplitHeader.cpp:101"
+  ],
+  "follow, ": [
+    "src\\widgets\\splits\\SplitHeader.cpp:107"
+  ],
+  "Couldn't fetch thumbnail<br>": [
+    "src\\widgets\\splits\\SplitHeader.cpp:246",
+    "src\\widgets\\splits\\SplitHeader.cpp:324"
+  ],
+  " height=\"": [
+    "src\\widgets\\splits\\SplitHeader.cpp:255",
+    "src\\widgets\\splits\\SplitHeader.cpp:329"
+  ],
+  " % sizeStr % u": [
+    "src\\widgets\\splits\\SplitHeader.cpp:258",
+    "src\\widgets\\splits\\SplitHeader.cpp:330"
+  ],
+  "data:image/jpg;base64, ": [
+    "src\\widgets\\splits\\SplitHeader.cpp:258",
+    "src\\widgets\\splits\\SplitHeader.cpp:330"
+  ],
+  "%1 for %2 with %3 viewers": [
+    "src\\widgets\\splits\\SplitHeader.cpp:280"
+  ],
+  "Vod-casting": [
+    "src\\widgets\\splits\\SplitHeader.cpp:281",
+    "src\\widgets\\splits\\SplitHeader.cpp:554"
+  ],
+  "<p style=\"text-align: center;\">": [
+    "src\\widgets\\splits\\SplitHeader.cpp:286",
+    "src\\widgets\\splits\\SplitHeader.cpp:366"
+  ],
+  "<p style=\"text-align: center;\">Offline<br>%1</p>": [
+    "src\\widgets\\splits\\SplitHeader.cpp:297",
+    "src\\widgets\\splits\\SplitHeader.cpp:372"
+  ],
+  "';\n        return u": [
+    "src\\widgets\\splits\\SplitHeader.cpp:329"
+  ],
+  "%1 viewers": [
+    "src\\widgets\\splits\\SplitHeader.cpp:363"
+  ],
+  " (rerun)": [
+    "src\\widgets\\splits\\SplitHeader.cpp:384"
+  ],
+  " (live)": [
+    "src\\widgets\\splits\\SplitHeader.cpp:394",
+    "src\\widgets\\splits\\SplitHeader.cpp:1949",
+    "src\\widgets\\splits\\SplitHeader.cpp:2109"
+  ],
+  " (live with ": [
+    "src\\widgets\\splits\\SplitHeader.cpp:406"
+  ],
+  " - offline": [
+    "src\\widgets\\splits\\SplitHeader.cpp:579"
+  ],
+  "%1 of %2 live": [
+    "src\\widgets\\splits\\SplitHeader.cpp:637"
+  ],
+  " viewers": [
+    "src\\widgets\\splits\\SplitHeader.cpp:640"
+  ],
+  "and %1 more live": [
+    "src\\widgets\\splits\\SplitHeader.cpp:751"
+  ],
+  "%1 offline": [
+    "src\\widgets\\splits\\SplitHeader.cpp:755"
+  ],
+  "<p style=\"text-align: left;\">": [
+    "src\\widgets\\splits\\SplitHeader.cpp:759"
+  ],
+  "How to...": [
+    "src\\widgets\\splits\\SplitHeader.cpp:1353"
+  ],
+  "Mor&e": [
+    "src\\widgets\\splits\\SplitHeader.cpp:1362"
+  ],
+  "Seconds:": [
+    "src\\widgets\\splits\\SplitHeader.cpp:1538"
+  ],
+  "/slow %1": [
+    "src\\widgets\\splits\\SplitHeader.cpp:1542"
+  ],
+  "/followers %1": [
+    "src\\widgets\\splits\\SplitHeader.cpp:1565"
+  ],
+  " - filtered": [
+    "src\\widgets\\splits\\SplitHeader.cpp:1957",
+    "src\\widgets\\splits\\SplitHeader.cpp:2123"
+  ],
+  "watching: ": [
+    "src\\widgets\\splits\\SplitHeader.cpp:1976"
+  ],
+  "Click to open rewards": [
+    "src\\widgets\\splits\\SplitInput.cpp:165"
+  ],
+  "Click to refresh": [
+    "src\\widgets\\splits\\SplitInput.cpp:166",
+    "src\\widgets\\splits\\SplitInput.cpp:168"
+  ],
+  "Channel Points: %1\n%2": [
+    "src\\widgets\\splits\\SplitInput.cpp:174"
+  ],
+  "Channel Points: loading...\n%1": [
+    "src\\widgets\\splits\\SplitInput.cpp:178"
+  ],
+  "Channel Points (click to open rewards)": [
+    "src\\widgets\\splits\\SplitInput.cpp:186"
+  ],
+  "Channel Points (click to refresh)": [
+    "src\\widgets\\splits\\SplitInput.cpp:189"
+  ],
+  "%1 viewer%2": [
+    "src\\widgets\\splits\\SplitInput.cpp:242"
+  ],
+  "There was a conflicting warn operation on this user. Please try again.": [
+    "src\\widgets\\splits\\SplitInput.cpp:268"
+  ],
+  "You are being ratelimited by Twitch. Try again in a few seconds.": [
+    "src\\widgets\\splits\\SplitInput.cpp:275"
+  ],
+  "You cannot warn %1.": [
+    "src\\widgets\\splits\\SplitInput.cpp:279"
+  ],
+  "You don't have permission to perform that action.": [
+    "src\\widgets\\splits\\SplitInput.cpp:287"
+  ],
+  "Failed to send message as warning - %1": [
+    "src\\widgets\\splits\\SplitInput.cpp:318"
+  ],
+  "Failed to send message as warning - bad target username: %1": [
+    "src\\widgets\\splits\\SplitInput.cpp:344"
+  ],
+  "Failed to send message as warning - could not look up %1.": [
+    "src\\widgets\\splits\\SplitInput.cpp:361"
+  ],
+  "An error occurred trying to process your image: %1": [
+    "src\\widgets\\splits\\SplitInput.cpp:665"
+  ],
+  "You are uploading an image to a 3rd party service not in control of the Leafyrino team. You may not be able to remove the image from the site. Are you okay with this?": [
+    "src\\widgets\\splits\\SplitInput.cpp:676"
+  ],
+  "SEND": [
+    "src\\widgets\\splits\\SplitInput.cpp:920"
+  ],
+  "/poll ": [
+    "src\\widgets\\splits\\SplitInput.cpp:1553"
+  ],
+  "The /poll command only works in Twitch channels": [
+    "src\\widgets\\splits\\SplitInput.cpp:1566"
+  ],
+  "Translation failed, so nothing was sent. Try switching providers in Settings.": [
+    "src\\widgets\\splits\\SplitInput.cpp:1712",
+    "src\\widgets\\splits\\SplitInput.cpp:1769"
+  ],
+  "The translated message is too long for Twitch.": [
+    "src\\widgets\\splits\\SplitInput.cpp:1719"
+  ],
+  "You must be logged in to send warnings.": [
+    "src\\widgets\\splits\\SplitInput.cpp:1804"
+  ],
+  "Cannot send warning: channel ID not available.": [
+    "src\\widgets\\splits\\SplitInput.cpp:1812"
+  ],
+  "Invalid cursorToStart arguments. Argument 0: select (\"withSelection\" or \"withoutSelection\")": [
+    "src\\widgets\\splits\\SplitInput.cpp:1859"
+  ],
+  "Invalid cursorToEnd arguments. Argument 0: select (\"withSelection\" or \"withoutSelection\")": [
+    "src\\widgets\\splits\\SplitInput.cpp:1896"
+  ],
+  "copy action takes only one argument: the source of the copy \"split\", \"input\" or \"auto\". If the source is \"split\", only text from the chat will be copied. If it is \"splitInput\", text from the input box will be copied. Automatic will pick whichever has a selection": [
+    "src\\widgets\\splits\\SplitInput.cpp:2038"
+  ],
+  "Outgoing translation: %1": [
+    "src\\widgets\\splits\\SplitInput.cpp:2134"
+  ],
+  "/nuke ": [
+    "src\\widgets\\splits\\SplitInput.cpp:2545"
+  ],
+  "Preparing raid to %1": [
+    "src\\widgets\\splits\\SplitInput.cpp:2654"
+  ],
+  "Raiding %1 in %2": [
+    "src\\widgets\\splits\\SplitInput.cpp:2655"
+  ],
+  "Loading Potat commands…": [
+    "src\\widgets\\splits\\SplitInput.cpp:3201"
+  ],
+  "Loading Supibot commands…": [
+    "src\\widgets\\splits\\SplitInput.cpp:3216"
+  ],
+  "Channel Points unavailable": [
+    "src\\widgets\\splits\\SplitInput.cpp:4421"
+  ],
+  "\nError: ": [
+    "src\\widgets\\splits\\SplitInput.cpp:4425"
+  ],
+  "no match": [
+    "src\\widgets\\splits\\SplitInput.cpp:4640"
+  ],
+  "The quick brown fox jumps over the lazy dog": [
+    "src\\widgets\\dialogs\\font\\PreviewWidget.cpp:27"
+  ],
+  "Red:": [
+    "src\\widgets\\helper\\color\\ColorInput.cpp:83"
+  ],
+  "Green:": [
+    "src\\widgets\\helper\\color\\ColorInput.cpp:86"
+  ],
+  "Blue:": [
+    "src\\widgets\\helper\\color\\ColorInput.cpp:89"
+  ],
+  "Alpha:": [
+    "src\\widgets\\helper\\color\\ColorInput.cpp:92"
+  ]
+}

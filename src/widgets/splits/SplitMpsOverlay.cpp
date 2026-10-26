@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/splits/SplitMpsOverlay.hpp"
 
 #include "singletons/Settings.hpp"
@@ -132,7 +133,7 @@ void SplitMpsOverlay::updateOverlay()
     p.setColor(QPalette::WindowText, c);
     this->label_->setPalette(p);
 
-    this->label_->setText(QString::number(mps) + " mps");
+    this->label_->setText(QString::number(mps) + uiText(" mps"));
     this->label_->adjustSize();
     this->updateGeometryForCorner();
     this->label_->setVisible(true);

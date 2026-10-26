@@ -8,6 +8,7 @@
 
 #include <cassert>
 #include <mutex>
+#include <limits>
 #include <optional>
 #include <shared_mutex>
 #include <utility>
@@ -20,8 +21,8 @@ class LimitedQueue
 {
 public:
     LimitedQueue(size_t limit = 1000)
-        : limit_(limit)
-        , buffer_(limit)
+        : limit_(limit == 0 ? std::numeric_limits<size_t>::max() : limit)
+        , buffer_(limit == 0 ? 1000 : limit)
     {
     }
 
@@ -34,7 +35,7 @@ private:
      */
     [[nodiscard]] size_t space() const
     {
-        return this->limit() - this->buffer_.size();
+        return this->limit_ - this->buffer_.size();
     }
 
 public:
@@ -43,6 +44,7 @@ public:
      */
     [[nodiscard]] size_t limit() const
     {
+        std::shared_lock lock(this->mutex_);
         return this->limit_;
     }
 
@@ -119,6 +121,14 @@ public:
         return this->buffer_.back();
     }
 
+    // Zero means grow on demand. Shrinking retains the newest entries.
+    void setLimit(size_t limit)
+    {
+        std::unique_lock lock(this->mutex_);
+        this->limit_ = limit == 0 ? std::numeric_limits<size_t>::max() : limit;
+        this->buffer_.rset_capacity(limit == 0 ? std::max(size_t(1000), this->buffer_.size()) : limit);
+    }
+
     /// Modifiers
 
     // Clear the buffer
@@ -140,6 +150,7 @@ public:
     {
         std::unique_lock lock(this->mutex_);
 
+        this->reserveFor(1);
         bool full = this->buffer_.full();
         if (full)
         {
@@ -159,6 +170,7 @@ public:
     {
         std::unique_lock lock(this->mutex_);
 
+        this->reserveFor(1);
         bool full = this->buffer_.full();
         this->buffer_.push_back(item);
         return full;
@@ -168,13 +180,14 @@ public:
     {
         std::unique_lock lock(this->mutex_);
 
-        while (!this->buffer_.full())
+        while (this->buffer_.size() < this->limit_)
         {
             auto item = next();
             if (!item)
             {
                 break;
             }
+            this->reserveFor(1);
             this->buffer_.push_front(std::move(item));
         }
     }
@@ -193,6 +206,7 @@ public:
     {
         std::unique_lock lock(this->mutex_);
 
+        this->reserveFor(items.size());
         size_t numToPush = std::min(items.size(), this->space());
         std::vector<T> pushed;
         pushed.reserve(numToPush);
@@ -303,6 +317,7 @@ public:
     {
         std::unique_lock lock(this->mutex_);
 
+        this->reserveFor(1);
         Equals eq;
         for (auto it = this->buffer_.begin(); it != this->buffer_.end(); ++it)
         {
@@ -329,6 +344,7 @@ public:
     {
         std::unique_lock lock(this->mutex_);
 
+        this->reserveFor(1);
         Equals eq;
         for (auto it = this->buffer_.begin(); it != this->buffer_.end(); ++it)
         {
@@ -464,7 +480,16 @@ public:
 private:
     mutable std::shared_mutex mutex_;
 
-    const size_t limit_;
+    void reserveFor(size_t count)
+    {
+        const auto needed = std::min(this->limit_, this->buffer_.size() + count);
+        if (needed > this->buffer_.capacity())
+        {
+            this->buffer_.set_capacity(std::max(needed, std::min(this->limit_, this->buffer_.capacity() * 2)));
+        }
+    }
+
+    size_t limit_;
     boost::circular_buffer<T> buffer_;
 };
 

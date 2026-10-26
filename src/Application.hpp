@@ -341,4 +341,8 @@ IApplication *tryGetApp();
 
 bool isAppAboutToQuit();
 
+/// Mark the shared GUI lifecycle as quitting before Qt and static image
+/// resources are destroyed. The offline preview uses the same shutdown phase.
+void markAppAboutToQuit();
+
 }  // namespace chatterino

@@ -14,6 +14,8 @@
 #include "util/RatelimitBucket.hpp"
 
 #include <boost/unordered/unordered_flat_map.hpp>
+#include <QDateTime>
+#include <QHash>
 
 #include <span>
 
@@ -28,6 +30,134 @@ constexpr int JOIN_RATELIMIT_COOLDOWN = 12500;
 
 constexpr size_t CHANNELS_PER_CONNECTION = 18;
 
+/// Connection trouble of one channel: one status line, updated in place,
+/// for as long as drops keep coming (a quiet quarter of an hour ends it).
+struct Trouble {
+    MessagePtr line;
+    QDateTime first;
+    QDateTime last;
+    QDateTime downSince;
+    int drops = 0;
+    bool down = false;
+    QString reason;
+};
+
+constexpr qint64 TROUBLE_QUIET_SECS = 15 * 60;
+
+QHash<QString, Trouble> &troubles()
+{
+    static QHash<QString, Trouble> value;
+    return value;
+}
+
+QString hhmm(const QDateTime &time)
+{
+    return time.toLocalTime().toString(QStringLiteral("HH:mm"));
+}
+
+MessagePtr makeTroubleLine(const Trouble &t)
+{
+    QString text;
+    if (t.down)
+    {
+        text = t.drops <= 1
+                   ? QStringLiteral("Нет связи с чатом Twitch с %1")
+                         .arg(hhmm(t.downSince))
+                   : QStringLiteral("Связь с чатом нестабильна: %1 обрывов с "
+                                    "%2, сейчас нет связи")
+                         .arg(t.drops)
+                         .arg(hhmm(t.first));
+        if (!t.reason.isEmpty())
+        {
+            text += QStringLiteral(" (") + t.reason + QStringLiteral(")");
+        }
+        text += QStringLiteral(". Переподключаемся, /reconnect — сразу.");
+    }
+    else
+    {
+        text = t.drops <= 1
+                   ? QStringLiteral("Связь с чатом пропадала: %1–%2")
+                         .arg(hhmm(t.downSince), hhmm(t.last))
+                   : QStringLiteral("Связь с чатом нестабильна: %1 обрывов с "
+                                    "%2, восстановлена в %3")
+                         .arg(t.drops)
+                         .arg(hhmm(t.first), hhmm(t.last));
+    }
+    MessageBuilder b(systemMessage, text);
+    b->flags.set(t.down ? MessageFlag::DisconnectedMessage
+                        : MessageFlag::ConnectedMessage);
+    return b.release();
+}
+
+bool recentlyContains(Channel &chan, const MessagePtr &message)
+{
+    const auto snapshot = chan.getMessageSnapshot();
+    for (size_t i = snapshot.size(), seen = 0; i > 0 && seen < 2000;
+         --i, ++seen)
+    {
+        if (snapshot[i - 1] == message)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void showTrouble(Channel &chan, Trouble &t)
+{
+    auto next = makeTroubleLine(t);
+    if (t.line && recentlyContains(chan, t.line))
+    {
+        chan.replaceMessage(t.line, next);
+    }
+    else
+    {
+        chan.addMessage(next, MessageContext::Original);
+    }
+    t.line = next;
+}
+
+void noteDisconnected(Channel &chan, const QString &reason = {})
+{
+    const auto now = QDateTime::currentDateTime();
+    auto &t = troubles()[chan.getName()];
+    if (!t.line || t.last.secsTo(now) > TROUBLE_QUIET_SECS)
+    {
+        t = {};
+        t.first = now;
+    }
+    const bool changed = !t.down || (!reason.isEmpty() && reason != t.reason);
+    if (!t.down)
+    {
+        t.down = true;
+        t.downSince = now;
+        ++t.drops;
+    }
+    if (!reason.isEmpty())
+    {
+        t.reason = reason;
+    }
+    t.last = now;
+    if (changed)
+    {
+        showTrouble(chan, t);
+    }
+}
+
+/// False when there was no trouble to close (a first connect).
+bool noteConnected(Channel &chan)
+{
+    auto it = troubles().find(chan.getName());
+    if (it == troubles().end() || !it->down)
+    {
+        return false;
+    }
+    it->down = false;
+    it->last = QDateTime::currentDateTime();
+    showTrouble(chan, *it);
+    return true;
+}
+
 void appendConnectedMessage(std::span<const ChannelPtr> channels)
 {
     // connected/disconnected message
@@ -38,6 +168,10 @@ void appendConnectedMessage(std::span<const ChannelPtr> channels)
 
     for (const auto &chan : channels)
     {
+        if (noteConnected(*chan))
+        {
+            continue;  // the trouble line now says the connection is back
+        }
         MessagePtr last = chan->getLastMessage();
 
         bool replaceMessage =
@@ -58,6 +192,13 @@ void appendConnectedMessage(std::span<const ChannelPtr> channels)
 
 namespace chatterino {
 
+bool connectionTroubleRecent(const QString &channelName)
+{
+    const auto it = troubles().find(channelName);
+    return it != troubles().end() &&
+           it->last.secsTo(QDateTime::currentDateTime()) <= TROUBLE_QUIET_SECS;
+}
+
 TwitchReadConnectionPool::TwitchReadConnectionPool(TwitchIrcServer *parent)
     : QObject(parent)
 {
@@ -76,6 +217,7 @@ public:
     void onChannelCreated(TwitchChannel &channel) override;
     void reconnect() override;
     void close() override;
+    void rejoin(const QString &channelName) override;
 
 private:
     void onMessageReceived(Communi::IrcMessage *msg);
@@ -103,6 +245,7 @@ TwitchReadConnectionPoolSingle::TwitchReadConnectionPoolSingle(
     , server(parent)
 {
     assert(this->server);
+    this->connection->setDiagnosticsLabel(QStringLiteral("read"));
 
     // Apply a leaky bucket rate limiting to JOIN messages
     auto actuallyJoin = [&](const QString &name) {
@@ -138,14 +281,19 @@ TwitchReadConnectionPoolSingle::TwitchReadConnectionPoolSingle(
         this->connection->connectionLost, [this](bool timeout) {
             qCDebug(chatterinoIrc)
                 << "Read connection reconnect requested. Timeout:" << timeout;
-            if (timeout)
+            const auto delay = this->connection->smartReconnect();
+            const auto reason = timeout ? QStringLiteral("сервер не отвечает")
+                                        : this->connection->lastError();
+            (void)delay;
+            // One status line per channel, updated in place (no stream of
+            // "timed out" / "disconnected" lines on a flaky network).
+            for (const auto &[name, weak] : this->channels)
             {
-                // Show additional message since this is going to interrupt a
-                // connection that is still "connected"
-                this->server->addGlobalSystemMessage(
-                    "Server connection timed out, reconnecting");
+                if (auto chan = weak.lock())
+                {
+                    noteDisconnected(*chan, reason);
+                }
             }
-            this->connection->smartReconnect();
         });
     this->signalHolder.managedConnect(this->connection->heartbeat, [this] {
         this->markChannelsConnected();
@@ -177,6 +325,17 @@ void TwitchReadConnectionPoolSingle::reconnect()
 void TwitchReadConnectionPoolSingle::close()
 {
     this->connection->close();
+}
+
+void TwitchReadConnectionPoolSingle::rejoin(const QString &channelName)
+{
+    if (!this->channels.contains(channelName) ||
+        !this->connection->isConnected())
+    {
+        return;
+    }
+    this->connection->sendRaw("PART #" + channelName);
+    this->joinBucket->send(channelName);
 }
 
 void TwitchReadConnectionPoolSingle::onMessageReceived(Communi::IrcMessage *msg)
@@ -231,10 +390,6 @@ void TwitchReadConnectionPoolSingle::onConnected()
 
 void TwitchReadConnectionPoolSingle::onDisconnected()
 {
-    MessageBuilder b(systemMessage, "disconnected");
-    b->flags.set(MessageFlag::DisconnectedMessage);
-    auto disconnectedMsg = b.release();
-
     for (const auto &[name, weak] : this->channels)
     {
         auto chan = weak.lock();
@@ -243,7 +398,7 @@ void TwitchReadConnectionPoolSingle::onDisconnected()
             continue;
         }
 
-        chan->addMessage(disconnectedMsg, MessageContext::Original);
+        noteDisconnected(*chan);
         chan->markDisconnected();
     }
 }
@@ -277,6 +432,10 @@ public:
     void onChannelCreated(TwitchChannel &channel) override;
     void reconnect() override;
     void close() override;
+    void rejoin(const QString & /*channelName*/) override
+    {
+        // Anonymous connections: a ban of the account does not hide anything.
+    }
 
 private:
     struct Connection {
@@ -407,14 +566,12 @@ TwitchReadConnectionPoolMulti::Connection::Connection(
                 << "reconnect requested. Timeout:" << timeout;
             if (timeout)
             {
-                // Show additional message since this is going to interrupt a
-                // connection that is still "connected"
                 for (const auto &[name, weak] : this->channels)
                 {
                     if (auto chan = weak.lock())
                     {
-                        chan->addSystemMessage(
-                            "Server connection timed out, reconnecting");
+                        noteDisconnected(*chan,
+                                         QStringLiteral("сервер не отвечает"));
                     }
                 }
             }
@@ -511,10 +668,6 @@ void TwitchReadConnectionPoolMulti::Connection::onConnected()
 
 void TwitchReadConnectionPoolMulti::Connection::onDisconnected()
 {
-    MessageBuilder b(systemMessage, "disconnected");
-    b->flags.set(MessageFlag::DisconnectedMessage);
-    auto disconnectedMsg = b.release();
-
     for (const auto &[name, weak] : this->channels)
     {
         auto chan = weak.lock();
@@ -523,7 +676,7 @@ void TwitchReadConnectionPoolMulti::Connection::onDisconnected()
             continue;
         }
 
-        chan->addMessage(disconnectedMsg, MessageContext::Original);
+        noteDisconnected(*chan);
         chan->markDisconnected();
     }
 }

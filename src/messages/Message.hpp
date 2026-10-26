@@ -54,6 +54,9 @@ struct Message {
     QString localizedName;
     QString userID;
     QString timeoutUser;
+    /// Twitch ID of the person a moderation notice is about (ban, timeout,
+    /// deleted message); empty when the source did not say.
+    QString timeoutUserID;
     QString channelName;
     QColor usernameColor;
     QDateTime serverReceivedTime;

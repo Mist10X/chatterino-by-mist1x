@@ -18,6 +18,10 @@ class Credentials
 public:
     static Credentials &instance();
 
+    /// Whether logins go to the system keyring (never, in this build) instead
+    /// of Settings/credentials.json in the profile.
+    static bool usesSystemKeyring();
+
     void get(const QString &provider, const QString &name, QObject *receiver,
              std::function<void(const QString &)> &&onLoaded);
     void get(const QString &provider, const QString &name, QObject *receiver,

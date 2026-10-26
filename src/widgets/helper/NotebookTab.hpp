@@ -55,6 +55,10 @@ public:
     const QString &getDefaultTitle() const;
     const QString &getTitle() const;
 
+    /// The channel whose avatar this tab shows: a Twitch login or
+    /// "kick:<slug>" (empty for none).
+    void setAvatarLogin(const QString &login);
+
     bool isSelected() const;
     void setSelected(bool value);
 
@@ -145,6 +149,12 @@ private:
 
     int normalTabWidthForHeight(int height) const;
 
+    bool showsAvatar() const;
+    /// The tab shows only its avatar (an unselected tab in "Avatar only").
+    bool avatarOnly() const;
+    int avatarDiameter() const;
+    void paintAvatar(QPainter &painter, QRect rect, const QColor &text);
+
     bool shouldMessageHighlight(const ChannelView &channelViewSource) const;
 
     struct HighlightSource {
@@ -173,6 +183,7 @@ private:
     QString customTitle_;
     QColor customTabColor_;
     QString defaultTitle_;
+    QString avatarLogin_;
 
     bool selected_{};
     bool mouseOver_{};

@@ -242,6 +242,7 @@ TwitchIrcServer::TwitchIrcServer()
     // Initialize the connections
     // XXX: don't create write connection if there is no separate write connection.
     this->writeConnection_.reset(new IrcConnection);
+    this->writeConnection_->setDiagnosticsLabel(QStringLiteral("write"));
     this->writeConnection_->moveToThread(
         QCoreApplication::instance()->thread());
 
@@ -256,15 +257,29 @@ TwitchIrcServer::TwitchIrcServer()
         });
     this->signalHolder.managedConnect(
         this->readConnection_->messageReceived, [this](auto *msg) {
+            // A channel read through the anonymous connection (banned
+            // account) gets its chat events from there only: no doubles.
+            const auto &command = msg->command();
+            if ((command == "CLEARCHAT" || command == "CLEARMSG" ||
+                 command == "USERNOTICE") &&
+                this->readsBannedChat(msg->parameter(0).mid(1)))
+            {
+                return;
+            }
             this->readConnectionMessageReceived(msg);
         });
     this->signalHolder.managedConnect(
         this->readConnection_->privateMessageReceived, [this](auto *msg) {
+            if (this->readsBannedChat(msg->target().mid(1)))
+            {
+                return;
+            }
             this->privateMessageReceived(msg);
         });
 
     auto actuallyJoinAnonymous = [this](QString message) {
-        if (!this->anonymousChannels.contains(message) ||
+        if ((!this->anonymousChannels.contains(message) &&
+             !this->bannedChatChannels_.contains(message)) ||
             !this->anonymousReadConnection_)
         {
             return;
@@ -278,6 +293,8 @@ TwitchIrcServer::TwitchIrcServer()
         joinBudget, JOIN_RATELIMIT_COOLDOWN, actuallyJoinAnonymous, this));
 
     this->anonymousReadConnection_.reset(new IrcConnection);
+    this->anonymousReadConnection_->setDiagnosticsLabel(
+        QStringLiteral("anonymous"));
     this->anonymousReadConnection_->moveToThread(
         QCoreApplication::instance()->thread());
 
@@ -294,8 +311,7 @@ TwitchIrcServer::TwitchIrcServer()
                              this->reconnectAnonymousChannels();
                              return;
                          }
-                         ScopedAnonymousTwitchLookup lookup(true);
-                         this->readConnectionMessageReceived(msg);
+                         this->anonymousMessageReceived(msg);
                      });
     QObject::connect(this->anonymousReadConnection_.get(),
                      &Communi::IrcConnection::privateMessageReceived, this,
@@ -330,6 +346,8 @@ void TwitchIrcServer::initialize()
 {
     getApp()->getAccounts()->twitch.currentUserChanged.connect([this]() {
         postToThread([this] {
+            // Bans are per account: read them again for the new one.
+            this->updateAllBannedChatReading();
             if (getSettings()->twitchReadConnectionMode ==
                 TwitchReadConnectionMode::Authenticated)
             {
@@ -461,6 +479,35 @@ void TwitchIrcServer::initialize()
             });
         });
 
+    this->signalHolder.managedConnect(
+        getApp()->getTwitchPubSub()->ownModeration.updated,
+        [this](const auto &data) {
+            const auto channelId = data.value("channel_id").toString();
+            if (channelId.isEmpty())
+            {
+                return;
+            }
+
+            auto chan = this->getChannelOrEmptyByID(channelId);
+
+            postToThread([chan, data] {
+                if (isAppAboutToQuit())
+                {
+                    return;
+                }
+
+                if (auto *channel = dynamic_cast<TwitchChannel *>(chan.get()))
+                {
+                    channel->handleOwnModerationPubSub(data);
+                }
+            });
+        });
+
+    getSettings()->readChatWhileBanned.connect(
+        [this] {
+            this->updateAllBannedChatReading();
+        },
+        this->signalHolder, false);
     getSettings()->enableBTTVChannelEmotes.connect(
         [this] {
             this->reloadAllBTTVChannelEmotes();
@@ -559,6 +606,18 @@ std::shared_ptr<Channel> TwitchIrcServer::createChannel(
 {
     auto channel = std::make_shared<TwitchChannel>(channelName, anonymous);
     channel->initialize();
+    if (!anonymous)
+    {
+        std::ignore = channel->ownRestrictionChanged.connect(
+            [this, channelName] {
+                this->updateBannedChatReading(channelName);
+            });
+        std::ignore = channel->destroyed.connect([this, channelName] {
+            QTimer::singleShot(0, this, [this, channelName] {
+                this->updateBannedChatReading(channelName);
+            });
+        });
+    }
 
     // We can safely ignore these signal connections since the TwitchIrcServer is only
     // ever destroyed when the full Application state is about to be destroyed, at which point
@@ -599,14 +658,17 @@ void TwitchIrcServer::privateMessageReceived(
         }
 
         auto chan = this->getAnonymousChannelOrEmpty(channelName);
-        auto *twitchChannel = dynamic_cast<TwitchChannel *>(chan.get());
-        if (!twitchChannel)
+        if (auto *twitchChannel = dynamic_cast<TwitchChannel *>(chan.get()))
         {
-            return;
+            IrcMessageHandler::parsePrivMessageInto(message, *twitchChannel,
+                                                    twitchChannel);
         }
-
-        IrcMessageHandler::parsePrivMessageInto(message, *twitchChannel,
-                                                twitchChannel);
+        if (this->readsBannedChat(channelName))
+        {
+            // The normal channel of a banned account, as if read normally.
+            ScopedAnonymousTwitchLookup normal(false);
+            IrcMessageHandler::instance().handlePrivMessage(message, *this);
+        }
         return;
     }
 
@@ -689,13 +751,145 @@ void TwitchIrcServer::writeConnectionMessageReceived(
     }
 }
 
+void TwitchIrcServer::anonymousMessageReceived(Communi::IrcMessage *message)
+{
+    const auto &command = message->command();
+    const auto target = message->parameter(0).startsWith('#')
+                            ? message->parameter(0).mid(1)
+                            : QString();
+    if (target.isEmpty() || this->hasAnonymousTab(target))
+    {
+        ScopedAnonymousTwitchLookup lookup(true);
+        this->readConnectionMessageReceived(message);
+    }
+    // The guest's own JOIN/PART and notices are not the banned account's.
+    if (!target.isEmpty() && this->readsBannedChat(target) &&
+        command != "JOIN" && command != "PART" && command != "NOTICE" &&
+        command != "USERSTATE")
+    {
+        ScopedAnonymousTwitchLookup normal(false);
+        this->readConnectionMessageReceived(message);
+    }
+}
+
+bool TwitchIrcServer::readsBannedChat(const QString &channelName)
+{
+    std::lock_guard lock(this->channelMutex);
+    return this->bannedChatChannels_.contains(channelName.toLower());
+}
+
+bool TwitchIrcServer::hasAnonymousTab(const QString &channelName)
+{
+    std::lock_guard lock(this->channelMutex);
+    auto it = this->anonymousChannels.find(channelName.toLower());
+    return it != this->anonymousChannels.end() && !it.value().expired();
+}
+
+void TwitchIrcServer::updateBannedChatReading(const QString &channelName)
+{
+    std::shared_ptr<TwitchChannel> channel;
+    {
+        std::lock_guard lock(this->channelMutex);
+        auto it = this->channels.find(channelName);
+        if (it != this->channels.end())
+        {
+            channel =
+                std::dynamic_pointer_cast<TwitchChannel>(it.value().lock());
+        }
+    }
+    const bool want =
+        channel && getSettings()->readChatWhileBanned &&
+        getSettings()->twitchReadConnectionMode ==
+            TwitchReadConnectionMode::Authenticated &&
+        channel->ownRestriction().kind ==
+            TwitchChannel::OwnRestriction::Kind::Banned;
+
+    bool closeConnection = false;
+    {
+        std::lock_guard lock(this->channelMutex);
+        if (want == this->bannedChatChannels_.contains(channelName))
+        {
+            return;
+        }
+        if (want)
+        {
+            this->bannedChatChannels_.insert(channelName);
+        }
+        else
+        {
+            this->bannedChatChannels_.remove(channelName);
+            closeConnection = this->bannedChatChannels_.isEmpty() &&
+                              this->anonymousChannels.isEmpty();
+        }
+    }
+    const bool tab = this->hasAnonymousTab(channelName);
+
+    if (want)
+    {
+        channel->addSystemMessage(
+            "Вы забанены на этом канале. Чат показывается через гостевое "
+            "подключение Twitch — только чтение.");
+        this->ensureAnonymousReadConnection();
+        std::lock_guard lock(this->connectionMutex_);
+        if (this->anonymousReadConnection_ &&
+            this->anonymousReadConnection_->isConnected())
+        {
+            this->anonymousJoinBucket_->send(channelName);
+        }
+        return;
+    }
+
+    if (channel)
+    {
+        channel->addSystemMessage("Чат снова читается через ваш аккаунт.");
+        this->readConnection_->rejoin(channelName);
+    }
+    std::lock_guard lock(this->connectionMutex_);
+    if (!this->anonymousReadConnection_)
+    {
+        return;
+    }
+    if (!tab)
+    {
+        this->anonymousReadConnection_->sendRaw("PART #" + channelName);
+    }
+    if (closeConnection)
+    {
+        this->anonymousReadConnectionStarted_ = false;
+        this->anonymousReadConnection_->close();
+    }
+}
+
+void TwitchIrcServer::updateAllBannedChatReading()
+{
+    std::vector<std::shared_ptr<TwitchChannel>> all;
+    {
+        std::lock_guard lock(this->channelMutex);
+        for (const auto &weak : this->channels)
+        {
+            if (auto channel =
+                    std::dynamic_pointer_cast<TwitchChannel>(weak.lock()))
+            {
+                all.push_back(channel);
+            }
+        }
+    }
+    for (const auto &channel : all)
+    {
+        this->updateBannedChatReading(channel->getName());
+        channel->checkOwnBan();
+    }
+}
+
 void TwitchIrcServer::onAnonymousReadConnected(IrcConnection *connection)
 {
     (void)connection;
 
     std::vector<ChannelPtr> activeChannels;
+    QStringList bannedChat;
     {
         std::lock_guard lock(this->channelMutex);
+        bannedChat = this->bannedChatChannels_.values();
 
         activeChannels.reserve(this->anonymousChannels.size());
         for (const auto &weak : this->anonymousChannels)
@@ -720,6 +914,10 @@ void TwitchIrcServer::onAnonymousReadConnected(IrcConnection *connection)
             continue;
         }
         this->anonymousJoinBucket_->send(channel->getName());
+    }
+    for (const auto &name : bannedChat)
+    {
+        this->anonymousJoinBucket_->send(name);
     }
 
     auto connectedMsg = makeSystemMessage("connected anonymously");
@@ -1587,7 +1785,8 @@ ChannelPtr TwitchIrcServer::getOrAddAnonymousChannel(
                                                                 channelName);
                     }
 
-                    if (!hasAnonymousChannels)
+                    if (!hasAnonymousChannels &&
+                        this->bannedChatChannels_.isEmpty())
                     {
                         this->anonymousReadConnectionStarted_ = false;
                         this->anonymousReadConnection_->close();
@@ -1691,7 +1890,8 @@ void TwitchIrcServer::reconnectAnonymousChannels()
 {
     {
         std::lock_guard<std::mutex> lock(this->channelMutex);
-        if (this->anonymousChannels.isEmpty())
+        if (this->anonymousChannels.isEmpty() &&
+            this->bannedChatChannels_.isEmpty())
         {
             return;
         }

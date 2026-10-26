@@ -54,47 +54,74 @@ NetworkTask::~NetworkTask()
 
 void NetworkTask::run()
 {
-    this->reply_ = this->createReply();
-    if (!this->reply_)
+    if (this->completed_)
     {
+        return;
+    }
+    this->data_->startDeadline();
+    if (this->data_->hasCaller && this->data_->caller.isNull())
+    {
+        this->completed_ = true;
         this->deleteLater();
         return;
     }
-
-    const auto &timeout = this->data_->timeout;
-    if (timeout.has_value())
+    if (this->data_->deadline)
     {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
-        QObject::connect(this->reply_, &QNetworkReply::requestSent, this,
-                         [this]() {
-                             const auto &timeout = this->data_->timeout;
-                             this->timer_ = new QTimer(this);
-                             this->timer_->setSingleShot(true);
-                             this->timer_->start(timeout.value());
-                             QObject::connect(this->timer_, &QTimer::timeout,
-                                              this, &NetworkTask::timeout);
-                         });
-#else
+        if (this->data_->deadline->hasExpired())
+        {
+            this->timeout();
+            return;
+        }
         this->timer_ = new QTimer(this);
         this->timer_->setSingleShot(true);
-        this->timer_->start(timeout.value());
-        QObject::connect(this->timer_, &QTimer::timeout, this,
-                         &NetworkTask::timeout);
-#endif
+        this->timer_->setTimerType(Qt::PreciseTimer);
+        QObject::connect(this->timer_, &QTimer::timeout, this, &NetworkTask::timeout);
+        this->timer_->start(std::chrono::milliseconds(this->data_->deadline->remainingTime()));
     }
-
-    QObject::connect(this->reply_, &QNetworkReply::finished, this,
-                     &NetworkTask::finished);
-
+    // The deadline is already running before the first proxy/TCP/TLS attempt.
+    this->reply_ = this->createReply();
+    if (!this->reply_)
+    {
+        this->completed_ = true;
+        if (this->timer_) this->timer_->stop();
+        this->data_->emitError({NetworkResult::NetworkError::UnknownNetworkError, {}, {}});
+        this->data_->emitFinally();
+        this->deleteLater();
+        return;
+    }
+    QObject::connect(this->reply_, &QNetworkReply::finished, this, &NetworkTask::finished);
+    if (this->data_->hasCaller)
+    {
+        if (this->data_->caller.isNull())
+        {
+            this->reply_->abort();
+        }
+        else
+        {
+            QObject::connect(this->data_->caller, &QObject::destroyed, this, [this] {
+                if (!this->completed_ && this->reply_)
+                {
+                    this->reply_->abort();
+                }
+            });
+        }
+    }
 #ifndef NDEBUG
     if (this->data_->ignoreSslErrors)
     {
         QObject::connect(this->reply_, &QNetworkReply::sslErrors, this,
-                         [this](const auto &errors) {
-                             this->reply_->ignoreSslErrors(errors);
-                         });
+                         [this](const auto &) { this->reply_->ignoreSslErrors(); });
     }
 #endif
+    if (this->data_->deadline && this->data_->deadline->hasExpired())
+    {
+        this->timeout();
+    }
+    else if (this->reply_->isFinished())
+    {
+        // Preserve single completion even for a reply completed during creation.
+        QMetaObject::invokeMethod(this, &NetworkTask::finished, Qt::QueuedConnection);
+    }
 }
 
 QNetworkReply *NetworkTask::createReply()
@@ -235,22 +262,25 @@ void NetworkTask::writeToCache(const QByteArray &bytes) const
 
 void NetworkTask::timeout()
 {
+    if (this->completed_) return;
+    this->completed_ = true;
     AbandonObject guard(this);
-
-    QObject::disconnect(this->reply_, &QNetworkReply::finished, this,
-                        &NetworkTask::finished);
-    this->reply_->abort();
-
-    qCDebug(chatterinoHTTP).noquote()
-        << this->data_->typeString() << "[timed out]"
-        << this->data_->request.url().toString();
-
+    if (this->timer_) this->timer_->stop();
+    if (this->reply_)
+    {
+        QObject::disconnect(this->reply_, &QNetworkReply::finished, this, &NetworkTask::finished);
+        this->reply_->abort();
+    }
+    // Do not log URLs, query strings, headers or payloads for transport failures.
+    qCDebug(chatterinoHTTP) << this->data_->typeString() << "[timed out]";
     this->data_->emitError({NetworkResult::NetworkError::TimeoutError, {}, {}});
     this->data_->emitFinally();
 }
 
 void NetworkTask::finished()
 {
+    if (this->completed_) return;
+    this->completed_ = true;
     AbandonObject guard(this);
 
     if (this->timer_)
@@ -262,17 +292,16 @@ void NetworkTask::finished()
     auto status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
     auto etag = reply->rawHeader("ETag");
 
-    if (reply->error() == QNetworkReply::OperationCanceledError)
-    {
-        qCDebug(chatterinoHTTP).noquote()
-            << this->data_->typeString() << "[cancelled]"
-            << this->data_->request.url().toString();
-        return;
-    }
-
     if (reply->error() != QNetworkReply::NoError)
     {
-        this->logReply();
+        if (reply->error() == QNetworkReply::OperationCanceledError)
+        {
+            qCDebug(chatterinoHTTP) << this->data_->typeString() << "[cancelled]";
+        }
+        else
+        {
+            this->logReply();
+        }
         this->data_->emitError(
             {reply->error(), status, reply->readAll(), std::move(etag)});
         this->data_->emitFinally();

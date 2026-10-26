@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/helper/EditableModelView.hpp"
 
 #include "widgets/helper/RegExpItemDelegate.hpp"
@@ -44,13 +45,13 @@ EditableModelView::EditableModelView(QAbstractTableModel *model, bool movable)
     this->buttons_ = buttons;
     vbox->addLayout(buttons);
 
-    QPushButton *add = new QPushButton("Add");
+    QPushButton *add = new QPushButton(uiText("Add"));
     buttons->addWidget(add);
     QObject::connect(add, &QPushButton::clicked, [this] {
         this->addButtonPressed.invoke();
     });
 
-    QPushButton *remove = new QPushButton("Remove");
+    QPushButton *remove = new QPushButton(uiText("Remove"));
     buttons->addWidget(remove);
     QObject::connect(remove, &QPushButton::clicked, [this] {
         auto selected = this->getTableView()->selectionModel()->selectedRows(0);
@@ -71,13 +72,13 @@ EditableModelView::EditableModelView(QAbstractTableModel *model, bool movable)
 
     if (movable)
     {
-        QPushButton *moveUp = new QPushButton("Move up");
+        QPushButton *moveUp = new QPushButton(uiText("Move up"));
         buttons->addWidget(moveUp);
         QObject::connect(moveUp, &QPushButton::clicked, this, [this] {
             this->moveRow(-1);
         });
 
-        QPushButton *moveDown = new QPushButton("Move down");
+        QPushButton *moveDown = new QPushButton(uiText("Move down"));
         buttons->addWidget(moveDown);
         QObject::connect(moveDown, &QPushButton::clicked, this, [this] {
             this->moveRow(1);
@@ -116,7 +117,7 @@ void EditableModelView::setTitles(std::initializer_list<QString> titles)
             break;
         }
 
-        this->model_->setHeaderData(i++, Qt::Horizontal, title,
+        this->model_->setHeaderData(i++, Qt::Horizontal, uiText(title),
                                     Qt::DisplayRole);
     }
 }
@@ -139,9 +140,9 @@ void EditableModelView::addCustomButton(QWidget *widget)
 void EditableModelView::addRegexHelpLink()
 {
     auto *regexHelpLabel =
-        new QLabel("<a href='"
+        new QLabel(uiText("<a href='"
                    "https://chatterino.com/help/regex'>"
-                   "<span style='color:#99f'>regex info</span></a>");
+                   "<span style='color:#99f'>regex info</span></a>"));
     regexHelpLabel->setOpenExternalLinks(true);
     this->addCustomButton(regexHelpLabel);
 }

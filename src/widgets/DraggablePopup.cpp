@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/DraggablePopup.hpp"
 
 #include "buttons/SvgButton.hpp"
@@ -123,7 +124,7 @@ Button *DraggablePopup::createPinButton()
 {
     this->pinButton_ = new SvgButton(this->pinDisabledSource_, this, {3, 3});
     this->pinButton_->setScaleIndependentSize(18, 18);
-    this->pinButton_->setToolTip("Pin Window");
+    this->pinButton_->setToolTip(uiText("Pin Window"));
 
     QObject::connect(this->pinButton_, &Button::leftClicked, this,
                      &DraggablePopup::togglePinned);

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/PluginRepl.hpp"
 
 #ifdef CHATTERINO_HAVE_PLUGINS
@@ -395,7 +396,7 @@ PluginRepl::PluginRepl(QString id, QWidget *parent)
     this->setAttribute(Qt::WA_DeleteOnClose);
     this->resize(600, 300);
 
-    this->setWindowTitle(this->id + u" - Plugin REPL"_s);
+    this->setWindowTitle(this->id + uiText(u" - Plugin REPL"_s));
 
     auto *root = new QVBoxLayout(this->getLayoutContainer());
 
@@ -408,7 +409,7 @@ PluginRepl::PluginRepl(QString id, QWidget *parent)
             },
             nullptr, {3, 3});
         this->ui.clear->setScaleIndependentSize({18, 18});
-        this->ui.clear->setToolTip(u"Clear Output"_s);
+        this->ui.clear->setToolTip(uiText(u"Clear Output"_s));
         QObject::connect(this->ui.clear, &Button::leftClicked, this, [this] {
             this->ui.output->clear();
         });
@@ -420,28 +421,28 @@ PluginRepl::PluginRepl(QString id, QWidget *parent)
             },
             nullptr, {3, 3});
         this->ui.reload->setScaleIndependentSize({18, 18});
-        this->ui.reload->setToolTip(u"Reload"_s);
+        this->ui.reload->setToolTip(uiText(u"Reload"_s));
         QObject::connect(this->ui.reload, &Button::leftClicked, this, [this] {
             if (!this->plugin)
             {
                 this->log(lua::api::LogLevel::Critical, "Plugin not loaded.");
                 return;
             }
-            this->log({}, u"Reloading..."_s);
+            this->log({}, uiText(u"Reloading..."_s));
             bool result = getApp()->getPlugins()->reload(this->id);
             if (result)
             {
-                this->log({}, u"Reloaded."_s);
+                this->log({}, uiText(u"Reloaded."_s));
             }
             else
             {
-                this->log(lua::api::LogLevel::Critical, u"Failed to reload."_s);
+                this->log(lua::api::LogLevel::Critical, uiText(u"Failed to reload."_s));
             }
         });
 
         this->ui.pin = new SvgButton(this->ui.pinDisabledSource_, this, {3, 3});
         this->ui.pin->setScaleIndependentSize({18, 18});
-        this->ui.pin->setToolTip(u"Pin Window"_s);
+        this->ui.pin->setToolTip(uiText(u"Pin Window"_s));
         QObject::connect(this->ui.pin, &Button::leftClicked, this, [this] {
             this->isPinned = !this->isPinned;
             this->updatePinned();
@@ -469,7 +470,7 @@ PluginRepl::PluginRepl(QString id, QWidget *parent)
     QObject::connect(input, &HistoricTextEdit::onSend, this,
                      &PluginRepl::tryRun);
     splitter->addWidget(this->ui.input);
-    this->ui.input->setPlaceholderText(u"Type something..."_s);
+    this->ui.input->setPlaceholderText(uiText(u"Type something..."_s));
     this->ui.input->setAcceptRichText(false);
     this->ui.input->setFocus();
 
@@ -571,7 +572,7 @@ void PluginRepl::tryRun(QString code)
         if (!fn)
         {
             this->log(lua::api::LogLevel::Critical,
-                      u"Code didn't result in a callable function."_s);
+                      uiText(u"Code didn't result in a callable function."_s));
             return;
         }
 
@@ -694,14 +695,14 @@ void PluginRepl::setPlugin(Plugin *plugin)
 
     this->pluginDestroyConn = this->plugin->onUnloaded.connect([this] {
         this->setPlugin(nullptr);
-        this->log({}, u"Unloaded."_s);
+        this->log({}, uiText(u"Unloaded."_s));
     });
     this->pluginLogConn =
         this->plugin->onLog.connect([this](auto level, const auto &text) {
             this->log(level, text);
         });
 
-    this->log({}, u"Loaded."_s);
+    this->log({}, uiText(u"Loaded."_s));
 }
 
 QFont PluginRepl::currentFont()

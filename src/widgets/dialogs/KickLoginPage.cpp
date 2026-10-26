@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/KickLoginPage.hpp"
 
 #include "Application.hpp"
@@ -130,7 +131,7 @@ public:
         , statusLabel("Waiting...")
     {
         this->setAttribute(Qt::WA_DeleteOnClose);
-        this->setWindowTitle("Waiting...");
+        this->setWindowTitle(uiText("Waiting..."));
 
         QUrlQuery query{
             {"response_type", "code"},
@@ -152,19 +153,19 @@ public:
 
         auto *root = new QVBoxLayout(this);
         root->addWidget(&this->statusLabel, 1, Qt::AlignCenter);
-        root->addWidget(new QLabel("This window will close automatically."), 1,
+        root->addWidget(new QLabel(uiText("This window will close automatically.")), 1,
                         Qt::AlignCenter);
 
         auto *urlButtons = new QWidget;
         auto *urlButtonLayout = new QHBoxLayout(urlButtons);
 
-        auto *openUrl = new QPushButton(u"Log in (Opens in browser)"_s);
+        auto *openUrl = new QPushButton(uiText(u"Log in (Opens in browser)"_s));
         QObject::connect(openUrl, &QPushButton::clicked, this, [this] {
             QDesktopServices::openUrl(this->authURL);
         });
         urlButtonLayout->addWidget(openUrl, 1);
 
-        auto *copyUrl = new QPushButton(u"Copy URL"_s);
+        auto *copyUrl = new QPushButton(uiText(u"Copy URL"_s));
         QObject::connect(copyUrl, &QPushButton::clicked, this, [this] {
             qApp->clipboard()->setText(
                 this->authURL.toString(QUrl::FullyEncoded));
@@ -333,7 +334,7 @@ KickLoginPage::KickLoginPage()
         this->ui.methodCombo->addItem(u"Public proxy (" % proxy.name % ')',
                                       QVariant::fromValue(&proxy));
     }
-    this->ui.methodCombo->addItem(u"Custom (local)"_s);
+    this->ui.methodCombo->addItem(uiText(u"Custom (local)"_s));
     root->addRow(this->ui.methodCombo);
 
     this->ui.topLabel = new QLabel();
@@ -345,13 +346,13 @@ KickLoginPage::KickLoginPage()
         new QSpacerItem(0, 10, QSizePolicy::Minimum, QSizePolicy::Fixed));
 
     this->ui.clientID = new QLineEdit;
-    this->ui.clientID->setPlaceholderText("ABCD123");
+    this->ui.clientID->setPlaceholderText(uiText("ABCD123"));
     this->ui.clientID->setValidator(
         new QRegularExpressionValidator(nonEmptyRe, this));
     root->addRow("Client ID:", this->ui.clientID);
 
     this->ui.clientSecret = new QLineEdit;
-    this->ui.clientSecret->setPlaceholderText("12345abcd");
+    this->ui.clientSecret->setPlaceholderText(uiText("12345abcd"));
     this->ui.clientSecret->setEchoMode(QLineEdit::Password);
     this->ui.clientSecret->setValidator(
         new QRegularExpressionValidator(nonEmptyRe, this));
@@ -387,7 +388,7 @@ KickLoginPage::KickLoginPage()
     root->addItem(
         new QSpacerItem(0, 10, QSizePolicy::Minimum, QSizePolicy::Fixed));
 
-    auto *startButton = new QPushButton("Start");
+    auto *startButton = new QPushButton(uiText("Start"));
     root->addRow(startButton);
     QObject::connect(startButton, &QPushButton::clicked, this, [this] {
         const auto *proxy =
@@ -438,7 +439,7 @@ void KickLoginPage::refreshState() const
     {
         // Local, client secret
         this->ui.topLabel->setText(
-            u"The Kick API does not provide an OAuth flow for local chat "
+            uiText(u"The Kick API does not provide an OAuth flow for local chat "
             u"clients "
             "like Chatterino "
             "to authenticate without exposing the client secret or using an "
@@ -451,8 +452,8 @@ void KickLoginPage::refreshState() const
             "<br><br>Developer applications can be found at <a "
             "href=\"https://kick.com/settings/developer\">kick.com/settings/"
             "developer</a>. The following redirect URL <b>must</b> be added: "
-            "<b><code>" %
-            REDIRECT_URL % u"</code></b>");
+            "<b><code>") %
+            REDIRECT_URL % uiText(u"</code></b>"));
         this->ui.layout->setRowVisible(rowTopSpacer, true);
         this->ui.layout->setRowVisible(rowClientID, true);
         this->ui.layout->setRowVisible(rowClientSecret, true);
@@ -460,12 +461,12 @@ void KickLoginPage::refreshState() const
     else
     {
         this->ui.topLabel->setText(
-            u"Authentication will be done through <a href=\"" % proxy->baseURL %
+            uiText(u"Authentication will be done through <a href=\"") % proxy->baseURL %
             u"\">" % proxy->name %
-            u"</a>. "
+            uiText(u"</a>. "
             "This proxy will not save your data.<br>"
             "It is required, because Kick does not provide a suitable OAuth "
-            "flow for local chat clients like Chatterino.");
+            "flow for local chat clients like Chatterino."));
         this->ui.layout->setRowVisible(rowTopSpacer, false);
         this->ui.layout->setRowVisible(rowClientID, false);
         this->ui.layout->setRowVisible(rowClientSecret, false);

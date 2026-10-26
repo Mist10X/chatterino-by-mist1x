@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "widgets/settingspages/SettingsPage.hpp"
+#include "common/UiLanguage.hpp"
 
 #include "Application.hpp"
 #include "singletons/WindowManager.hpp"
@@ -95,8 +96,8 @@ QCheckBox *SettingsPage::createCheckBox(
     const QString &text, pajlada::Settings::Setting<bool> &setting,
     const QString &toolTipText)
 {
-    QCheckBox *checkbox = new SCheckBox(text);
-    checkbox->setToolTip(toolTipText);
+    QCheckBox *checkbox = new SCheckBox(uiText(text));
+    checkbox->setToolTip(uiText(toolTipText));
 
     setting.connect(
         [checkbox](const bool &value, auto) {
@@ -116,19 +117,22 @@ QCheckBox *SettingsPage::createCheckBox(
 QComboBox *SettingsPage::createComboBox(
     const QStringList &items, pajlada::Settings::Setting<QString> &setting)
 {
-    QComboBox *combo = new SComboBox();
-
-    combo->addItems(items);
+    auto *combo = new SComboBox();
+    for (const auto &item : items)
+    {
+        combo->addItem(uiText(item));
+        combo->setItemData(combo->count() - 1, item, UiComboBox::SourceRole);
+    }
 
     setting.connect(
         [combo](const QString &value, auto) {
-            combo->setCurrentText(value);
+            combo->setSourceText(value);
         },
         this->managedConnections_);
 
-    QObject::connect(combo, &QComboBox::currentTextChanged,
-                     [&setting](const QString &newValue) {
-                         setting = newValue;
+    QObject::connect(combo, &QComboBox::currentIndexChanged,
+                     [combo, &setting](int index) {
+                         setting = combo->sourceText(index);
                      });
 
     return combo;

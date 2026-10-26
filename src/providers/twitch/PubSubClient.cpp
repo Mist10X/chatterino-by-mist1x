@@ -434,6 +434,13 @@ void PubSubClient::handleMessageResponse(const PubSubMessageMessage &message)
         const auto type = message.messageObject.value("type").toString();
         const auto data = message.messageObject.value("data").toObject();
         const auto action = data.value("action").toString();
+        if (type == "user_moderation_action" &&
+            (action == "timeout" || action == "untimeout" ||
+             action == "ban" || action == "unban"))
+        {
+            this->manager_.ownModeration.updated.invoke(data);
+            return;
+        }
         if (type != "user_moderation_action" ||
             (action != "warn" && action != "acknowledge_warning"))
         {

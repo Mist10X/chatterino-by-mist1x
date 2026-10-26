@@ -11,7 +11,9 @@
 #include <concepts>
 #include <memory>
 
+class QPainter;
 class QTextDocument;
+class QTextEdit;
 
 namespace chatterino {
 
@@ -42,10 +44,25 @@ public:
 
     QStringView getWordAt(QStringView text, qsizetype pos);
 
+    void setSpellCheckEnabled(bool enabled);
+    /// Emote names followed by a space (typed or Tab-completed) are shown as
+    /// the emote. The text itself is untouched: only its look changes.
+    void setEmotePreviewEnabled(bool enabled);
+    bool needsDocument() const;
+
+    /// Draws the emotes over their invisible, re-spaced names.
+    void paintEmotes(QPainter &painter, const QTextEdit &edit) const;
+    /// Whether any emote is shown (repaint for animation then).
+    bool showsEmotes() const;
+    /// An emote image got its size after the line was laid out.
+    bool takePendingSizes();
+
 protected:
     void highlightBlock(const QString &text) override;
 
 private:
+    void highlightEmotes(const QString &text);
+
     void visitWords(
         const QString &text,
         std::invocable<const QString &, qsizetype, qsizetype> auto &&cb);
@@ -58,6 +75,11 @@ private:
 
     QRegularExpression wordRegex;
     QRegularExpression tokenRegex;
+
+    bool spellCheck_ = false;
+    bool emotePreview_ = false;
+    bool pendingSizes_ = false;
+    int shownEmotes_ = 0;
 };
 
 }  // namespace chatterino

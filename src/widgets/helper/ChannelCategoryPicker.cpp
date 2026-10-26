@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "widgets/helper/ChannelCategoryPicker.hpp"
 
 #include <QAbstractItemView>
@@ -32,8 +33,8 @@ ChannelCategoryPicker::ChannelCategoryPicker(QWidget *parent)
     , model_(new QStandardItemModel(this))
 {
     this->setClearButtonEnabled(true);
-    this->setPlaceholderText("Search categories");
-    this->setAccessibleName("Category");
+    this->setPlaceholderText(uiText("Search categories"));
+    this->setAccessibleName(uiText("Category"));
     this->completer_->setModel(this->model_);
     this->completer_->setCompletionRole(Qt::DisplayRole);
     this->completer_->setCaseSensitivity(Qt::CaseInsensitive);

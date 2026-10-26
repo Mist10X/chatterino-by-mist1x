@@ -65,6 +65,11 @@ ResizingTextEdit::ResizingTextEdit()
 void ResizingTextEdit::paintEvent(QPaintEvent *event)
 {
     QTextEdit::paintEvent(event);
+    if (this->paintOverlay)
+    {
+        QPainter overlay(this->viewport());
+        this->paintOverlay(overlay);
+    }
     const auto cursor = this->textCursor();
     if (this->ghostText_.isEmpty() || !this->hasFocus() ||
         cursor.hasSelection() ||
@@ -103,8 +108,23 @@ void ResizingTextEdit::changeEvent(QEvent *event)
         // document's default font. Keep them in sync so the live document
         // relayout tracks scale changes correctly.
         this->document()->setDefaultFont(this->font());
+        this->applyVerticalPadding();
         this->invalidateAncestorLayouts();
     }
+}
+
+void ResizingTextEdit::setVerticalPadding(qreal share)
+{
+    this->verticalPadding_ = share;
+    this->applyVerticalPadding();
+    this->invalidateAncestorLayouts();
+}
+
+void ResizingTextEdit::applyVerticalPadding()
+{
+    auto padding =
+        qRound(QFontMetricsF(this->font()).height() * this->verticalPadding_);
+    this->setViewportMargins(0, padding, 0, padding);
 }
 
 void ResizingTextEdit::invalidateAncestorLayouts()
@@ -167,10 +187,12 @@ void ResizingTextEdit::setIgnoredCompletionPrefix(const QString &prefix)
 int ResizingTextEdit::heightForWidth(int width) const
 {
     auto margins = this->contentsMargins();
+    auto padding = this->viewportMargins();
     auto documentWidth = qMax(width - margins.left() - margins.right(), 1);
 
-    return margins.top() + qCeil(this->documentHeightForWidth(documentWidth)) +
-           margins.bottom() + 5;
+    return margins.top() + padding.top() +
+           qCeil(this->documentHeightForWidth(documentWidth)) +
+           padding.bottom() + margins.bottom() + 5;
 }
 
 qreal ResizingTextEdit::documentHeightForWidth(int width) const

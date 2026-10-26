@@ -121,7 +121,7 @@ TitleLabel *GeneralPageView::addTitle(const QString &title)
         this->addWidget(this->groups_.back().space = new Space);
     }
 
-    auto *label = new TitleLabel(title + ":");
+    auto *label = new TitleLabel(uiText(title) + ":");
     this->addWidget(label);
 
     NavigationLabel *navLabel = nullptr;
@@ -139,7 +139,7 @@ TitleLabel *GeneralPageView::addTitle(const QString &title)
             });
     }
 
-    this->groups_.push_back(Group{title, label, navLabel, nullptr, {}});
+    this->groups_.push_back(Group{uiText(title), label, navLabel, nullptr, {}});
 
     if (this->groups_.size() == 1)
     {
@@ -151,7 +151,7 @@ TitleLabel *GeneralPageView::addTitle(const QString &title)
 
 SubtitleLabel *GeneralPageView::addSubtitle(const QString &title)
 {
-    auto *label = new SubtitleLabel(title + ":");
+    auto *label = new SubtitleLabel(uiText(title) + ":");
     this->addWidget(label);
 
     this->groups_.back().widgets.push_back({label, {title}});
@@ -166,9 +166,13 @@ ComboBox *GeneralPageView::addDropdown(const QString &text,
     auto *layout = new QHBoxLayout;
     auto *combo = new ComboBox;
     combo->setFocusPolicy(Qt::StrongFocus);
-    combo->addItems(list);
+    for (const auto &item : list)
+    {
+        combo->addItem(uiText(item));
+        combo->setItemData(combo->count() - 1, item, UiComboBox::SourceRole);
+    }
 
-    auto *label = new QLabel(text + ":");
+    auto *label = new QLabel(uiText(text) + ":");
     layout->addWidget(label);
     layout->addStretch(1);
     layout->addWidget(combo);
@@ -286,6 +290,7 @@ bool GeneralPageView::filterElements(const QString &query)
                 for (auto &&keyword : widget.keywords)
                 {
                     if (keyword.contains(query, Qt::CaseInsensitive) ||
+                        uiText(keyword).contains(query, Qt::CaseInsensitive) ||
                         currentSubtitleSearched)
                     {
                         currentSubtitleVisible = true;
@@ -359,6 +364,8 @@ void GeneralPageView::addToolTip(QWidget &widget, QString text) const
     {
         return;
     }
+
+    text = uiText(text);
 
     if (text.length() > MAX_TOOLTIP_LINE_LENGTH)
     {

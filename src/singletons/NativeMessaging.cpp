@@ -6,6 +6,7 @@
 
 #include "Application.hpp"
 #include "common/Literals.hpp"
+#include "common/Isolation.hpp"
 #include "common/Modes.hpp"
 #include "common/QLogging.hpp"
 #include "debug/AssertInGuiThread.hpp"
@@ -22,7 +23,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
-#include <QSettings>
 #include <QStringBuilder>
 #include <QTimer>
 
@@ -84,29 +84,13 @@ ExpectedStr<void> registerNmManifest([[maybe_unused]] const Paths &paths,
                                      const Config &config,
                                      const QJsonDocument &document)
 {
-#ifdef Q_OS_WIN
-    auto result =
-        writeManifestTo(paths.miscDirectory, u"."_s, config.fileName, document);
-    if (!result)
-    {
-        return makeUnexpected(result.error());
-    }
-
-    QSettings registry(config.registryKey, QSettings::NativeFormat);
-    registry.setValue("Default",
-                      QString(paths.miscDirectory % u'/' % config.fileName));
-    registry.sync();
-    if (registry.status() != QSettings::NoError)
-    {
-        return makeUnexpected(
-            QString(u"Failed to register native messaging host in "_s %
-                    config.registryKey));
-    }
-#else
-    return writeManifestTo(config.browserDirectory, config.nmDirectory,
-                           u"com.chatterino.chatterino.json"_s, document);
-#endif
-    return {};
+    // Never registered: the host name com.chatterino.chatterino (and its
+    // HKCU\Software\<browser>\NativeMessagingHosts key) is shared with other
+    // Chatterino clients, so writing it would take their extension over.
+    (void)config;
+    (void)document;
+    return makeUnexpected(
+        u"Browser integration is disabled in this Leafyrino build."_s);
 }
 
 }  // namespace
@@ -223,18 +207,16 @@ bool registerNmHost(const Paths &paths)
 
 void registerNmHost(Modes modes, const Paths &paths)
 {
-    if (modes.isPortable)
-    {
-        return;
-    }
-
-    std::ignore = registerNmHost(paths);
+    // Disabled: com.chatterino.chatterino is shared with other Chatterino
+    // clients, so registering would take their browser extension over.
+    (void)modes;
+    (void)paths;
 }
 
 std::string &getNmQueueName(const Paths &paths)
 {
     static std::string name =
-        "chatterino_gui" + paths.applicationFilePathHash.toStdString();
+        isolation::NM_QUEUE_NAME + paths.applicationFilePathHash.toStdString();
     return name;
 }
 
@@ -242,7 +224,7 @@ namespace nm::client {
 
 void sendMessage(const QByteArray &array)
 {
-    ipc::sendMessage("chatterino_gui", array);
+    ipc::sendMessage(isolation::NM_QUEUE_NAME, array);
 }
 
 void writeToCout(const QByteArray &array)
@@ -271,7 +253,7 @@ NativeMessagingServer::~NativeMessagingServer()
         this->detachTimer_.reset();
     }
 
-    if (!ipc::IpcQueue::remove("chatterino_gui"))
+    if (!ipc::IpcQueue::remove(isolation::NM_QUEUE_NAME))
     {
         qCWarning(chatterinoNativeMessage) << "Failed to remove message queue";
     }
@@ -343,7 +325,8 @@ NativeMessagingServer::ReceiverThread::ReceiverThread(
 void NativeMessagingServer::ReceiverThread::run()
 {
     auto [messageQueue, error] =
-        ipc::IpcQueue::tryReplaceOrCreate("chatterino_gui", 100, MESSAGE_SIZE);
+        ipc::IpcQueue::tryReplaceOrCreate(isolation::NM_QUEUE_NAME, 100,
+                                          MESSAGE_SIZE);
 
     if (!error.isEmpty())
     {

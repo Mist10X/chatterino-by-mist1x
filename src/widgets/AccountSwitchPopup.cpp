@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/AccountSwitchPopup.hpp"
 
 #include "Application.hpp"
@@ -64,7 +65,7 @@ AccountSwitchPopup::AccountSwitchPopup(QWidget *parent)
 
     auto *hbox = new QHBoxLayout();
     auto *manageAccountsButton = new QPushButton(this);
-    manageAccountsButton->setText("Manage Accounts");
+    manageAccountsButton->setText(uiText("Manage Accounts"));
     manageAccountsButton->setFocusPolicy(Qt::NoFocus);
     hbox->addWidget(manageAccountsButton);
     vbox->addLayout(hbox);

@@ -14,6 +14,8 @@
 #include <pajlada/signals/signal.hpp>
 #include <pajlada/signals/signalholder.hpp>
 #include <QDateTime>
+#include <QHash>
+#include <QJsonObject>
 #include <QMovie>
 #include <QPixmap>
 #include <QPointer>
@@ -33,13 +35,20 @@ class QKeyEvent;
 class QLabel;
 class QMenu;
 class QMovie;
+class QResizeEvent;
+class QScrollArea;
+class QSplitter;
+class QTabWidget;
+class QToolButton;
 class QWidget;
 
 namespace chatterino {
 
 class Channel;
+class Button;
 using ChannelPtr = std::shared_ptr<Channel>;
 struct Message;
+struct Emote;
 using MessagePtr = std::shared_ptr<const Message>;
 enum class MessagePlatform : uint8_t;
 class Label;
@@ -55,6 +64,24 @@ class LiveIndicator;
 class Paint;
 class PixmapButton;
 class SvgButton;
+class ArchiveClient;
+
+/// Synthetic, already-resolved data used by the standalone offline UI preview.
+struct UserInfoPreviewData {
+    QString login;
+    QString userId;
+    QString displayName;
+    QString createdText;
+    QString followersText;
+    QString pronouns;
+    ChannelPtr messages;
+    /// Optional unfiltered buffer for exercising the real identity filter.
+    ChannelPtr sourceMessages;
+    QPixmap avatar;
+    QPixmap banner;
+    std::vector<std::shared_ptr<const Emote>> earnedBadges;
+    bool allowPublicHistory = false;
+};
 
 class UserInfoPopup final : public DraggablePopup
 {
@@ -65,15 +92,31 @@ public:
      * @param closeAutomatically Decides whether the popup should close when it loses focus
      * @param split Will be used as the popup's parent. Must not be null
      */
-    UserInfoPopup(bool closeAutomatically, Split *split);
+    UserInfoPopup(bool closeAutomatically, Split *split,
+                  bool offlinePreview = false);
     ~UserInfoPopup() override;
 
     void setData(const QString &name, const ChannelPtr &channel);
     void setData(const QString &name, const ChannelPtr &contextChannel,
-                 const ChannelPtr &openingChannel);
+                 const ChannelPtr &openingChannel,
+                 const QString &expectedUserId = {});
 
     void setYouTubeContext();
 
+    /// Installs a read-only local Archive view. Ownership transfers to this card.
+    void setArchivePanel(QWidget *panel);
+    void setOfflinePreviewData(const UserInfoPreviewData &data);
+    /// Offline preview only: show the moderation strip as for a moderator.
+    void previewModerationStrip();
+
+Q_SIGNALS:
+    /// Emitted immediately on a new target and again after its Twitch UID resolves.
+    /// An empty UID must never be interpreted as proof of a login's identity.
+    void archiveIdentityChanged(const QString &userId, const QString &login,
+                                const QString &channelName);
+    void archiveIdentityUnavailable();
+
+public:
     static void openUserChannelAction(const QString &userName,
                                       MessagePlatform platform,
                                       const QString &channelName,
@@ -89,6 +132,8 @@ protected:
     void scaleChangedEvent(float scale) override;
     void windowDeactivationEvent() override;
     void keyPressEvent(QKeyEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
     void registerMnemonicButton(LabelButton *button, int key,
@@ -109,6 +154,8 @@ private:
     void updateNotes();
     void refreshSevenTVUserButtonVisibility();
     void refreshSeventvPaint();
+    /// Show / hide the moderation strip; the card grows / shrinks by it.
+    void setModerationStripVisible(bool visible);
     void updateSeventvPaintPixmap();
     void resetNameHistory();
     bool applyCachedNameHistory();
@@ -125,6 +172,27 @@ private:
     void resetUsercardInfoRows();
     void applyIvrUserProfile(const IvrUserProfile &profile);
     void updateLiveIndicatorDisplay();
+    void updateResponsiveLayout();
+    /// Header line above messages/Archive: "Сообщения в чате #channel",
+    /// page switch and history (one line, like Chatterino+).
+    void updateMessagesHeader();
+    void setMessagesHeading(const QString &channel);
+    void showActionsMenu();
+    void loadProfileBanner(const QString &url);
+    void updateProfileBanner();
+    void updateObservedBadges();
+    void requestEarnedBadges();
+    void updateNamePresentation();
+    void showProfileDetails(QMenu *menu);
+    bool canUseArchiveHistory() const;
+    void resetArchiveHistory();
+    void requestArchiveHistory(bool userInitiated,
+                               bool localContinuation = false);
+    void applyArchiveHistory(const QJsonObject &data);
+    bool archiveConfigured() const;
+    void rebuildArchiveHistoryView(bool preserveAnchor);
+    void updateArchiveHistoryButton();
+    bool hasCachedOlderHistory() const;
 
     bool isFollowing() const;
     bool isFollowingStatusKnown() const;
@@ -141,9 +209,9 @@ private:
 
     void loadSevenTVAvatar(const QString &userID, bool isKick,
                            bool allowAvatarDownload = true);
-    void setSevenTVAvatar(const QString &filename, const QByteArray &format);
+    bool setSevenTVAvatar(const QString &filename, const QByteArray &format);
 
-    void saveCacheAvatar(const QByteArray &avatar,
+    bool saveCacheAvatar(const QByteArray &avatar,
                          const QString &filename) const;
 
     void updateAvatarUrl();
@@ -192,6 +260,7 @@ private:
 
     QString userName_;
     QString userId_;
+    QString archiveLoginHint_;
     uint64_t userDataRequestGeneration_ = 0;
     QString avatarUrl_;
     QString helixAvatarUrl_;
@@ -199,6 +268,7 @@ private:
     QString seventvUserID_;
     int seventvUserRequestGeneration_ = 0;
     bool seventvUserLookupInFlight_ = false;
+    bool seventvPaintAsked_ = false;
     bool seventvUserLookupFinished_ = false;
     QString nameHistoryLogin_;
     std::vector<TwitchNameHistoryEntry> nameHistoryEntries_;
@@ -213,6 +283,23 @@ private:
     bool usercardMessagesLoading_ = false;
     bool usercardMessagesHasNextPage_ = true;
     bool usercardMessagesLazyLoadEnabled_ = false;
+    ArchiveClient *archiveHistoryClient_ = nullptr;
+    QJsonObject archiveLocalCursor_;
+    QJsonObject archivePublicCursor_;
+    std::vector<MessagePtr> archiveHistoryMessages_;
+    QHash<QString, QJsonObject> archiveHistoryRowMetadata_;
+    QString archiveHistoryStatus_;
+    bool archiveHistoryStarted_ = false;
+    bool archiveHistoryLoading_ = false;
+    bool archiveHistoryPublic_ = false;
+    bool archiveLocalComplete_ = false;
+    bool archivePublicComplete_ = false;
+    bool archiveHistoryPreserveAnchor_ = false;
+    bool archiveHistorySyntheticEndpoint_ = false;
+    bool offlinePublicHistoryAllowed_ = false;
+    int archiveLocalDrainRemaining_ = 0;
+    bool archiveHistoryWindowLimited_ = false;
+    std::chrono::steady_clock::time_point archiveLocalDrainDeadline_;
 
     QString kickUserSlug_;
     QPointer<QWidget> moderationReasonPopup_;
@@ -248,11 +335,32 @@ private:
     // Set based on the "Automatically close usercard when it loses focus" setting
     // Pinned status is tracked in DraggablePopup::isPinned_.
     const bool closeAutomatically_;
+    const bool offlinePreview_;
 
     pajlada::Signals::SignalHolder signalHolder_;
 
     class TimeoutWidget;
     struct {
+        QSplitter *columns = nullptr;
+        QWidget *moderationStrip = nullptr;
+        QScrollArea *profileScroll = nullptr;
+        QWidget *profile = nullptr;
+        QWidget *profileDetails = nullptr;
+        QWidget *profileHeader = nullptr;
+        QWidget *identityHeader = nullptr;
+        QWidget *profileFacts = nullptr;
+        QLabel *banner = nullptr;
+        QWidget *badgeStrip = nullptr;
+        QToolButton *actions = nullptr;
+        QWidget *actionControls = nullptr;
+        QWidget *rightColumn = nullptr;
+        LabelButton *archiveToggle = nullptr;
+        LabelButton *messagesToggle = nullptr;
+        QTabWidget *contentTabs = nullptr;
+        QWidget *messagesPage = nullptr;
+        QWidget *archivePanel = nullptr;
+        QLabel *messagesHeading = nullptr;
+        LabelButton *historyButton = nullptr;
         PixmapButton *avatarButton = nullptr;
         PixmapButton *localizedNameCopyButton = nullptr;
 
@@ -307,7 +415,15 @@ private:
     QMovie *seventvAvatar_ = nullptr;
     std::shared_ptr<Paint> seventvPaint_;
     bool isTwitchAvatarShown_ = true;
+    bool columnsBalanced_ = false;
+    QString headingChannel_;
     QPixmap avatarPixmap_;
+    QPixmap bannerPixmap_;
+    QString bannerUrl_;
+    std::vector<std::shared_ptr<const Emote>> earnedBadges_;
+    bool earnedBadgesReady_ = false;
+    QString earnedBadgesError_;
+    std::vector<std::pair<QString, QPointer<Button>>> actionMenuButtons_;
     QPointer<EditUserNotesDialog> editUserNotesDialog_;
 
     bool isKick_ = false;

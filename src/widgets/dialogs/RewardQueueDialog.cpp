@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/RewardQueueDialog.hpp"
 
 #include "Application.hpp"
@@ -71,17 +72,17 @@ QString formatAge(const QDateTime &timestamp)
         std::max<qint64>(0, timestamp.secsTo(QDateTime::currentDateTimeUtc()));
     if (seconds < 60)
     {
-        return QStringLiteral("just now");
+        return uiText(QStringLiteral("just now"));
     }
     if (seconds < 60 * 60)
     {
-        return QStringLiteral("%1m ago").arg(seconds / 60);
+        return uiText(QStringLiteral("%1m ago")).arg(seconds / 60);
     }
     if (seconds < 24 * 60 * 60)
     {
-        return QStringLiteral("%1h ago").arg(seconds / (60 * 60));
+        return uiText(QStringLiteral("%1h ago")).arg(seconds / (60 * 60));
     }
-    return QStringLiteral("%1d ago").arg(seconds / (24 * 60 * 60));
+    return uiText(QStringLiteral("%1d ago")).arg(seconds / (24 * 60 * 60));
 }
 
 QString userDisplayText(const GqlRewardQueueUser &user)
@@ -153,7 +154,7 @@ RewardQueueDialog::RewardQueueDialog(TwitchChannel *channel, QWidget *parent)
 {
     this->setObjectName("RewardQueueDialog");
     this->setWindowTitle(
-        QStringLiteral("%1's Reward Queue").arg(this->channelLogin_));
+        uiText(QStringLiteral("%1's Reward Queue")).arg(this->channelLogin_));
     this->setScaleIndependentSize(DEFAULT_DIALOG_SIZE);
 
     auto *container = this->getLayoutContainer();
@@ -191,9 +192,9 @@ RewardQueueDialog::RewardQueueDialog(TwitchChannel *channel, QWidget *parent)
     contentLayout->addLayout(titleLayout);
     titleLayout->addWidget(this->titleLabel_, 1);
 
-    this->pauseCheckBox_ = new QCheckBox("Pause redemptions", container);
+    this->pauseCheckBox_ = new QCheckBox(uiText("Pause redemptions"), container);
     this->pauseCheckBox_->setToolTip(
-        "Stops viewers from redeeming this reward until it is unpaused");
+        uiText("Stops viewers from redeeming this reward until it is unpaused"));
     this->pauseCheckBox_->hide();
     QObject::connect(this->pauseCheckBox_, &QCheckBox::clicked, this,
                      [this](bool checked) {
@@ -206,7 +207,7 @@ RewardQueueDialog::RewardQueueDialog(TwitchChannel *channel, QWidget *parent)
     actionsLayout->setSpacing(4);
     contentLayout->addLayout(actionsLayout);
 
-    this->selectAllCheckBox_ = new QCheckBox("Select all", container);
+    this->selectAllCheckBox_ = new QCheckBox(uiText("Select all"), container);
     QObject::connect(this->selectAllCheckBox_, &QCheckBox::clicked, this,
                      [this](bool checked) {
                          for (auto *checkBox : this->rowCheckBoxes_)
@@ -241,7 +242,7 @@ RewardQueueDialog::RewardQueueDialog(TwitchChannel *channel, QWidget *parent)
                      });
     actionsLayout->addWidget(this->rejectSelectedButton_);
 
-    this->completeAllButton_ = new QPushButton("Complete all", container);
+    this->completeAllButton_ = new QPushButton(uiText("Complete all"), container);
     this->completeAllButton_->setObjectName("RewardQueueCompleteButton");
     QObject::connect(this->completeAllButton_, &QPushButton::clicked, this,
                      [this] {
@@ -249,7 +250,7 @@ RewardQueueDialog::RewardQueueDialog(TwitchChannel *channel, QWidget *parent)
                      });
     actionsLayout->addWidget(this->completeAllButton_);
 
-    this->rejectAllButton_ = new QPushButton("Reject all", container);
+    this->rejectAllButton_ = new QPushButton(uiText("Reject all"), container);
     this->rejectAllButton_->setObjectName("RewardQueueButton");
     QObject::connect(this->rejectAllButton_, &QPushButton::clicked, this,
                      [this] {
@@ -281,7 +282,7 @@ RewardQueueDialog::RewardQueueDialog(TwitchChannel *channel, QWidget *parent)
     this->statusLabel_->setWordWrap(true);
     footerLayout->addWidget(this->statusLabel_, 1);
 
-    this->loadMoreButton_ = new QPushButton("Load more", container);
+    this->loadMoreButton_ = new QPushButton(uiText("Load more"), container);
     this->loadMoreButton_->setObjectName("RewardQueueButton");
     QObject::connect(this->loadMoreButton_, &QPushButton::clicked, this,
                      [this] {
@@ -622,7 +623,7 @@ void RewardQueueDialog::reload(bool quiet)
     const auto generation = ++this->generation_;
     if (!quiet)
     {
-        this->setStatus("Loading reward queue...");
+        this->setStatus(uiText("Loading reward queue..."));
         this->updateActions();
     }
 
@@ -1014,8 +1015,8 @@ void RewardQueueDialog::finishLoading()
     {
         this->updateAllStatus_.reset();
         this->setStatus(
-            "Stopped before the rest of the queue was updated. Run it again "
-            "to continue.");
+            uiText("Stopped before the rest of the queue was updated. Run it again "
+            "to continue."));
         return;
     }
 
@@ -1179,7 +1180,7 @@ void RewardQueueDialog::onBulkUpdateProgress(const QJsonObject &progress,
     {
         return;
     }
-    this->setStatus(QStringLiteral("Updating requests: %1 of %2")
+    this->setStatus(uiText(QStringLiteral("Updating requests: %1 of %2"))
                         .arg(progress.value("processed").toInt(0))
                         .arg(total));
 }
@@ -1243,7 +1244,7 @@ const GqlRewardRedemption *RewardQueueDialog::findRedemption(
 void RewardQueueDialog::setIdleStatus()
 {
     this->setStatus(this->redemptions_.isEmpty()
-                        ? QStringLiteral("No pending requests.")
+                        ? uiText(QStringLiteral("No pending requests."))
                         : QString());
 }
 
@@ -1396,21 +1397,21 @@ void RewardQueueDialog::rebuildSidebar(bool force)
         auto title = reward.title;
         if (!reward.isEnabled)
         {
-            title += QStringLiteral(" (disabled)");
+            title += uiText(QStringLiteral(" (disabled)"));
         }
         button->setChecked(reward.id == this->selectedRewardId_);
         setButtonText(button, QStringLiteral("%1 (%2)").arg(
                                   title, QLocale().toString(reward.count)));
 
-        auto tooltip = QStringLiteral("%1 - %2 points")
+        auto tooltip = uiText(QStringLiteral("%1 - %2 points"))
                            .arg(reward.title, QLocale().toString(reward.cost));
         if (reward.isPaused)
         {
-            tooltip += QStringLiteral("\nRedemptions are paused");
+            tooltip += uiText(QStringLiteral("\nRedemptions are paused"));
         }
         if (!reward.isEnabled)
         {
-            tooltip += QStringLiteral("\nDisabled by the broadcaster");
+            tooltip += uiText(QStringLiteral("\nDisabled by the broadcaster"));
         }
         if (!reward.prompt.isEmpty())
         {
@@ -1474,12 +1475,12 @@ void RewardQueueDialog::rebuildSidebar(bool force)
     {
         setButtonText(
             allButton,
-            QStringLiteral("All requests (%1)").arg(QLocale().toString(total)));
+            uiText(QStringLiteral("All requests (%1)")).arg(QLocale().toString(total)));
         allButton->setChecked(this->selectedRewardId_.isEmpty());
     }
 
     this->titleLabel_->setText(selectedReward == nullptr
-                                   ? QStringLiteral("All requests")
+                                   ? uiText(QStringLiteral("All requests"))
                                    : selectedReward->title);
     this->pauseCheckBox_->setVisible(selectedReward != nullptr);
     this->pauseCheckBox_->setChecked(selectedReward != nullptr &&
@@ -1660,7 +1661,7 @@ QWidget *RewardQueueDialog::createRow(const GqlRewardRedemption &redemption)
     }
     else
     {
-        nameLabel->setText(QStringLiteral("User %1").arg(redemption.userId));
+        nameLabel->setText(uiText(QStringLiteral("User %1")).arg(redemption.userId));
     }
     userLayout->addWidget(nameLabel);
 
@@ -1693,7 +1694,7 @@ QWidget *RewardQueueDialog::createRow(const GqlRewardRedemption &redemption)
         textLayout->addWidget(messageLabel);
     }
 
-    auto *completeButton = new QPushButton("Complete", row);
+    auto *completeButton = new QPushButton(uiText("Complete"), row);
     completeButton->setObjectName("RewardQueueCompleteButton");
     completeButton->setCursor(Qt::PointingHandCursor);
     completeButton->setEnabled(!this->actionInFlight_);
@@ -1703,7 +1704,7 @@ QWidget *RewardQueueDialog::createRow(const GqlRewardRedemption &redemption)
                      });
     rowLayout->addWidget(completeButton, 0, Qt::AlignVCenter);
 
-    auto *rejectButton = new QPushButton("Reject", row);
+    auto *rejectButton = new QPushButton(uiText("Reject"), row);
     rejectButton->setObjectName("RewardQueueButton");
     rejectButton->setCursor(Qt::PointingHandCursor);
     rejectButton->setEnabled(!this->actionInFlight_);
@@ -1723,9 +1724,9 @@ void RewardQueueDialog::updateActions()
     const auto hasRedemptions = !this->redemptions_.isEmpty();
 
     this->completeSelectedButton_->setText(
-        QStringLiteral("Complete (%1)").arg(selectedCount));
+        uiText(QStringLiteral("Complete (%1)")).arg(selectedCount));
     this->rejectSelectedButton_->setText(
-        QStringLiteral("Reject (%1)").arg(selectedCount));
+        uiText(QStringLiteral("Reject (%1)")).arg(selectedCount));
     this->completeSelectedButton_->setEnabled(idle && selectedCount > 0);
     this->rejectSelectedButton_->setEnabled(idle && selectedCount > 0);
     this->completeAllButton_->setEnabled(idle && hasRedemptions);
@@ -1760,7 +1761,7 @@ void RewardQueueDialog::toggleSortOrder()
     this->reloadTimer_.stop();
     ++this->generation_;
     this->quietLoad_ = false;
-    this->setStatus("Loading reward requests...");
+    this->setStatus(uiText("Loading reward requests..."));
     this->loadRedemptions(false);
 }
 
@@ -1768,13 +1769,13 @@ void RewardQueueDialog::updateSortButton()
 {
     if (this->newestFirst_)
     {
-        this->sortButton_->setText("Sort by newest");
-        this->sortButton_->setToolTip("Showing the most recent requests first");
+        this->sortButton_->setText(uiText("Sort by newest"));
+        this->sortButton_->setToolTip(uiText("Showing the most recent requests first"));
         return;
     }
 
-    this->sortButton_->setText("Sort by oldest");
-    this->sortButton_->setToolTip("Showing the oldest requests first");
+    this->sortButton_->setText(uiText("Sort by oldest"));
+    this->sortButton_->setToolTip(uiText("Showing the oldest requests first"));
 }
 
 void RewardQueueDialog::selectReward(const QString &rewardId)
@@ -1792,7 +1793,7 @@ void RewardQueueDialog::selectReward(const QString &rewardId)
     this->reloadTimer_.stop();
     ++this->generation_;
     this->quietLoad_ = false;
-    this->setStatus("Loading reward requests...");
+    this->setStatus(uiText("Loading reward requests..."));
     this->loadRedemptions(false);
 }
 
@@ -1817,8 +1818,8 @@ void RewardQueueDialog::updateRedemptions(const QStringList &ids, bool fulfill)
         this->resolvedIds_.insert(id);
         this->resolveLocally(id, {});
     }
-    this->setStatus(fulfill ? "Completing requests..."
-                            : "Rejecting requests...");
+    this->setStatus(fulfill ? uiText("Completing requests...")
+                            : uiText("Rejecting requests..."));
     this->rebuildSidebar();
     this->rebuildList();
     this->sendStatusUpdate(ids, fulfill, token);
@@ -1902,13 +1903,13 @@ void RewardQueueDialog::updateAll(bool fulfill)
 
     const auto scope =
         this->selectedRewardId_.isEmpty()
-            ? QStringLiteral("every pending request in this channel")
-            : QStringLiteral("every pending request for \"%1\"")
+            ? uiText(QStringLiteral("every pending request in this channel"))
+            : uiText(QStringLiteral("every pending request for \"%1\""))
                   .arg(this->titleLabel_->text());
     const auto question =
         fulfill
-            ? QStringLiteral("Complete %1?").arg(scope)
-            : QStringLiteral("Reject %1? Rejected requests refund the points.")
+            ? uiText(QStringLiteral("Complete %1?")).arg(scope)
+            : uiText(QStringLiteral("Reject %1? Rejected requests refund the points."))
                   .arg(scope);
     if (QMessageBox::question(this, this->windowTitle(), question) !=
         QMessageBox::Yes)

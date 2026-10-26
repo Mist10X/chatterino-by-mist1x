@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/PollDialog.hpp"
 
 #include "Application.hpp"
@@ -309,7 +310,7 @@ PollDialog::PollDialog(TwitchChannel *channel, QWidget *parent)
 {
     this->setAttribute(Qt::WA_DeleteOnClose);
     this->setObjectName("PollDialog");
-    this->setWindowTitle("Poll");
+    this->setWindowTitle(uiText("Poll"));
     this->setScaleIndependentSize(DEFAULT_DIALOG_SIZE);
     this->ensureDraft();
     this->currentPoll_ = *this->channel_->accessPoll();
@@ -328,7 +329,7 @@ PollDialog::PollDialog(TwitchChannel *channel, QWidget *parent)
 
     auto *headerTextLayout = new QVBoxLayout();
     headerTextLayout->setContentsMargins(0, 0, 0, 0);
-    this->headerTitleLabel_ = new QLabel("Poll", this->headerWidget_);
+    this->headerTitleLabel_ = new QLabel(uiText("Poll"), this->headerWidget_);
     this->headerTitleLabel_->setObjectName("PollHeaderTitle");
     this->headerSubtitleLabel_ = new QLabel("", this->headerWidget_);
     this->headerSubtitleLabel_->setObjectName("PollHeaderSubtitle");
@@ -337,7 +338,7 @@ PollDialog::PollDialog(TwitchChannel *channel, QWidget *parent)
     headerLayout->addLayout(headerTextLayout, 1);
 
     this->pinButton_ = this->createPinButton();
-    this->pinButton_->setToolTip("Pin Poll Popup");
+    this->pinButton_->setToolTip(uiText("Pin Poll Popup"));
     this->pinButton_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     if (!getSettings()->predictionCloseOnFocusLoss)
     {
@@ -352,7 +353,7 @@ PollDialog::PollDialog(TwitchChannel *channel, QWidget *parent)
         },
         this, QSize{3, 3});
     this->closeButton_->setScaleIndependentSize(18, 18);
-    this->closeButton_->setToolTip("Close");
+    this->closeButton_->setToolTip(uiText("Close"));
     this->closeButton_->setCursor(Qt::PointingHandCursor);
     QObject::connect(this->closeButton_, &Button::leftClicked, this,
                      &QWidget::close);
@@ -552,21 +553,21 @@ void PollDialog::refreshHeader()
 {
     if (!this->currentPoll_)
     {
-        this->headerTitleLabel_->setText("Start a Poll");
+        this->headerTitleLabel_->setText(uiText("Start a Poll"));
         this->headerSubtitleLabel_->setText('#' + this->channel_->getName());
         return;
     }
 
-    this->headerTitleLabel_->setText("Poll");
+    this->headerTitleLabel_->setText(uiText("Poll"));
     const bool votingEnded = this->currentPoll_->status.compare(
                                  "ACTIVE", Qt::CaseInsensitive) == 0 &&
                              this->remainingPollSeconds() <= 0;
     const auto status =
         votingEnded ? QString("COMPLETED") : this->currentPoll_->status;
     this->headerSubtitleLabel_->setText(
-        QString("<span style=\"font-weight:400;\">#%1</span>"
+        uiText(QString("<span style=\"font-weight:400;\">#%1</span>"
                 " <span style=\"font-weight:400;\">•</span> "
-                "<span style=\"font-weight:700; color:%2;\">%3</span>")
+                "<span style=\"font-weight:700; color:%2;\">%3</span>"))
             .arg(this->channel_->getName().toHtmlEscaped(),
                  statusColor(status).name(),
                  pollStatusLabel(status).toHtmlEscaped()));
@@ -631,9 +632,9 @@ void PollDialog::updateCountdownLabel()
     {
         const auto remaining = this->remainingPollSeconds();
         this->countdownLabel_->setText(
-            this->currentPoll_->status == "ACTIVE" && remaining > 0
-                ? QString("Ending in %1").arg(formatRemainingTime(remaining))
-                : QString("Voting ended"));
+            this->currentPoll_->status == uiText("ACTIVE") && remaining > 0
+                ? uiText(QString("Ending in %1")).arg(formatRemainingTime(remaining))
+                : uiText(QString("Voting ended")));
 
         if (this->currentPoll_->status == "ACTIVE" && remaining <= 0 &&
             !this->pollExpiryRefreshQueued_)
@@ -731,7 +732,7 @@ void PollDialog::updateUi()
             auto *card = new QFrame(this->activeWidget_);
             card->setObjectName("PollCard");
             auto *cardLayout = new QVBoxLayout(card);
-            auto *label = new QLabel("No active poll in this channel.", card);
+            auto *label = new QLabel(uiText("No active poll in this channel."), card);
             label->setAlignment(Qt::AlignCenter);
             label->setWordWrap(true);
             cardLayout->addWidget(label);
@@ -813,7 +814,7 @@ void PollDialog::buildCreateUi()
     titleInput->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     titleInput->setMaxLength(TITLE_LIMIT);
     titleInput->setPlaceholderText(
-        QString("Poll title (%1 chars)").arg(TITLE_LIMIT));
+        uiText(QString("Poll title (%1 chars)")).arg(TITLE_LIMIT));
     titleInput->setText(this->draftTitle_);
     titleInput->setFont(uiFont);
     titleInput->setFixedHeight(inputHeight);
@@ -827,7 +828,7 @@ void PollDialog::buildCreateUi()
         auto *headerRow = new QHBoxLayout();
         headerRow->setContentsMargins(0, 0, 0, 0);
         headerRow->setSpacing(rowSpacing);
-        auto *label = new QLabel("Responses", this->activeWidget_);
+        auto *label = new QLabel(uiText("Responses"), this->activeWidget_);
         label->setObjectName("PollSectionTitle");
         label->setFont(buttonFont);
         headerRow->addWidget(label);
@@ -888,8 +889,8 @@ void PollDialog::buildCreateUi()
         auto *input = new QLineEdit(this->draftChoices_.value(i), rowWidget);
         input->setObjectName("PollOptionInput");
         input->setMaxLength(CHOICE_LIMIT);
-        input->setPlaceholderText(i < 2 ? QString("Response %1").arg(i + 1)
-                                        : QString("Response %1").arg(i + 1));
+        input->setPlaceholderText(i < 2 ? uiText(QString("Response %1")).arg(i + 1)
+                                        : uiText(QString("Response %1")).arg(i + 1));
         input->setFont(uiFont);
         input->setFixedHeight(inputHeight);
         QObject::connect(input, &QLineEdit::textChanged, this,
@@ -924,7 +925,7 @@ void PollDialog::buildCreateUi()
     additionalRow->setSpacing(rowSpacing);
     additionalRow->setAlignment(Qt::AlignVCenter);
     auto *additionalVotes =
-        new QCheckBox("Allow Additional Votes", this->bottomWidget_);
+        new QCheckBox(uiText("Allow Additional Votes"), this->bottomWidget_);
     additionalVotes->setObjectName("PollCheckBox");
     additionalVotes->setChecked(this->draftEnableAdditionalVotes_);
     additionalVotes->setFont(uiFont);
@@ -953,7 +954,7 @@ void PollDialog::buildCreateUi()
         });
     additionalRow->addWidget(pointsEdit, 0, Qt::AlignVCenter);
 
-    auto *pointsLabel = new QLabel("Points", this->bottomWidget_);
+    auto *pointsLabel = new QLabel(uiText("Points"), this->bottomWidget_);
     pointsLabel->setObjectName("PollInfoLabel");
     pointsLabel->setFont(uiFont);
     pointsLabel->setEnabled(this->draftEnableAdditionalVotes_);
@@ -964,7 +965,7 @@ void PollDialog::buildCreateUi()
         auto *durationRow = new QHBoxLayout();
         durationRow->setSpacing(rowSpacing);
 
-        auto *durationLabel = new QLabel("Duration", this->bottomWidget_);
+        auto *durationLabel = new QLabel(uiText("Duration"), this->bottomWidget_);
         durationLabel->setObjectName("PollSectionTitle");
         durationLabel->setFont(buttonFont);
         durationRow->addWidget(durationLabel);
@@ -1000,7 +1001,7 @@ void PollDialog::buildCreateUi()
     }
 
     auto *startButton =
-        new QPushButton(this->actionInFlight_ ? "Starting..." : "Start Poll",
+        new QPushButton(this->actionInFlight_ ? uiText("Starting...") : uiText("Start Poll"),
                         this->bottomWidget_);
     startButton->setObjectName("PollCreateStartButton");
     startButton->setFont(buttonFont);
@@ -1070,7 +1071,7 @@ void PollDialog::buildVoteUi()
     titleLabel->setObjectName("PollCurrentTitle");
     questionLayout->addWidget(titleLabel);
 
-    auto *timerLabel = new QLabel("Voting ended", questionCard);
+    auto *timerLabel = new QLabel(uiText("Voting ended"), questionCard);
     this->countdownLabel_ = timerLabel;
     timerLabel->setAlignment(Qt::AlignCenter);
     timerLabel->setObjectName("PollCountdown");
@@ -1293,7 +1294,7 @@ void PollDialog::buildVoteUi()
                 .arg(rowTextColor.name(QColor::HexArgb)));
         metaLayout->addWidget(votesValue);
 
-        auto *votesLabel = new QLabel("VOTES", metaWidget);
+        auto *votesLabel = new QLabel(uiText("VOTES"), metaWidget);
         votesLabel->setObjectName("PollOutcomeStats");
         votesLabel->setFont(compactMetaFont);
         votesLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -1421,7 +1422,7 @@ void PollDialog::buildVoteUi()
         if (poll.channelPointsVotingEnabled)
         {
             auto *balance = new QLabel(
-                QString("Bal: %1").arg(
+                uiText(QString("Bal: %1")).arg(
                     formatChannelPoints(this->channel_->channelPointBalance())),
                 bottomCard);
             balance->setObjectName("PollBalanceLabel");
@@ -1437,27 +1438,27 @@ void PollDialog::buildVoteUi()
     voteButton->setFixedHeight(compactControlHeight);
     if (canCastFreeVote)
     {
-        voteButton->setText(this->actionInFlight_ ? "Voting..." : "Vote");
+        voteButton->setText(this->actionInFlight_ ? uiText("Voting...") : uiText("Vote"));
     }
     else if (canBuyExtraVotes)
     {
         voteButton->setText(
             this->actionInFlight_
-                ? "Voting..."
-                : QString("Vote (%1)").arg(formatCompact(poll.pointsPerVote)));
+                ? uiText("Voting...")
+                : uiText(QString("Vote (%1)")).arg(formatCompact(poll.pointsPerVote)));
     }
     else if (!votingOpen)
     {
-        voteButton->setText("Voting ended");
+        voteButton->setText(uiText("Voting ended"));
     }
     else if (poll.channelPointsVotingEnabled &&
              this->currentUserTotalVotes() > 0)
     {
-        voteButton->setText("Point cost unavailable");
+        voteButton->setText(uiText("Point cost unavailable"));
     }
     else
     {
-        voteButton->setText("Already voted");
+        voteButton->setText(uiText("Already voted"));
     }
 
     voteButton->setEnabled(!this->actionInFlight_ &&

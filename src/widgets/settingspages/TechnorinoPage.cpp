@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "widgets/settingspages/TechnorinoPage.hpp"
 
 #include "Application.hpp"
@@ -105,68 +106,68 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
 {
     auto &s = *getSettings();
 
-    layout.addTitle("Chat");
+    layout.addTitle(uiText("Chat"));
     // SettingWidget::checkbox("", s.hideModerated)->setTooltip("")->addTo(layout);
     SettingWidget::checkbox(
-        "Show placeholder in text input box (requires restart)",
+        uiText("Show placeholder in text input box (requires restart)"),
         s.showTextInputPlaceholder)
-        ->setTooltip("Show placeholder in text input box (requires restart)")
+        ->setTooltip(uiText("Show placeholder in text input box (requires restart)"))
         ->addTo(layout);
-    SettingWidget::checkbox("Convert #text to channel links", s.channelLinks)
-        ->setTooltip("Convert #text to channel links")
+    SettingWidget::checkbox(uiText("Convert #text to channel links"), s.channelLinks)
+        ->setTooltip(uiText("Convert #text to channel links"))
         ->addTo(layout);
 
-    layout.addTitle("Miscellaneous");
-    SettingWidget::checkbox("Fake messages as webchat", s.fakeWebChat)
-        ->setTooltip("Fake messages as webchat")
+    layout.addTitle(uiText("Miscellaneous"));
+    SettingWidget::checkbox(uiText("Fake messages as webchat"), s.fakeWebChat)
+        ->setTooltip(uiText("Fake messages as webchat"))
         ->addTo(layout);
-    SettingWidget::checkbox("Use bot limits for messages",
+    SettingWidget::checkbox(uiText("Use bot limits for messages"),
                             s.useBotLimitsMessage)
-        ->setTooltip("Use bot limits for messages")
+        ->setTooltip(uiText("Use bot limits for messages"))
         ->addTo(layout);
-    SettingWidget::checkbox("Use bot limits for JOINs", s.useBotLimitsJoin)
-        ->setTooltip("Use bot limits for JOINs")
+    SettingWidget::checkbox(uiText("Use bot limits for JOINs"), s.useBotLimitsJoin)
+        ->setTooltip(uiText("Use bot limits for JOINs"))
         ->addTo(layout);
     SettingWidget::checkbox(
-        "Enable. Required for abnormal nonce and webchat detection to work!",
+        uiText("Enable. Required for abnormal nonce and webchat detection to work!"),
         s.nonceFuckeryEnabled)
-        ->setTooltip("Enable. Required for abnormal nonce and webchat "
-                     "detection to work!")
+        ->setTooltip(uiText("Enable. Required for abnormal nonce and webchat "
+                     "detection to work!"))
         ->addTo(layout);
-    SettingWidget::checkbox("Abnormal nonce detection",
+    SettingWidget::checkbox(uiText("Abnormal nonce detection"),
                             s.abnormalNonceDetection)
-        ->setTooltip("Abnormal nonce detection")
+        ->setTooltip(uiText("Abnormal nonce detection"))
         ->addTo(layout);
 
-    layout.addTitle("Client detection");
-    SettingWidget::checkbox("Client detection highlights. ",
+    layout.addTitle(uiText("Client detection"));
+    SettingWidget::checkbox(uiText("Client detection highlights. "),
                             s.normalNonceDetection)
-        ->setTooltip("Highlights messages sent from specified clients "
-                     "using the specified color below.")
+        ->setTooltip(uiText("Highlights messages sent from specified clients "
+                     "using the specified color below."))
         ->addTo(layout);
-    SettingWidget::colorButton("Webchat color", getSettings()->webchatColor)
+    SettingWidget::colorButton(uiText("Webchat color"), getSettings()->webchatColor)
         ->addTo(layout);
-    SettingWidget::colorButton("Android color", getSettings()->androidColor)
+    SettingWidget::colorButton(uiText("Android color"), getSettings()->androidColor)
         ->addTo(layout);
-    SettingWidget::colorButton("iOS color", getSettings()->iosColor)
+    SettingWidget::colorButton(uiText("iOS color"), getSettings()->iosColor)
         ->addTo(layout);
-    SettingWidget::colorButton("Mobile (new) color",
+    SettingWidget::colorButton(uiText("Mobile (new) color"),
                                getSettings()->mobileNewColor)
         ->addTo(layout);
-    SettingWidget::checkbox("Client detection icons. ", s.clientDetectionIcon)
-        ->setTooltip("Displays client icons beside messages")
+    SettingWidget::checkbox(uiText("Client detection icons. "), s.clientDetectionIcon)
+        ->setTooltip(uiText("Displays client icons beside messages"))
         ->addTo(layout);
 
-    SettingWidget::checkbox("Watching tab live sound", s.watchingTabLiveSound)
-        ->setTooltip("Watching tab live sound")
+    SettingWidget::checkbox(uiText("Watching tab live sound"), s.watchingTabLiveSound)
+        ->setTooltip(uiText("Watching tab live sound"))
         ->addTo(layout);
-    SettingWidget::checkbox("Auto detach watching tab (~10s timeout)",
+    SettingWidget::checkbox(uiText("Auto detach watching tab (~10s timeout)"),
                             s.autoDetachLiveTab)
-        ->setTooltip("Auto detach watching tab (~10s timeout)")
+        ->setTooltip(uiText("Auto detach watching tab (~10s timeout)"))
         ->addTo(layout);
-    SettingWidget::checkbox("Markdown parsing (Experimental)",
+    SettingWidget::checkbox(uiText("Markdown parsing (Experimental)"),
                             s.markdownParsing)
-        ->setTooltip("Markdown parsing (Experimental)")
+        ->setTooltip(uiText("Markdown parsing (Experimental)"))
         ->addTo(layout);
     layout.addStretch();
 

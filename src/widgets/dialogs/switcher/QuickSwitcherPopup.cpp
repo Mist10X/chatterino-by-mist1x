@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/switcher/QuickSwitcherPopup.hpp"
 
 #include "Application.hpp"
@@ -78,7 +79,7 @@ void QuickSwitcherPopup::initWidgets()
 
     {
         auto lineEdit = vbox.emplace<QLineEdit>().assign(&this->ui_.searchEdit);
-        lineEdit->setPlaceholderText("Jump to a channel or open a new one");
+        lineEdit->setPlaceholderText(uiText("Jump to a channel or open a new one"));
         QObject::connect(this->ui_.searchEdit, &QLineEdit::textChanged, this,
                          &QuickSwitcherPopup::updateSuggestions);
     }

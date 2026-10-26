@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/font/FontSizeWidget.hpp"
 
 #include "widgets/dialogs/font/IntItem.hpp"
@@ -40,7 +41,7 @@ FontSizeWidget::FontSizeWidget(const QFont &startFont, QWidget *parent)
     layout->addWidget(this->list);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    header->addWidget(new QLabel("Size"));
+    header->addWidget(new QLabel(uiText("Size")));
     header->addWidget(this->edit);
 
     QObject::connect(this->edit, &QSpinBox::valueChanged, this,

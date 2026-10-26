@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "controllers/hotkeys/HotkeyController.hpp"
+#include "common/UiLanguage.hpp"
 
 #include "common/QLogging.hpp"
 #include "controllers/hotkeys/Hotkey.hpp"
@@ -63,7 +64,7 @@ QString hotkeyCategoryDisplayName(HotkeyCategory category)
 
     const auto &categoryData = HOTKEY_CATEGORIES.at(category);
 
-    return categoryData.displayName;
+    return uiText(categoryData.displayName);
 }
 
 static bool hotkeySortCompare_(const std::shared_ptr<Hotkey> &a,

@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/helper/color/ColorInput.hpp"
 
 namespace chatterino {
@@ -92,7 +93,7 @@ ColorInput::ColorInput(QColor color, QWidget *parent)
         color.setAlpha(value);
     });
 
-    this->hexLabel_.setText("Hex:");
+    this->hexLabel_.setText(uiText("Hex:"));
     this->hexInput_.setValidator(&this->hexValidator_);
     QObject::connect(&this->hexInput_, &QLineEdit::editingFinished, [this]() {
         auto css = parseHexColor(this->hexInput_.text());

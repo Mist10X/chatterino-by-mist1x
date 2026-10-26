@@ -12,6 +12,8 @@
 
 #include <magic_enum/magic_enum.hpp>
 #include <pajlada/signals/signal.hpp>
+#include <pajlada/signals/signalholder.hpp>
+#include <functional>
 #include <QDate>
 #include <QString>
 #include <QTimer>
@@ -112,6 +114,8 @@ public:
         MessagePtr message, MessageContext context,
         std::optional<MessageFlags> overridingFlags = std::nullopt) final;
     void addMessagesAtStart(const std::vector<MessagePtr> &messages_);
+    /// Lets 7TV paints of this chatter be looked up (Twitch channels).
+    void noteChatter(const Message &message);
 
     void addSystemMessage(const QString &contents);
 
@@ -132,6 +136,13 @@ public:
 
     /// Removes all messages from this channel and invokes #messagesCleared
     void clearMessages();
+    // A zero limit preserves this session's full chat in memory.
+    void setMessageLimit(size_t limit);
+    size_t messageLimit() const;
+    bool archiveHistoryManaged() const;
+    void followMessageLimit(pajlada::Signals::NoArgSignal &changed,
+                            std::function<size_t()> policy);
+    pajlada::Signals::NoArgSignal messageLimitChanged;
 
     MessagePtr findMessageByID(QStringView messageID) final;
 
@@ -191,6 +202,8 @@ private:
     /// intended to prevent all infinite recursion. That will still crash the
     /// program.
     uint8_t recursionCount_ = 0;
+    bool archiveHistoryManaged_ = false;
+    pajlada::Signals::SignalHolder historyPolicyConnections_;
 
     QTimer clearCompletionModelTimer_;
     bool watching_;

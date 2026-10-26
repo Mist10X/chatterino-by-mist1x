@@ -6,6 +6,7 @@
 
 #include "Application.hpp"
 #include "common/Common.hpp"
+#include "common/network/NetworkProxy.hpp"
 #include "common/network/NetworkRequest.hpp"
 #include "common/network/NetworkResult.hpp"
 #include "common/QLogging.hpp"
@@ -42,6 +43,34 @@ const auto IMAGE_POOL_IMAGE_LIFETIME = std::chrono::minutes(10);
 namespace {
 
 using namespace chatterino;
+
+bool isTransientImageError(const NetworkResult &result)
+{
+    // HTTP errors describe the resource or server response, not a lost route.
+    if (result.status().value_or(0) >= 400)
+    {
+        return false;
+    }
+
+    switch (result.error())
+    {
+        case QNetworkReply::ConnectionRefusedError:
+        case QNetworkReply::RemoteHostClosedError:
+        case QNetworkReply::HostNotFoundError:
+        case QNetworkReply::TimeoutError:
+        case QNetworkReply::TemporaryNetworkFailureError:
+        case QNetworkReply::NetworkSessionFailedError:
+        case QNetworkReply::UnknownNetworkError:
+        case QNetworkReply::ProxyConnectionRefusedError:
+        case QNetworkReply::ProxyConnectionClosedError:
+        case QNetworkReply::ProxyNotFoundError:
+        case QNetworkReply::ProxyTimeoutError:
+        case QNetworkReply::UnknownProxyError:
+            return true;
+        default:
+            return false;
+    }
+}
 
 std::pair<QSize, bool> limitedAutoScaleSize(
     QSize original, std::optional<uint16_t> optAutoScale)
@@ -343,6 +372,9 @@ void assignFrames(std::weak_ptr<Image> weak, QList<Frame> parsed)
         {
             return;
         }
+        shared->loadRetry_.finished();
+        shared->shouldLoad_ = false;
+        shared->empty_ = parsed.empty();
         shared->frames_ = std::make_unique<detail::Frames>(std::move(parsed));
         if (shared->autoScale_)
         {
@@ -568,8 +600,6 @@ std::optional<QPixmap> Image::pixmapOrLoad() const
 {
     assertInGuiThread();
 
-    this->lastUsed_ = std::chrono::steady_clock::now();
-
     this->load();
 
     return this->frames_->current();
@@ -579,15 +609,38 @@ void Image::load() const
 {
     assertInGuiThread();
 
-    if (this->shouldLoad_)
+    this->lastUsed_ = std::chrono::steady_clock::now();
+    const_cast<Image *>(this)->loadIfNeeded();
+}
+
+void Image::loadIfNeeded()
+{
+    assertInGuiThread();
+
+    if (this->empty_ || (!this->shouldLoad_ && !this->loadRetry_.pending()))
     {
-        Image *this2 = const_cast<Image *>(this);
-        this2->shouldLoad_ = false;
-        this2->actuallyLoad();
-#ifndef DISABLE_IMAGE_EXPIRATION_POOL
-        ImageExpirationPool::instance().addImagePtr(this2->shared_from_this());
-#endif
+        return;
     }
+
+    if (!this->url_.string.startsWith(u":/"))
+    {
+        if (this->shouldLoad_)
+        {
+            this->loadRetry_.request();
+        }
+        if (!this->loadRetry_.tryStart(httpNetworkGeneration(),
+                                      std::chrono::steady_clock::now()))
+        {
+            this->scheduleRetry();
+            return;
+        }
+    }
+
+    this->shouldLoad_ = false;
+    this->actuallyLoad();
+#ifndef DISABLE_IMAGE_EXPIRATION_POOL
+    ImageExpirationPool::instance().addImagePtr(this->shared_from_this());
+#endif
 }
 
 qreal Image::scale() const
@@ -666,8 +719,18 @@ QSizeF Image::size() const
 
 void Image::actuallyLoad()
 {
+    assertInGuiThread();
+
     auto weak = weakOf(this);
-    auto onSuccess = [weak](const auto &result) {
+    auto onFailure = [weak](bool retryable) {
+        runInGuiThread([weak, retryable] {
+            if (auto shared = weak.lock())
+            {
+                shared->failLoad(retryable);
+            }
+        });
+    };
+    auto onSuccess = [weak, onFailure](const auto &result) {
         auto shared = weak.lock();
         if (!shared)
         {
@@ -684,14 +747,14 @@ void Image::actuallyLoad()
         {
             qCDebug(chatterinoImage)
                 << "Error: image cant be read " << shared->url().string;
-            shared->empty_ = true;
+            onFailure(false);
             return;
         }
 
         const auto size = reader.size();
         if (size.isEmpty())
         {
-            shared->empty_ = true;
+            onFailure(false);
             return;
         }
 
@@ -700,7 +763,7 @@ void Image::actuallyLoad()
             qCDebug(chatterinoImage)
                 << "Error: image has less than 1 frame " << shared->url().string
                 << ": " << reader.errorString();
-            shared->empty_ = true;
+            onFailure(false);
             return;
         }
 
@@ -722,13 +785,7 @@ void Image::actuallyLoad()
         {
             qCDebug(chatterinoImage) << "image too large in RAM";
 
-            shared->empty_ = true;
-            postToGuiThread([] {
-                if (auto *app = tryGetApp())
-                {
-                    app->getWindows()->forceLayoutChannelViews();
-                }
-            });
+            onFailure(false);
             return;
         }
 
@@ -738,15 +795,8 @@ void Image::actuallyLoad()
 
         assignFrames(shared, parsed);
     };
-    auto onError = [weak](const auto &) {
-        auto shared = weak.lock();
-        if (!shared)
-        {
-            return false;
-        }
-
-        shared->empty_ = true;
-
+    auto onError = [onFailure](const auto &result) {
+        onFailure(isTransientImageError(result));
         return true;
     };
 
@@ -781,10 +831,60 @@ void Image::actuallyLoad()
         NetworkRequest(this->url().string)
             .concurrent()
             .cache()
+            .timeout(15000)
             .onSuccess(std::move(onSuccess))
             .onError(std::move(onError))
             .execute();
     }
+}
+
+void Image::failLoad(bool retryable)
+{
+    assertInGuiThread();
+
+    this->shouldLoad_ = false;
+    if (retryable && !this->url_.string.startsWith(u":/"))
+    {
+        // Keep the image selectable by ImageSet so renewed demand can recover it.
+        this->loadRetry_.failed(std::chrono::steady_clock::now());
+        this->scheduleRetry();
+        return;
+    }
+
+    this->loadRetry_.finished();
+    this->empty_ = true;
+    if (auto *app = tryGetApp())
+    {
+        app->getWindows()->forceLayoutChannelViews();
+    }
+}
+
+void Image::scheduleRetry()
+{
+    assertInGuiThread();
+
+    const auto now = std::chrono::steady_clock::now();
+    if (this->retryScheduled_ || !this->loadRetry_.canSchedule() ||
+        !detail::ImageLoadRetry::recentlyNeeded(now, this->lastUsed_))
+    {
+        return;
+    }
+
+    this->retryScheduled_ = true;
+    QTimer::singleShot(
+        this->loadRetry_.delay(now), qApp, [weak = weakOf(this)] {
+            auto shared = weak.lock();
+            if (!shared)
+            {
+                return;
+            }
+            shared->retryScheduled_ = false;
+            if (detail::ImageLoadRetry::recentlyNeeded(
+                    std::chrono::steady_clock::now(), shared->lastUsed_))
+            {
+                shared->loadIfNeeded();
+            }
+        });
 }
 
 void Image::expireFrames()

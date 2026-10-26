@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/splits/SplitHeader.hpp"
 
 #include "Application.hpp"
@@ -83,7 +84,7 @@ auto formatRoomModeUnclean(const TwitchChannel::RoomModes &modes) -> QString
     }
     if (modes.slowMode > 0)
     {
-        text += QString("slow(%1), ").arg(localizeNumbers(modes.slowMode));
+        text += uiText(QString("slow(%1), ")).arg(localizeNumbers(modes.slowMode));
     }
     if (modes.emoteOnly)
     {
@@ -97,13 +98,13 @@ auto formatRoomModeUnclean(const TwitchChannel::RoomModes &modes) -> QString
     {
         if (modes.followerOnly != 0)
         {
-            text += QString("follow(%1), ")
+            text += uiText(QString("follow(%1), "))
                         .arg(formatDurationExact(
                             std::chrono::minutes{modes.followerOnly}));
         }
         else
         {
-            text += QString("follow, ");
+            text += uiText(QString("follow, "));
         }
     }
 
@@ -242,7 +243,7 @@ auto formatTooltip(const TwitchChannel::StreamStatus &s, QString thumbnail,
 
         if (thumbnail.isEmpty())
         {
-            return QStringLiteral("Couldn't fetch thumbnail<br>");
+            return uiText(QStringLiteral("Couldn't fetch thumbnail<br>"));
         }
 
         QString sizeStr;
@@ -276,7 +277,7 @@ auto formatTooltip(const TwitchChannel::StreamStatus &s, QString thumbnail,
                 "Mode&gt;</span>");
         }
 
-        return QString("%1 for %2 with %3 viewers")
+        return uiText(QString("%1 for %2 with %3 viewers"))
             .arg(s.rerun ? "Vod-casting" : "Live")
             .arg(s.uptime)
             .arg(localizeNumbers(s.viewerCount));
@@ -293,7 +294,7 @@ auto formatTooltip(const TwitchChannel::StreamStatus &s, QString thumbnail,
 
 auto formatOfflineTooltip(const TwitchChannel::StreamStatus &s)
 {
-    return QString("<p style=\"text-align: center;\">Offline<br>%1</p>")
+    return uiText(QString("<p style=\"text-align: center;\">Offline<br>%1</p>"))
         .arg(s.title.toHtmlEscaped());
 }
 
@@ -320,7 +321,7 @@ QString formatYouTubeTooltip(const YouTubeChannel::StreamData &s,
         }
         if (thumbnail.isEmpty())
         {
-            return QStringLiteral("Couldn't fetch thumbnail<br>");
+            return uiText(QStringLiteral("Couldn't fetch thumbnail<br>"));
         }
         auto height =
             std::min(getSettings()->thumbnailSizeStream.getValue(), 4) * 80;
@@ -359,7 +360,7 @@ QString formatYouTubeTooltip(const YouTubeChannel::StreamData &s,
         {
             return QStringLiteral("");
         }
-        return QString("%1 viewers").arg(localizeNumbers(s.viewerCount));
+        return uiText(QString("%1 viewers")).arg(localizeNumbers(s.viewerCount));
     }();
 
     return QString("<p style=\"text-align: center;\">" % preview % username %
@@ -368,7 +369,7 @@ QString formatYouTubeTooltip(const YouTubeChannel::StreamData &s,
 
 QString formatYouTubeOfflineTooltip(const YouTubeChannel::StreamData &s)
 {
-    return QString("<p style=\"text-align: center;\">Offline<br>%1</p>")
+    return uiText(QString("<p style=\"text-align: center;\">Offline<br>%1</p>"))
         .arg(youtubeHeaderName(s).toHtmlEscaped());
 }
 
@@ -550,7 +551,7 @@ QString multiTooltipDetail(const QString &category, bool rerun)
 {
     if (rerun)
     {
-        return u"Vod-casting"_s;
+        return uiText(u"Vod-casting"_s);
     }
     if (category.isEmpty())
     {
@@ -633,7 +634,7 @@ MultiTooltipRow makeMultiTooltipRow(const MultiChannel::ChildChannel &child,
 QString multiTooltipSummary(int liveCount, int total, qint64 viewers,
                             bool hideCounts)
 {
-    auto text = QString("%1 of %2 live").arg(liveCount).arg(total);
+    auto text = uiText(QString("%1 of %2 live")).arg(liveCount).arg(total);
     if (liveCount > 0 && !hideCounts)
     {
         text += u" · " % formatCompactNumber(viewers) % u" viewers";
@@ -747,11 +748,11 @@ QString formatMultiChannelTooltip(const MultiChannel &mc)
         if (liveCut)
         {
             const int hiddenLive = liveCount - static_cast<int>(visible.size());
-            lines.push_back(QString("and %1 more live").arg(hiddenLive));
+            lines.push_back(uiText(QString("and %1 more live")).arg(hiddenLive));
         }
         if (offlineCount > 0)
         {
-            lines.push_back(QString("%1 offline").arg(offlineCount));
+            lines.push_back(uiText(QString("%1 offline")).arg(offlineCount));
         }
     }
 
@@ -897,7 +898,7 @@ void SplitHeader::initializeLayout()
         },
         this, {4, 4});
     this->youtubeRefreshButton_->setToolTip(
-        "Refresh YouTube live chat (find the channel's latest stream)");
+        uiText("Refresh YouTube live chat (find the channel's latest stream)"));
     this->youtubeRefreshButton_->hide();
 
     this->sendTargetButton_ = new LabelButton({}, this);
@@ -914,8 +915,8 @@ void SplitHeader::initializeLayout()
             .light = ":/buttons/editStreamInfo-lightMode.svg",
         },
         this, {6, 6});
-    this->manageChannelButton_->setToolTip("Edit stream info");
-    this->manageChannelButton_->setAccessibleName("Edit stream info");
+    this->manageChannelButton_->setToolTip(uiText("Edit stream info"));
+    this->manageChannelButton_->setAccessibleName(uiText("Edit stream info"));
 
     this->addButton_ = new DrawnButton(DrawnButton::Symbol::Plus,
                                        {
@@ -1111,33 +1112,33 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
     auto *youtubeChannel = dynamic_cast<YouTubeChannel *>(selected.get());
 
     menu->addAction(
-        "Change channel",
+        uiText("Change channel"),
         h->getDisplaySequence(HotkeyCategory::Split, "changeChannel"),
         this->split_, &Split::changeChannel);
-    menu->addAction("Close",
+    menu->addAction(uiText("Close"),
                     h->getDisplaySequence(HotkeyCategory::Split, "delete"),
                     this->split_, &Split::deleteFromContainer);
     menu->addSeparator();
     menu->addAction(
-        "Popup",
+        uiText("Popup"),
         h->getDisplaySequence(HotkeyCategory::Window, "popup", {{"split"}}),
         this->split_, &Split::popup);
     menu->addAction(
-        "Popup overlay",
+        uiText("Popup overlay"),
         h->getDisplaySequence(HotkeyCategory::Split, "popupOverlay"),
         this->split_, &Split::showOverlayWindow);
-    menu->addAction(u"Search…"_s,
+    menu->addAction(uiText(u"Search…"_s),
                     h->getDisplaySequence(HotkeyCategory::Split, "showSearch"),
                     this->split_, [this] {
                         this->split_->showSearch(true);
                     });
     menu->addAction(
-        "Search all open tabs",
+        uiText("Search all open tabs"),
         h->getDisplaySequence(HotkeyCategory::Split, "showGlobalSearch"),
         this->split_, [this] {
             this->split_->showSearch(false);
         });
-    menu->addAction(u"Set filters…"_s,
+    menu->addAction(uiText(u"Set filters…"_s),
                     h->getDisplaySequence(HotkeyCategory::Split, "pickFilters"),
                     this->split_, &Split::setFiltersDialog);
 
@@ -1146,38 +1147,38 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
         menu->addSeparator();
 
         auto *bannersMenu =
-            menu->addMenu(QStringLiteral("Banners in this split"));
+            menu->addMenu(uiText(QStringLiteral("Banners in this split")));
         const bool hideAll = this->split_->perSplitHidePinnedMessage() &&
                              this->split_->perSplitHidePrediction() &&
                              this->split_->perSplitHidePoll();
         auto *hideAllBannersAction =
-            bannersMenu->addAction(QStringLiteral("Hide all"));
+            bannersMenu->addAction(uiText(QStringLiteral("Hide all")));
         hideAllBannersAction->setCheckable(true);
         hideAllBannersAction->setChecked(hideAll);
         QObject::connect(hideAllBannersAction, &QAction::toggled, this->split_,
                          &Split::setPerSplitHideAllBanners);
         bannersMenu->addSeparator();
         auto *hidePinnedAction =
-            bannersMenu->addAction(QStringLiteral("Hide pinned message"));
+            bannersMenu->addAction(uiText(QStringLiteral("Hide pinned message")));
         hidePinnedAction->setCheckable(true);
         hidePinnedAction->setChecked(this->split_->perSplitHidePinnedMessage());
         QObject::connect(hidePinnedAction, &QAction::toggled, this->split_,
                          &Split::setPerSplitHidePinnedMessage);
         auto *hidePredictionAction =
-            bannersMenu->addAction(QStringLiteral("Hide prediction"));
+            bannersMenu->addAction(uiText(QStringLiteral("Hide prediction")));
         hidePredictionAction->setCheckable(true);
         hidePredictionAction->setChecked(
             this->split_->perSplitHidePrediction());
         QObject::connect(hidePredictionAction, &QAction::toggled, this->split_,
                          &Split::setPerSplitHidePrediction);
         auto *hidePollAction =
-            bannersMenu->addAction(QStringLiteral("Hide poll"));
+            bannersMenu->addAction(uiText(QStringLiteral("Hide poll")));
         hidePollAction->setCheckable(true);
         hidePollAction->setChecked(this->split_->perSplitHidePoll());
         QObject::connect(hidePollAction, &QAction::toggled, this->split_,
                          &Split::setPerSplitHidePoll);
 
-        menu->addAction(QStringLiteral("Restore dismissed banners"),
+        menu->addAction(uiText(QStringLiteral("Restore dismissed banners")),
                         this->split_, &Split::recoverDismissedBanners);
         menu->addSeparator();
     }
@@ -1206,7 +1207,7 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
 
         if (!getSettings()->customURIScheme.getValue().isEmpty())
         {
-            menu->addAction("Open in custom player",
+            menu->addAction(uiText("Open in custom player"),
                             h->getDisplaySequence(HotkeyCategory::Split,
                                                   "openInCustomPlayer"),
                             this->split_, &Split::openWithCustomScheme);
@@ -1224,7 +1225,7 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
         if (twitchChannel && twitchChannel->hasModRights())
         {
             menu->addAction(
-                "Open &reward queue",
+                uiText("Open &reward queue"),
                 h->getDisplaySequence(HotkeyCategory::Split, "openRewardQueue"),
                 this->split_, &Split::openRewardQueue);
         }
@@ -1235,20 +1236,20 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
             auto managedChannel =
                 std::dynamic_pointer_cast<TwitchChannel>(selected);
             auto *manageAction =
-                menu->addAction("Manage channel...", this->split_,
+                menu->addAction(uiText("Manage channel..."), this->split_,
                                 [managedChannel, parent = this->split_] {
                                     ChannelManagementDialog::showForChannel(
                                         managedChannel, parent);
                                 });
             manageAction->setToolTip(
-                "Edit stream information or run a commercial as the "
-                "broadcaster or a verified channel editor.");
+                uiText("Edit stream information or run a commercial as the "
+                "broadcaster or a verified channel editor."));
         }
 
         if (twitchChannel)
         {
             menu->addAction(
-                    "Create a clip",
+                    uiText("Create a clip"),
                     h->getDisplaySequence(HotkeyCategory::Split, "createClip"),
                     this->split_,
                     [twitchChannel] {
@@ -1260,7 +1261,7 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
         if (this->split_->getIndirectChannel().getType() ==
             Channel::Type::TwitchWatching)
         {
-            menu->addAction("Reset /watching", this->split_, [] {
+            menu->addAction(uiText("Reset /watching"), this->split_, [] {
                 if (!getApp()
                          ->getTwitch()
                          ->getWatchingChannel()
@@ -1290,7 +1291,7 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
     if (this->split_->getChannel()->canReconnect())
     {
         menu->addAction(
-            "Reconnect",
+            uiText("Reconnect"),
             h->getDisplaySequence(HotkeyCategory::Split, "reconnect"), this,
             &SplitHeader::reconnect);
     }
@@ -1303,12 +1304,12 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
                                                 "reloadEmotes", {{"channel"}});
         auto subSeq = h->getDisplaySequence(HotkeyCategory::Split,
                                             "reloadEmotes", {{"subscriber"}});
-        menu->addAction("Reload channel emotes",
+        menu->addAction(uiText("Reload channel emotes"),
                         channelSeq.isEmpty() ? bothSeq : channelSeq, this,
                         &SplitHeader::reloadChannelEmotes);
         if (twitchChannel)
         {
-            menu->addAction("Reload subscriber emotes",
+            menu->addAction(uiText("Reload subscriber emotes"),
                             subSeq.isEmpty() ? bothSeq : subSeq, this,
                             &SplitHeader::reloadSubscriberEmotes);
         }
@@ -1321,12 +1322,12 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
         const auto selectedChannelName =
             this->split_->getSelectedChannel()->getName();
         auto *autoTranslateAction = new QAction(menu.get());
-        autoTranslateAction->setText("Auto-translate messages (risky)");
+        autoTranslateAction->setText(uiText("Auto-translate messages (risky)"));
         autoTranslateAction->setCheckable(true);
         autoTranslateAction->setToolTip(
-            "Translates new visible chat messages in this channel as they "
+            uiText("Translates new visible chat messages in this channel as they "
             "arrive. Risky in fast chats because translation requests can hit "
-            "rate limits, fail, or skip messages.");
+            "rate limits, fail, or skip messages."));
         autoTranslateAction->setStatusTip(autoTranslateAction->toolTip());
 
         QObject::connect(
@@ -1350,7 +1351,7 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
     {
         // "How to..." sub menu
         auto *subMenu = new QMenu("How to...", this);
-        subMenu->addAction("move split", this->split_, &Split::explainMoving);
+        subMenu->addAction(uiText("move split"), this->split_, &Split::explainMoving);
         subMenu->addAction("add/split", this->split_, &Split::explainSplitting);
         menu->addMenu(subMenu);
     }
@@ -1370,14 +1371,14 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
         // this makes a full std::optional<> with an empty vector inside
     }
     moreMenu->addAction(
-        "&Toggle moderation mode", modModeSeq, this->split_, [this]() {
+        uiText("&Toggle moderation mode"), modModeSeq, this->split_, [this]() {
             this->split_->setModerationMode(!this->split_->getModerationMode());
         });
 
     if (this->split_->getChannel()->getType() == Channel::Type::TwitchMentions)
     {
         auto *action = new QAction(this);
-        action->setText("Enable /mention tab highlights");
+        action->setText(uiText("Enable /mention tab highlights"));
         action->setCheckable(true);
 
         QObject::connect(moreMenu, &QMenu::aboutToShow, this, [action]() {
@@ -1394,21 +1395,21 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
     if (canShowChatterList(this->split_->getChannel()))
     {
         moreMenu->addAction(
-            "Show chatter &list",
+            uiText("Show chatter &list"),
             h->getDisplaySequence(HotkeyCategory::Split, "openViewerList"),
             this->split_, &Split::openChatterList);
     }
 
     if (twitchChannel)
     {
-        moreMenu->addAction("&Subscribe",
+        moreMenu->addAction(uiText("&Subscribe"),
                             h->getDisplaySequence(HotkeyCategory::Split,
                                                   "openSubscriptionPage"),
                             this->split_, &Split::openSubPage);
 
         {
             auto *action = new QAction(this);
-            action->setText("&Notify when live");
+            action->setText(uiText("&Notify when live"));
             action->setCheckable(true);
 
             auto notifySeq = h->getDisplaySequence(
@@ -1440,7 +1441,7 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
 
         {
             auto *action = new QAction(this);
-            action->setText("&Mute highlight sounds");
+            action->setText(uiText("&Mute highlight sounds"));
             action->setCheckable(true);
 
             auto notifySeq = h->getDisplaySequence(
@@ -1469,7 +1470,7 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
 
     moreMenu->addSeparator();
     moreMenu->addAction(
-        "&Clear messages",
+        uiText("&Clear messages"),
         h->getDisplaySequence(HotkeyCategory::Split, "clearMessages"),
         this->split_, &Split::clear);
     //    moreMenu->addSeparator();
@@ -1484,11 +1485,11 @@ std::unique_ptr<QMenu> SplitHeader::createChatModeMenu()
 {
     auto menu = std::make_unique<QMenu>();
 
-    this->modeActionSetSub = new QAction("Subscriber only", this);
-    this->modeActionSetEmote = new QAction("Emote only", this);
-    this->modeActionSetSlow = new QAction("Slow", this);
-    this->modeActionSetR9k = new QAction("Unique chat (R9K)", this);
-    this->modeActionSetFollowers = new QAction("Followers only", this);
+    this->modeActionSetSub = new QAction(uiText("Subscriber only"), this);
+    this->modeActionSetEmote = new QAction(uiText("Emote only"), this);
+    this->modeActionSetSlow = new QAction(uiText("Slow"), this);
+    this->modeActionSetR9k = new QAction(uiText("Unique chat (R9K)"), this);
+    this->modeActionSetFollowers = new QAction(uiText("Followers only"), this);
 
     this->modeActionSetFollowers->setCheckable(true);
     this->modeActionSetSub->setCheckable(true);
@@ -1556,7 +1557,7 @@ std::unique_ptr<QMenu> SplitHeader::createChatModeMenu()
                          };
                          auto ok = bool();
                          auto time = QInputDialog::getText(
-                             this, "", "Time:", QLineEdit::Normal, "15m", &ok,
+                             this, "", uiText("Time:"), QLineEdit::Normal, "15m", &ok,
                              Qt::FramelessWindowHint,
                              Qt::ImhLowercaseOnly | Qt::ImhPreferNumbers);
                          if (ok)
@@ -1807,8 +1808,8 @@ void SplitHeader::updateSendTargetButton()
     const auto name = active->channel->getName();
     const auto platform = multiPlatformName(active->platform);
     this->sendTargetButton_->setText(name);
-    this->sendTargetButton_->setToolTip(u"Sending to: " % name % u" (" %
-                                        platform % u"). Click to change.");
+    this->sendTargetButton_->setToolTip(uiText(u"Sending to: ") % name % u" (" %
+                                        platform % uiText(u"). Click to change."));
     this->sendTargetButton_->show();
 }
 
@@ -1884,14 +1885,14 @@ void SplitHeader::toggleFollow()
                                      : channel->getLocalizedName();
 
         QMessageBox box(this);
-        box.setWindowTitle("Unfollow channel?");
+        box.setWindowTitle(uiText("Unfollow channel?"));
         box.setIcon(QMessageBox::Question);
         box.setText(
-            QString("Are you sure you want to unfollow %1?").arg(displayName));
+            uiText(QString("Are you sure you want to unfollow %1?")).arg(displayName));
 
         auto *confirmButton =
-            box.addButton("Confirm", QMessageBox::DestructiveRole);
-        auto *cancelButton = box.addButton("Cancel", QMessageBox::RejectRole);
+            box.addButton(uiText("Confirm"), QMessageBox::DestructiveRole);
+        auto *cancelButton = box.addButton(uiText("Cancel"), QMessageBox::RejectRole);
         box.setDefaultButton(cancelButton);
         box.setEscapeButton(cancelButton);
         box.exec();
@@ -1958,7 +1959,7 @@ void SplitHeader::updateChannelText()
 
         this->titleLabel_->setShouldElide(true);
         this->titleLabel_->setElideSuffix(suffix);
-        this->titleLabel_->setText(mainText.isEmpty() ? "<empty>" : mainText);
+        this->titleLabel_->setText(mainText.isEmpty() ? uiText("<empty>") : mainText);
         this->tooltipText_ = formatMultiChannelTooltip(*mc);
         return;
     }
@@ -2122,7 +2123,7 @@ void SplitHeader::updateChannelText()
         title += " - filtered";
     }
 
-    this->titleLabel_->setText(title.isEmpty() ? "<empty>" : title);
+    this->titleLabel_->setText(title.isEmpty() ? uiText("<empty>") : title);
 }
 
 void SplitHeader::updateIcons()
@@ -2153,8 +2154,8 @@ void SplitHeader::updateIcons()
                                              : channel->getLocalizedName();
                 this->followButton_->setSource(followButtonSource(following));
                 this->followButton_->setToolTip(
-                    following ? QString("Unfollow %1").arg(displayName)
-                              : QString("Follow %1").arg(displayName));
+                    following ? uiText(QString("Unfollow %1")).arg(displayName)
+                              : uiText(QString("Follow %1")).arg(displayName));
                 this->followButton_->show();
             }
         }

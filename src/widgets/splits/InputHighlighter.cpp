@@ -15,12 +15,22 @@
 #include "providers/kick/KickChannel.hpp"
 #include "providers/kick/KickChatServer.hpp"
 #include "providers/seventv/SeventvEmotes.hpp"
+#include "providers/seventv/SeventvPersonalEmotes.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "singletons/Settings.hpp"
 
+#include <QFontMetricsF>
+#include <QPainter>
+#include <QTextBlock>
+#include <QTextBlockUserData>
 #include <QTextCharFormat>
+#include <QTextCursor>
 #include <QTextDocument>
+#include <QTextEdit>
+
+#include <cmath>
+#include <utility>
 
 namespace {
 
@@ -74,6 +84,71 @@ bool isEmote(TwitchChannel *twitch, KickChannel *kick, QStringView word)
 
     return false;
 }
+
+EmotePtr findEmote(TwitchChannel *twitch, KickChannel *kick, QStringView word)
+{
+    EmoteNameView name{word};
+    // your own 7TV personal emotes come first, as in sent messages
+    if (auto personal =
+            getApp()->getSeventvPersonalEmotes()->getEmoteForTwitchUser(
+                getApp()->getAccounts()->twitch.getCurrent()->getUserId(),
+                name))
+    {
+        return personal;
+    }
+    if (twitch)
+    {
+        for (auto emote : {twitch->seventvEmote(name), twitch->bttvEmote(name),
+                           twitch->ffzEmote(name)})
+        {
+            if (emote)
+            {
+                return *emote;
+            }
+        }
+        auto locals = twitch->localTwitchEmotes();
+        if (auto it = locals->find(name); it != locals->end())
+        {
+            return it->second;
+        }
+    }
+    if (kick)
+    {
+        if (auto emote = kick->seventvEmote(name))
+        {
+            return emote;
+        }
+        auto globals = getApp()->getKickChatServer()->globalEmotes();
+        if (auto it = globals->find(name); it != globals->end())
+        {
+            return it->second;
+        }
+    }
+    for (auto emote : {getApp()->getSeventvEmotes()->globalEmote(name),
+                       getApp()->getBttvEmotes()->emote(name),
+                       getApp()->getFfzEmotes()->emote(name),
+                       getApp()->getAccounts()->twitch.getCurrent()->twitchEmote(
+                           name)})
+    {
+        if (emote)
+        {
+            return *emote;
+        }
+    }
+    return nullptr;
+}
+
+struct ShownEmote {
+    int start;
+    EmotePtr emote;
+    QSizeF size;
+};
+
+class EmoteBlockData final : public QTextBlockUserData
+{
+public:
+    std::vector<ShownEmote> emotes;
+};
 
 bool isChatter(TwitchChannel *twitch, KickChannel *kick, const QString &word)
 {
@@ -191,9 +266,159 @@ QStringView InputHighlighter::getWordAt(QStringView text, qsizetype pos)
     return word;
 }
 
+void InputHighlighter::setSpellCheckEnabled(bool enabled)
+{
+    this->spellCheck_ = enabled;
+}
+
+void InputHighlighter::setEmotePreviewEnabled(bool enabled)
+{
+    this->emotePreview_ = enabled;
+}
+
+bool InputHighlighter::needsDocument() const
+{
+    return this->spellCheck_ || this->emotePreview_;
+}
+
+bool InputHighlighter::showsEmotes() const
+{
+    const auto *document = this->document();
+    if (!document || !this->emotePreview_)
+    {
+        return false;
+    }
+    for (auto block = document->begin(); block.isValid(); block = block.next())
+    {
+        if (dynamic_cast<EmoteBlockData *>(block.userData()))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool InputHighlighter::takePendingSizes()
+{
+    return std::exchange(this->pendingSizes_, false);
+}
+
+void InputHighlighter::highlightEmotes(const QString &text)
+{
+    auto *previous = dynamic_cast<EmoteBlockData *>(this->currentBlockUserData());
+    if (previous)
+    {
+        this->shownEmotes_ -= int(previous->emotes.size());
+    }
+
+    auto *twitch = this->channel.lock().get();
+    auto *kick = this->kickChannel.lock().get();
+    auto data = std::make_unique<EmoteBlockData>();
+    const QFontMetricsF metrics(this->document()->defaultFont());
+    const qreal height = std::round(metrics.height() * 1.4);
+
+    auto it = this->tokenRegex.globalMatch(text);
+    while (it.hasNext())
+    {
+        const auto match = it.next();
+        // The word still being typed stays text until a space or Tab follows.
+        if (match.capturedEnd() >= text.size())
+        {
+            continue;
+        }
+        auto emote = findEmote(twitch, kick, match.capturedView());
+        if (!emote)
+        {
+            continue;
+        }
+        const auto &image = emote->images.getImage1();
+        qreal width = height;
+        if (image->width() > 0 && image->height() > 0)
+        {
+            width = std::min(height * 4,
+                             height * image->width() / image->height());
+        }
+        else
+        {
+            this->pendingSizes_ = true;
+        }
+
+        // Keep the characters (copy, send, cursor) but make them invisible and
+        // exactly as wide as the emote drawn over them.
+        const auto length = int(match.capturedLength());
+        QTextCharFormat format;
+        format.setForeground(Qt::transparent);
+        format.setFontLetterSpacingType(QFont::AbsoluteSpacing);
+        format.setFontLetterSpacing(
+            (width - metrics.horizontalAdvance(match.captured())) / length);
+        this->setFormat(int(match.capturedStart()), length, format);
+        data->emotes.push_back(
+            {int(match.capturedStart()), emote, QSizeF(width, height)});
+    }
+
+    this->shownEmotes_ += int(data->emotes.size());
+    this->setCurrentBlockUserData(data->emotes.empty() ? nullptr
+                                                       : data.release());
+}
+
+void InputHighlighter::paintEmotes(QPainter &painter,
+                                   const QTextEdit &edit) const
+{
+    auto *document = this->document();
+    if (!document || !this->emotePreview_)
+    {
+        return;
+    }
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
+    const auto scale = float(std::max(1.0, edit.devicePixelRatioF() * 1.5));
+    for (auto block = document->begin(); block.isValid(); block = block.next())
+    {
+        const auto *data = dynamic_cast<EmoteBlockData *>(block.userData());
+        if (!data)
+        {
+            continue;
+        }
+        for (const auto &shown : data->emotes)
+        {
+            QTextCursor cursor(block);
+            cursor.setPosition(block.position() + shown.start);
+            const auto caret = edit.cursorRect(cursor);
+            const QRectF target(caret.left() + 1,
+                                caret.center().y() - shown.size.height() / 2,
+                                shown.size.width(), shown.size.height());
+            const auto &image = shown.emote->images.getImageOrLoaded(scale);
+            if (auto pixmap = image->pixmapOrLoad())
+            {
+                // keep the emote's own proportions inside the reserved box
+                auto box = QSizeF(pixmap->size()).scaled(target.size(),
+                                                         Qt::KeepAspectRatio);
+                painter.drawPixmap(
+                    QRectF(target.left() + (target.width() - box.width()) / 2,
+                           target.top() + (target.height() - box.height()) / 2,
+                           box.width(), box.height()),
+                    *pixmap, QRectF(pixmap->rect()));
+            }
+        }
+    }
+}
+
 void InputHighlighter::highlightBlock(const QString &text)
 {
-    if (!this->spellChecker.isLoaded())
+    if (this->emotePreview_)
+    {
+        this->highlightEmotes(text);
+    }
+    else if (this->currentBlockUserData())
+    {
+        this->shownEmotes_ -= int(
+            dynamic_cast<EmoteBlockData *>(this->currentBlockUserData())
+                ? dynamic_cast<EmoteBlockData *>(this->currentBlockUserData())
+                      ->emotes.size()
+                : 0);
+        this->setCurrentBlockUserData(nullptr);
+    }
+
+    if (!this->spellCheck_ || !this->spellChecker.isLoaded())
     {
         return;
     }
@@ -249,3 +474,4 @@ void InputHighlighter::visitWords(
 }
 
 }  // namespace chatterino
+

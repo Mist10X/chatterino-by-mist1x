@@ -5,6 +5,7 @@
 #include "common/Modes.hpp"
 
 #include "common/Args.hpp"
+#include "common/Isolation.hpp"
 #include "util/CombinePath.hpp"
 
 #include <QCoreApplication>
@@ -13,10 +14,10 @@ namespace chatterino {
 
 Modes::Modes(const Args &args)
 {
-    if (args.portableEnable)
-    {
-        this->isPortable = true;
-    }
+    // Portable no matter what: losing the `modes` file must never move the
+    // profile to %APPDATA%\Chatterino2 (see common/Isolation.hpp).
+    this->isPortable = isolation::FORCE_PORTABLE;
+    (void)args.portableEnable;
 
     QFile file(combinePath(QCoreApplication::applicationDirPath(), "modes"));
     if (!file.open(QIODevice::ReadOnly))

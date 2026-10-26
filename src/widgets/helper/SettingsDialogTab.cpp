@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 #include "widgets/helper/SettingsDialogTab.hpp"
+#include "common/UiLanguage.hpp"
 
 #include "widgets/dialogs/SettingsDialog.hpp"
 #include "widgets/settingspages/SettingsPage.hpp"
@@ -20,9 +21,9 @@ SettingsDialogTab::SettingsDialogTab(SettingsDialog *_dialog,
     , dialog_(_dialog)
     , lazyPage_(std::move(_lazyPage))
     , id_(id)
-    , name_(name)
+    , name_(uiText(name))
 {
-    this->ui_.labelText = name;
+    this->ui_.labelText = uiText(name);
     this->ui_.icon.addFile(imageFileName);
 
     this->setCursor(QCursor(Qt::PointingHandCursor));

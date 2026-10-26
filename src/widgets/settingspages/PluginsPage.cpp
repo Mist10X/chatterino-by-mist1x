@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 #ifdef CHATTERINO_HAVE_PLUGINS
+#include "common/UiLanguage.hpp"
 #    include "widgets/settingspages/PluginsPage.hpp"
 
 #    include "Application.hpp"
@@ -43,16 +44,16 @@ PluginsPage::PluginsPage()
     auto layout = widget.setLayoutType<QVBoxLayout>();
 
     {
-        auto group = layout.emplace<QGroupBox>("General plugin settings");
+        auto group = layout.emplace<QGroupBox>(uiText("General plugin settings"));
         this->generalGroup = group.getElement();
         auto groupLayout = group.setLayoutType<QFormLayout>();
         auto *scaryLabel = new QLabel(
-            "Plugins can expand functionality of "
+            uiText("Plugins can expand functionality of "
             "Chatterino. They can be made in Lua. This functionality is "
             "still in public alpha stage. Use ONLY the plugins you trust. "
             "The permission system is best effort, always "
             "assume plugins can bypass permissions and can execute "
-            "arbitrary code. To see how to create plugins " +
+            "arbitrary code. To see how to create plugins ") +
             formatRichNamedLink("https://github.com/Chatterino/chatterino2/"
                                 "blob/master/docs/wip-plugins.md",
                                 "look at the manual") +
@@ -62,17 +63,17 @@ PluginsPage::PluginsPage()
         groupLayout->addRow(scaryLabel);
 
         auto *description =
-            new QLabel("You can load plugins by putting them into " +
+            new QLabel(uiText("You can load plugins by putting them into ") +
                        formatRichNamedLink(
                            "file:///" + getApp()->getPaths().pluginsDirectory,
                            "the Plugins directory") +
-                       ". Each one is a new directory.");
+                       uiText(". Each one is a new directory."));
         description->setOpenExternalLinks(true);
         description->setWordWrap(true);
         description->setStyleSheet("color: #bbb");
         groupLayout->addRow(description);
 
-        auto *box = this->createCheckBox("Enable plugins",
+        auto *box = this->createCheckBox(uiText("Enable plugins"),
                                          getSettings()->pluginsEnabled);
         QObject::connect(box, &QCheckBox::released, [this]() {
             this->rebuildContent();
@@ -82,9 +83,9 @@ PluginsPage::PluginsPage()
         {
             box->setEnabled(false);
             auto *disabledLabel = new QLabel(this);
-            disabledLabel->setText("Plugins will not be fully loaded because "
+            disabledLabel->setText(uiText("Plugins will not be fully loaded because "
                                    "Chatterino is in safe mode. You can still "
-                                   "enable and disable them.");
+                                   "enable and disable them."));
             groupLayout->addRow(disabledLabel);
         }
 
@@ -154,8 +155,8 @@ void PluginsPage::rebuildContent()
             }
             errors += "</ul>";
 
-            auto *warningLabel = new QLabel("There were errors while loading "
-                                            "metadata for this plugin:" +
+            auto *warningLabel = new QLabel(uiText("There were errors while loading "
+                                            "metadata for this plugin:") +
                                                 errors,
                                             this->dataFrame_);
             warningLabel->setTextFormat(Qt::RichText);
@@ -198,7 +199,7 @@ void PluginsPage::rebuildContent()
             if (!validPlugin->error().isNull())
             {
                 auto *errorLabel = new QLabel(
-                    "There was an error while loading this plugin: " +
+                    uiText("There was an error while loading this plugin: ") +
                         validPlugin->error(),
                     this->dataFrame_);
                 errorLabel->setStyleSheet("color: #f00");
@@ -230,7 +231,7 @@ void PluginsPage::rebuildContent()
             perms += "</ul>";
 
             auto *lbl =
-                new QLabel("Required permissions:" + perms, this->dataFrame_);
+                new QLabel(uiText("Required permissions:") + perms, this->dataFrame_);
             lbl->setTextFormat(Qt::RichText);
             pluginEntry->addRow(lbl);
         }
@@ -265,7 +266,7 @@ void PluginsPage::rebuildContent()
             toggleButton->setEnabled(false);
         }
 
-        auto *reloadButton = new QPushButton("Reload", this->dataFrame_);
+        auto *reloadButton = new QPushButton(uiText("Reload"), this->dataFrame_);
         QObject::connect(reloadButton, &QPushButton::pressed, [name = id]() {
             getApp()->getPlugins()->reload(name);
         });
@@ -277,7 +278,7 @@ void PluginsPage::rebuildContent()
 
         if (getSettings()->pluginRepl.enabled)
         {
-            auto *replButton = new QPushButton("Open REPL", this->dataFrame_);
+            auto *replButton = new QPushButton(uiText("Open REPL"), this->dataFrame_);
             QObject::connect(replButton, &QPushButton::clicked, [id]() {
                 auto *repl = new PluginRepl(id);
                 repl->show();

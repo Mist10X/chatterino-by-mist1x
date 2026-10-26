@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "widgets/settingspages/UiComboBox.hpp"
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QLabel>
@@ -37,7 +39,7 @@ namespace chatterino {
 
 SETTINGS_PAGE_WIDGET_BOILERPLATE(SCheckBox, QCheckBox)
 SETTINGS_PAGE_WIDGET_BOILERPLATE(SLabel, QLabel)
-SETTINGS_PAGE_WIDGET_BOILERPLATE(SComboBox, QComboBox)
+SETTINGS_PAGE_WIDGET_BOILERPLATE(SComboBox, UiComboBox)
 SETTINGS_PAGE_WIDGET_BOILERPLATE(SPushButton, QPushButton)
 
 }  // namespace chatterino

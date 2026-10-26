@@ -4,7 +4,9 @@
 
 #include "BrowserExtension.hpp"
 #include "common/Args.hpp"
+#include "common/Credentials.hpp"
 #include "common/Env.hpp"
+#include "common/Isolation.hpp"
 #include "common/Modes.hpp"
 #include "common/QLogging.hpp"
 #include "common/Version.hpp"
@@ -14,6 +16,7 @@
 #include "RunGui.hpp"
 #include "singletons/CrashHandler.hpp"
 #include "singletons/FileLogger.hpp"
+#include "singletons/NativeMessaging.hpp"
 #include "singletons/Paths.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/Updates.hpp"
@@ -28,8 +31,13 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QFile>
+#include <QDir>
 #include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QMessageBox>
+#include <QSaveFile>
 #include <QSslSocket>
 #include <QStringList>
 #include <Qt>
@@ -83,56 +91,87 @@ bool jsonPointerBoolIsTrue(const QString &filePath, const char *jsonPointerPath)
     return v != nullptr && v->IsBool() && v->GetBool();
 }
 
-// Find possible `settings.json` locations before QApplication is created
+// Find possible `settings.json` locations before QApplication is created.
+// Only this copy's own profile: never another client's settings.json.
 QStringList legacyScalingSettingsJsonCandidates(int argc, char **argv)
 {
-    QStringList candidates;
     const QFileInfo fi(QString::fromLocal8Bit(argc > 0 ? argv[0] : ""));
     const QString appDir = fi.absoluteDir().absolutePath();
-    if (QFile::exists(combinePath(appDir, QStringLiteral("portable"))))
+    return {combinePath(appDir, QStringLiteral("Settings/settings.json"))};
+}
+
+/// --isolation-report: writes where this profile keeps its files and which
+/// shared Windows integrations are off, then exits without a window and
+/// without saving. Used by the isolation regression tests.
+int writeIsolationReport(const QString &file, const chatterino::Modes &modes,
+                         const chatterino::Args &args,
+                         const chatterino::Paths *paths, const QString &error)
+{
+    using namespace chatterino;
+
+    QJsonObject report{
+        {"ok", paths != nullptr},
+        {"applicationName", QCoreApplication::applicationName()},
+        {"organizationName", QCoreApplication::organizationName()},
+        {"organizationDomain", QCoreApplication::organizationDomain()},
+        {"portable", modes.isPortable},
+        {"nmQueue", isolation::NM_QUEUE_NAME},
+        {"autostartValue", isolation::AUTOSTART_VALUE_NAME},
+#ifdef CHATTERINO_DISABLE_UPDATER
+        {"legacyUpdater", false},
+#else
+        {"legacyUpdater", true},
+#endif
+    };
+    if (!error.isEmpty())
     {
-        candidates << combinePath(appDir,
-                                  QStringLiteral("Settings/settings.json"));
-        return candidates;
+        report["error"] = error;
     }
 
-#if defined(Q_OS_WIN)
-    QString base = QString::fromLocal8Bit(qgetenv("APPDATA"));
-    if (!base.isEmpty())
+    std::unique_ptr<Settings> settings;
+    if (paths != nullptr)
     {
-        base.replace(QStringLiteral("chatterino"), QStringLiteral("Chatterino"),
-                     Qt::CaseInsensitive);
-        base += QStringLiteral("2");
-        candidates << combinePath(base,
-                                  QStringLiteral("Settings/settings.json"));
-    }
-#elif defined(Q_OS_MACOS)
-    const QString home = QString::fromLocal8Bit(qgetenv("HOME"));
-    if (!home.isEmpty())
-    {
-        candidates << combinePath(
-            combinePath(
-                home, QStringLiteral("Library/Application Support/chatterino")),
-            QStringLiteral("Settings/settings.json"));
-    }
-#else
-    const QString home = QString::fromLocal8Bit(qgetenv("HOME"));
-    if (!home.isEmpty())
-    {
-        QString xdgData = QString::fromLocal8Bit(qgetenv("XDG_DATA_HOME"));
-        if (xdgData.isEmpty())
+        settings =
+            std::make_unique<Settings>(modes, args, paths->settingsDirectory);
+        report["root"] = paths->rootAppDataDirectory;
+        report["settings"] = paths->settingsDirectory;
+        report["cache"] = paths->cacheDirectory();
+        report["configuredCache"] = QStringSetting("/cache/path").getValue();
+        report["logs"] = paths->messageLogsIn(settings->logPath.getValue());
+        report["misc"] = paths->miscDirectory;
+        report["plugins"] = paths->pluginsDirectory;
+        report["ipc"] = paths->ipcDirectory;
+        report["crashes"] = paths->crashdumpDirectory;
+        report["themes"] = paths->themesDirectory;
+        report["dictionaries"] = paths->dictionariesDirectory;
+        report["avatars"] = paths->twitchProfileAvatars;
+        report["activationServer"] = guiActivationServerName(*paths);
+        report["systemKeyring"] = Credentials::usesSystemKeyring();
+        // The real code path: it must refuse and write nothing.
+        report["nmRegistered"] = registerNmHost(*paths);
+
+        QJsonArray plugins;
+        for (const auto &info :
+             QDir(paths->pluginsDirectory)
+                 .entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot))
         {
-            xdgData = combinePath(home, QStringLiteral(".local/share"));
+            plugins.append(QJsonObject{
+                {"name", info.fileName()},
+                {"link", info.isSymLink() || info.isJunction()},
+                {"target", info.isJunction() ? info.junctionTarget()
+                                             : info.canonicalFilePath()},
+            });
         }
-        candidates << combinePath(
-            combinePath(xdgData, QStringLiteral("chatterino")),
-            QStringLiteral("Settings/settings.json"));
-        candidates << combinePath(
-            combinePath(xdgData, QStringLiteral("chatterino.com")),
-            QStringLiteral("chatterino/Settings/settings.json"));
+        report["pluginFolders"] = plugins;
     }
-#endif
-    return candidates;
+
+    QSaveFile out(file);
+    if (!out.open(QIODevice::WriteOnly) ||
+        out.write(QJsonDocument(report).toJson()) < 0 || !out.commit())
+    {
+        return 3;
+    }
+    return paths != nullptr ? 0 : 2;
 }
 
 bool settingsFileRequestsLegacyScaling(int argc, char **argv)
@@ -159,11 +198,13 @@ int main(int argc, char **argv)
 
     QApplication a(argc, argv);
 
-    // Keep "chatterino" so config/data stay under the existing chatterino paths
-    // (Flatpak also mounts xdg-data/chatterino).
-    QCoreApplication::setApplicationName("chatterino");
+    // Own names, so nothing Qt derives from them (QSettings, standard paths)
+    // can land in another Chatterino client's place.
+    QCoreApplication::setApplicationName(isolation::APPLICATION_NAME);
+    QGuiApplication::setApplicationDisplayName(QStringLiteral("Chatterino by Mist1X"));
     QCoreApplication::setApplicationVersion(CHATTERINO_VERSION);
-    QCoreApplication::setOrganizationDomain("chatterino.com");
+    QCoreApplication::setOrganizationName(isolation::ORGANIZATION_NAME);
+    QCoreApplication::setOrganizationDomain(isolation::ORGANIZATION_DOMAIN);
     // Must match the installed .desktop / Flatpak app-id so the shell
     // associates this window with Leafyrino's icon (not Chatterino's).
     QGuiApplication::setDesktopFileName("com.leafyzito.leafyrino");
@@ -185,24 +226,25 @@ int main(int argc, char **argv)
     }
     catch (std::runtime_error &error)
     {
+        if (args.isolationReport)
+        {
+            return writeIsolationReport(*args.isolationReport, modes, args,
+                                        nullptr,
+                                        QString::fromUtf8(error.what()));
+        }
+
+        auto errorMessage =
+            QString::fromUtf8(error.what()) +
+            QStringLiteral(
+                "\n\nChatterino by Mist1X keeps its profile only next to Leafyrino.exe "
+                "(or in --portable-dir) and never falls back to another "
+                "location, so it did not start. Move it to a folder you can "
+                "write to.");
+        std::cerr << errorMessage.toLocal8Bit().constData() << '\n';
+        std::cerr.flush();
         QMessageBox box;
-        if (modes.isPortable)
-        {
-            auto errorMessage =
-                error.what() +
-                QStringLiteral(
-                    "\n\nInfo: Portable mode requires the application to "
-                    "be in a writeable location. If you don't want "
-                    "portable mode reinstall the application. "
-                    "https://chatterino.com.");
-            std::cerr << errorMessage.toLocal8Bit().constData() << '\n';
-            std::cerr.flush();
-            box.setText(errorMessage);
-        }
-        else
-        {
-            box.setText(error.what());
-        }
+        box.setIcon(QMessageBox::Critical);
+        box.setText(errorMessage);
         box.exec();
         return 1;
     }
@@ -211,6 +253,12 @@ int main(int argc, char **argv)
 #ifdef CHATTERINO_WITH_CRASHPAD
     const auto crashpadHandler = installCrashHandler(args, *paths);
 #endif
+
+    if (args.isolationReport)
+    {
+        return writeIsolationReport(*args.isolationReport, modes, args,
+                                    paths.get(), {});
+    }
 
     if (args.shouldRunBrowserExtensionHost)
     {

@@ -117,6 +117,8 @@ struct GqlUsercardMessage {
     QString cursor;
     QString deletedBy;
     bool isDeleted = false;
+    /// Twitch's "first message in this channel" (known from archived history).
+    bool isFirstMessage = false;
 };
 
 struct GqlUsercardMessagePage {
@@ -322,6 +324,12 @@ void getChatRoomBanStatuses(
     const QString &oauthToken,
     std::function<void(QHash<QString, bool>)> successCallback,
     std::function<void(const QString &)> failureCallback);
+/// Whether `userId` (the account the token belongs to) is permanently banned
+/// in `channelId`. A timeout is not a ban here: Twitch still shows the chat.
+void getOwnChatBan(const QString &channelId, const QString &userId,
+                   const QString &oauthToken,
+                   std::function<void(bool banned)> successCallback,
+                   std::function<void(const QString &)> failureCallback);
 void followUser(const QString &targetId, const QString &oauthToken,
                 std::function<void()> successCallback,
                 std::function<void(const QString &)> failureCallback);
@@ -449,8 +457,9 @@ void voteInPoll(const QString &pollId, const QString &choiceId,
                 std::optional<int> pointsPerVote, const QString &oauthToken,
                 std::function<void()> successCallback,
                 std::function<void(const QString &)> failureCallback);
+/// The balance and the channel's points icon URL (empty: Twitch's default).
 void getChannelPoints(const QString &channelLogin, const QString &oauthToken,
-                      std::function<void(qint64)> successCallback,
+                      std::function<void(qint64, QString)> successCallback,
                       std::function<void(const QString &)> failureCallback);
 #if MOLTORINO_ENABLE_CHANNEL_POINT_REWARDS
 void getChannelPointRewards(
@@ -559,7 +568,8 @@ void getChannelViewerEarnedBadges(
     const QString &userLogin, const QString &channelLogin,
     const QString &oauthToken,
     std::function<void(QVector<GqlBadge>)> successCallback,
-    std::function<void(const QString &)> failureCallback);
+    std::function<void(const QString &)> failureCallback,
+    const QString &expectedUserId = {});
 void selectGlobalBadge(const QString &badgeSetID,
                        const QString &badgeSetVersion,
                        const QString &oauthToken,

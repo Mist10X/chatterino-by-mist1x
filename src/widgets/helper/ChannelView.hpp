@@ -250,7 +250,8 @@ public:
      * @param alternativePopoutChannel Optional parameter containing the channel name to use for context
      **/
     void showUserInfoPopup(const QString &userName, MessagePlatform platform,
-                           const QString &alternativePopoutChannel = {});
+                           const QString &alternativePopoutChannel = {},
+                           const QString &expectedUserId = {});
 
     /**
      * @brief This method is meant to be used when filtering out channels.
@@ -514,6 +515,7 @@ private:
     const Context context_;
 
     LimitedQueue<MessageLayoutPtr> messages_;
+    size_t defaultMessageLimit_;
 
     pajlada::Signals::SignalHolder signalHolder_;
 
@@ -539,6 +541,14 @@ private:
 
     /// Slot for the LinkInfo::stateChanged signal.
     void pendingLinkInfoStateChanged();
+
+    /// Link under the cursor waiting for its preview delay, and where the
+    /// preview goes once it fires.
+    QPointer<LinkInfo> hoveredLinkInfo_;
+    QPoint hoveredLinkPos_;
+    QTimer linkHoverTimer_;
+    void showHoveredLinkPreview();
+    void forgetHoveredLink();
 };
 
 }  // namespace chatterino

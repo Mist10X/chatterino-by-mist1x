@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "EditUserNotesDialog.hpp"
 
 #include "singletons/Theme.hpp"
@@ -71,7 +72,7 @@ EditUserNotesDialog::EditUserNotesDialog(QWidget *parent)
         this->textEdit_->setTextCursor(cursor);
         this->textEdit_->setFocus();
     });
-    headingButton->setToolTip("Insert a heading");
+    headingButton->setToolTip(uiText("Insert a heading"));
 
     auto *boldButton = headerLayout
                            .emplace<SvgButton>(SvgButton::Src{
@@ -126,7 +127,7 @@ EditUserNotesDialog::EditUserNotesDialog(QWidget *parent)
         this->textEdit_->setTextCursor(cursor);
         this->textEdit_->setFocus();
     });
-    boldButton->setToolTip("Make selected text bold");
+    boldButton->setToolTip(uiText("Make selected text bold"));
 
     auto *italicButton = headerLayout
                              .emplace<SvgButton>(SvgButton::Src{
@@ -181,7 +182,7 @@ EditUserNotesDialog::EditUserNotesDialog(QWidget *parent)
         this->textEdit_->setTextCursor(cursor);
         this->textEdit_->setFocus();
     });
-    italicButton->setToolTip("Make selected text italic");
+    italicButton->setToolTip(uiText("Make selected text italic"));
 
     auto *quoteButton = headerLayout
                             .emplace<SvgButton>(SvgButton::Src{
@@ -203,7 +204,7 @@ EditUserNotesDialog::EditUserNotesDialog(QWidget *parent)
         this->textEdit_->setTextCursor(cursor);
         this->textEdit_->setFocus();
     });
-    quoteButton->setToolTip("Insert a blockquote");
+    quoteButton->setToolTip(uiText("Insert a blockquote"));
 
     auto *linkButton = headerLayout
                            .emplace<SvgButton>(SvgButton::Src{
@@ -244,7 +245,7 @@ EditUserNotesDialog::EditUserNotesDialog(QWidget *parent)
         this->textEdit_->setTextCursor(cursor);
         this->textEdit_->setFocus();
     });
-    linkButton->setToolTip("Insert a hyperlink");
+    linkButton->setToolTip(uiText("Insert a hyperlink"));
 
     auto *listButton = headerLayout
                            .emplace<SvgButton>(SvgButton::Src{
@@ -274,11 +275,11 @@ EditUserNotesDialog::EditUserNotesDialog(QWidget *parent)
         this->textEdit_->setTextCursor(cursor);
         this->textEdit_->setFocus();
     });
-    listButton->setToolTip("Insert a bullet list item");
+    listButton->setToolTip(uiText("Insert a bullet list item"));
 
     headerLayout->addSpacing(175);
 
-    headerLayout.emplace<QCheckBox>("Show Markdown Preview")
+    headerLayout.emplace<QCheckBox>(uiText("Show Markdown Preview"))
         .assign(&this->previewCheckBox_);
 
     auto splitter =
@@ -342,7 +343,7 @@ void EditUserNotesDialog::setNotes(const QString &notes)
 
 void EditUserNotesDialog::updateWindowTitle(const QString &displayUsername)
 {
-    this->setWindowTitle("Editing notes for " + displayUsername);
+    this->setWindowTitle(uiText("Editing notes for ") + displayUsername);
 }
 
 void EditUserNotesDialog::showEvent(QShowEvent *event)
@@ -387,7 +388,7 @@ void EditUserNotesDialog::updatePreview()
     if (text.isEmpty())
     {
         this->previewLabel_->setText(
-            "*Preview will appear here when you type markdown text...*");
+            uiText("*Preview will appear here when you type markdown text...*"));
     }
     else
     {

@@ -496,6 +496,52 @@ bool readInteger(const rapidjson::Value &obj, const char *key, qint64 &out)
     return readInteger(obj[key], out);
 }
 
+/// The channel's own points icon from a ChannelPointsContext answer; empty
+/// when the channel uses Twitch's default one.
+QString pointsIconUrl(const rapidjson::Value *data)
+{
+    if (data == nullptr || !data->IsObject())
+    {
+        return {};
+    }
+
+    const rapidjson::Value *channel = nullptr;
+    if (data->HasMember("channel") && (*data)["channel"].IsObject())
+    {
+        channel = &(*data)["channel"];
+    }
+    else if (data->HasMember("community") &&
+             (*data)["community"].IsObject() &&
+             (*data)["community"].HasMember("channel") &&
+             (*data)["community"]["channel"].IsObject())
+    {
+        channel = &(*data)["community"]["channel"];
+    }
+    if (channel == nullptr || !channel->HasMember("communityPointsSettings"))
+    {
+        return {};
+    }
+
+    const auto &settings = (*channel)["communityPointsSettings"];
+    if (!settings.IsObject() || !settings.HasMember("image") ||
+        !settings["image"].IsObject())
+    {
+        return {};
+    }
+
+    const auto &image = settings["image"];
+    for (const char *key : {"url2x", "url4x", "url"})
+    {
+        if (image.HasMember(key) && image[key].IsString() &&
+            image[key].GetStringLength() > 0)
+        {
+            return QString::fromUtf8(image[key].GetString(),
+                                     image[key].GetStringLength());
+        }
+    }
+    return {};
+}
+
 qint64 jsonIntegerValue(const QJsonValue &value, qint64 fallback = -1)
 {
     if (value.isDouble())
@@ -4382,7 +4428,7 @@ void TwitchGql::voteInPoll(const QString &pollId, const QString &choiceId,
 
 void TwitchGql::getChannelPoints(
     const QString &channelLogin, const QString &oauthToken,
-    std::function<void(qint64)> successCallback,
+    std::function<void(qint64, QString)> successCallback,
     std::function<void(const QString &)> failureCallback)
 {
     QJsonObject variables;
@@ -4394,6 +4440,13 @@ void TwitchGql::getChannelPoints(
                 self {
                     communityPoints {
                         balance
+                    }
+                }
+                communityPointsSettings {
+                    image {
+                        url
+                        url2x
+                        url4x
                     }
                 }
             }
@@ -4436,7 +4489,7 @@ void TwitchGql::getChannelPoints(
                             qint64 points = 0;
                             if (readInteger(cp, "balance", points))
                             {
-                                successCallback(points);
+                                successCallback(points, pointsIconUrl(dataVal));
                                 return;
                             }
                         }
@@ -4454,7 +4507,7 @@ void TwitchGql::getChannelPoints(
                     qint64 points = 0;
                     if (readInteger(cp, "balance", points))
                     {
-                        successCallback(points);
+                        successCallback(points, pointsIconUrl(dataVal));
                         return;
                     }
                 }
@@ -4473,7 +4526,7 @@ void TwitchGql::getChannelPoints(
                         qint64 points = 0;
                         if (readInteger(cp, "balance", points))
                         {
-                            successCallback(points);
+                            successCallback(points, pointsIconUrl(dataVal));
                             return;
                         }
                     }
@@ -6033,10 +6086,12 @@ void TwitchGql::getChannelViewerEarnedBadges(
     const QString &userLogin, const QString &channelLogin,
     const QString &oauthToken,
     std::function<void(QVector<GqlBadge>)> successCallback,
-    std::function<void(const QString &)> failureCallback)
+    std::function<void(const QString &)> failureCallback,
+    const QString &expectedUserId)
 {
     static constexpr char QUERY[] = R"(
         query ChannelViewerEarnedBadges($userLogin: String!, $channelLogin: String!) {
+            badgeUser: user(login: $userLogin) { id }
             channelViewer(userLogin: $userLogin, channelLogin: $channelLogin) {
                 earnedBadges {
                     id
@@ -6058,7 +6113,7 @@ void TwitchGql::getChannelViewerEarnedBadges(
 
     makeGqlRequest(QUERY, variables, oauthToken)
         .onSuccess(
-            [successCallback, failureCallback](const NetworkResult &result) {
+            [successCallback, failureCallback, expectedUserId](const NetworkResult &result) {
                 const auto root = result.parseJsonValue();
                 if (root.isUndefined() || root.isNull())
                 {
@@ -6073,16 +6128,28 @@ void TwitchGql::getChannelViewerEarnedBadges(
                     return;
                 }
 
+                if (!expectedUserId.isEmpty() &&
+                    payloadDataObject(root).value("badgeUser").toObject()
+                            .value("id").toString() != expectedUserId)
+                {
+                    failureCallback("Twitch badge identity no longer matches this card");
+                    return;
+                }
+
                 const auto channelViewer =
                     payloadDataObject(root).value("channelViewer");
                 if (channelViewer.isNull() || !channelViewer.isObject())
                 {
-                    successCallback({});
+                    failureCallback("Twitch badge collection is unavailable");
                     return;
                 }
-
-                successCallback(badgesFromArray(
-                    channelViewer.toObject().value("earnedBadges").toArray()));
+                const auto earned = channelViewer.toObject().value("earnedBadges");
+                if (!earned.isArray())
+                {
+                    failureCallback("Twitch returned an invalid badge collection");
+                    return;
+                }
+                successCallback(badgesFromArray(earned.toArray()));
             })
         .onError([failureCallback](const NetworkResult &result) {
             failureCallback("Network Error: " + result.formatError());
@@ -7781,6 +7848,41 @@ mutation MoltorinoUnbanUserFromChatRoom($input: UnbanUserFromChatRoomInput!) {
                 return;
             }
             successCallback();
+        })
+        .onError([failureCallback](const NetworkResult &result) {
+            failureCallback("Network Error: " + result.formatError());
+        })
+        .execute();
+}
+
+void TwitchGql::getOwnChatBan(
+    const QString &channelId, const QString &userId, const QString &oauthToken,
+    std::function<void(bool banned)> successCallback,
+    std::function<void(const QString &)> failureCallback)
+{
+    static const char *query =
+        "query MoltorinoOwnBanStatus($channelID: ID!, $userID: ID!) { "
+        "chatRoomBanStatus(channelID: $channelID, userID: $userID) "
+        "{ createdAt expiresAt } }";
+    QJsonObject variables{{"channelID", channelId.trimmed()},
+                          {"userID", userId.trimmed()}};
+    makeInlineGqlRequest(query, variables, oauthToken)
+        .onSuccess([successCallback,
+                    failureCallback](const NetworkResult &result) {
+            const auto root = result.parseJsonValue();
+            const auto data = payloadDataObject(root);
+            const auto gqlError = extractFirstGqlErrorMessage(root);
+            if (!gqlError.isEmpty() || !data.contains("chatRoomBanStatus"))
+            {
+                failureCallback(gqlError.isEmpty()
+                                    ? QStringLiteral("No ban status")
+                                    : "Twitch API Error: " + gqlError);
+                return;
+            }
+            const auto status = data.value("chatRoomBanStatus").toObject();
+            // No status: not banned. An expiry: a timeout, not a ban.
+            successCallback(!status.value("createdAt").toString().isEmpty() &&
+                            status.value("expiresAt").toString().isEmpty());
         })
         .onError([failureCallback](const NetworkResult &result) {
             failureCallback("Network Error: " + result.formatError());

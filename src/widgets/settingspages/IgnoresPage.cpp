@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/settingspages/IgnoresPage.hpp"
 
 #include "Application.hpp"
@@ -38,15 +39,15 @@ IgnoresPage::IgnoresPage()
     auto layout = layoutCreator.setLayoutType<QVBoxLayout>();
     auto tabs = layout.emplace<QTabWidget>();
 
-    addPhrasesTab(tabs.appendTab(new QVBoxLayout, "Messages"));
-    addUsersTab(*this, tabs.appendTab(new QVBoxLayout, "Users"),
+    addPhrasesTab(tabs.appendTab(new QVBoxLayout, uiText("Messages")));
+    addUsersTab(*this, tabs.appendTab(new QVBoxLayout, uiText("Users")),
                 this->userListModel_);
     this->onShow();
 }
 
 void addPhrasesTab(LayoutCreator<QVBoxLayout> layout)
 {
-    layout.emplace<QLabel>("Ignore messages based certain patterns.");
+    layout.emplace<QLabel>(uiText("Ignore messages based certain patterns."));
     EditableModelView *view =
         layout
             .emplace<EditableModelView>(
@@ -54,7 +55,7 @@ void addPhrasesTab(LayoutCreator<QVBoxLayout> layout)
                     ->initialized(&getSettings()->ignoredMessages))
             .getElement();
     view->setTitles(
-        {"Pattern", "Regex", "Case-sensitive", "Block", "Replacement"});
+        {uiText("Pattern"), uiText("Regex"), uiText("Case-sensitive"), uiText("Block"), uiText("Replacement")});
     view->getTableView()->horizontalHeader()->setSectionResizeMode(
         QHeaderView::Fixed);
     view->getTableView()->horizontalHeader()->setSectionResizeMode(
@@ -81,18 +82,18 @@ void addUsersTab(IgnoresPage &page, LayoutCreator<QVBoxLayout> users,
                  QStringListModel &userModel)
 {
     auto label = users.emplace<QLabel>(
-        u"/block <user> in chat blocks a user.\n/unblock <user> in chat unblocks a user.\nYou can also click on a user to open the usercard."_s);
+        uiText(u"/block <user> in chat blocks a user.\n/unblock <user> in chat unblocks a user.\nYou can also click on a user to open the usercard."_s));
     label->setWordWrap(true);
-    users.append(page.createCheckBox("Enable Twitch blocked users",
+    users.append(page.createCheckBox(uiText("Enable Twitch blocked users"),
                                      getSettings()->enableTwitchBlockedUsers));
 
     auto anyways = users.emplace<QHBoxLayout>().withoutMargin();
     {
-        anyways.emplace<QLabel>("Show messages from blocked users:");
+        anyways.emplace<QLabel>(uiText("Show messages from blocked users:"));
 
         auto *combo = anyways.emplace<QComboBox>().getElement();
-        combo->addItems({"Never", "If you are Moderator",
-                         "If you are Broadcaster", "Placeholder (no content)"});
+        combo->addItems({uiText("Never"), uiText("If you are Moderator"),
+                         uiText("If you are Broadcaster"), uiText("Placeholder (no content)")});
 
         auto &setting = getSettings()->showBlockedUsersMessages;
 
@@ -112,7 +113,7 @@ void addUsersTab(IgnoresPage &page, LayoutCreator<QVBoxLayout> users,
         anyways->addStretch(1);
     }
 
-    users.emplace<QLabel>("List of blocked users:");
+    users.emplace<QLabel>(uiText("List of blocked users:"));
     users.emplace<QListView>()->setModel(&userModel);
 }
 

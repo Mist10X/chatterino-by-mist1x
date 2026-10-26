@@ -34,6 +34,7 @@ class QMimeData;
 namespace chatterino {
 
 class Split;
+class ChannelPointsLabel;
 class EmotePopup;
 class InputCompletionPopup;
 class InputHighlighter;
@@ -154,6 +155,16 @@ protected:
     void applyNukePreview();
     void bindRaidStatusChannel();
     void updateRaidStatus();
+    void bindOwnRestrictionChannel();
+    void updateOwnRestriction();
+    /// Placeholder and read-only state while the own user is restricted;
+    /// false when nothing is restricted (Split then sets its usual text).
+    bool applyOwnRestrictionPlaceholder();
+    /// The input background, tinted red / green while restricted.
+    QColor inputBackground() const;
+    /// After a message was sent: back to normal once lifted, or check
+    /// whether a restriction is still real.
+    void noteOwnRestrictionSend(const QString &message);
     bool trySendMessageAsWarning(const QString &message,
                                  const ChannelPtr &channel);
     bool maybeSendMessageAsWarning(const QString &message,
@@ -255,7 +266,7 @@ protected:
         LabelButton *sendButton;
         QLabel *sendWaitStatus;
         QHBoxLayout *buttonsRow;
-        QLabel *channelPointsLabel;
+        ChannelPointsLabel *channelPointsLabel;
         SvgButton *predictionButton;
         SvgButton *pollButton;
         SvgButton *badgeButton;
@@ -315,6 +326,14 @@ protected:
     QTimer raidStatusTimer_;
     QPropertyAnimation raidStatusProgressAnimation_;
     pajlada::Signals::ScopedConnection raidStatusConnection_;
+    QTimer ownRestrictionTimer_;
+    pajlada::Signals::ScopedConnection ownRestrictionConnection_;
+    /// What was typed when the restriction started; given back afterwards.
+    QString ownRestrictionDraft_;
+    bool ownRestrictionBlocked_ = false;
+    /// 0 normal, 1 red (timed out / banned), 2 green (lifted)
+    int ownRestrictionTint_ = 0;
+    bool ownRestrictionShowing_ = false;
     bool sendWaitStatusWanted_ = false;
     bool channelPointsLabelWanted_ = false;
     bool channelPointsManualRefreshLoading_ = false;

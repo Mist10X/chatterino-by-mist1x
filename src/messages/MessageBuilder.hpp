@@ -387,6 +387,8 @@ private:
                                         const Channel *channel);
 
     std::shared_ptr<Message> message_;
+    /// Clip links of this message: (slug, url); cards are added in release().
+    std::vector<std::pair<QString, QString>> clipCards_;
     MessageColor textColor_ = MessageColor::Text;
     std::vector<EmotePtr> pendingPrefixModifiers_;
 

@@ -345,8 +345,35 @@ include(cmake/resources/generate_resources.cmake)
 
 add_subdirectory(src)
 
+option(LEAFYRINO_USERCARD_PREVIEW "Build isolated offline usercard preview" OFF)
+if(LEAFYRINO_USERCARD_PREVIEW)
+    add_subdirectory(tools/usercard-preview)
+endif()
+
+option(LEAFYRINO_IRC_PROXY_TESTS "Build isolated local IRC proxy regression tests" OFF)
+if(LEAFYRINO_IRC_PROXY_TESTS)
+    add_executable(Leafyrino-irc-proxy-tests
+        tests/IrcProxyStandalone.cpp
+        src/providers/irc/IrcProxy.cpp)
+    target_include_directories(Leafyrino-irc-proxy-tests PRIVATE src)
+    target_link_libraries(Leafyrino-irc-proxy-tests PRIVATE
+        Qt${MAJOR_QT_VERSION}::Core Qt${MAJOR_QT_VERSION}::Network
+        $<$<BOOL:${WIN32}>:Wininet>)
+endif()
+
 if(BUILD_TESTS OR BUILD_BENCHMARKS)
     add_subdirectory(mocks)
+endif()
+
+option(LEAFYRINO_LOCALIZATION_TESTS "Build isolated offline localization widget tests" OFF)
+if(LEAFYRINO_LOCALIZATION_TESTS)
+    add_executable(Leafyrino-localization-tests tools/localization/Preview.cpp)
+    if(WIN32)
+        set_target_properties(Leafyrino-localization-tests PROPERTIES WIN32_EXECUTABLE TRUE)
+    endif()
+    target_include_directories(Leafyrino-localization-tests PRIVATE "${CMAKE_SOURCE_DIR}/mocks/include")
+    target_link_libraries(Leafyrino-localization-tests PRIVATE chatterino-lib)
+    set_target_properties(Leafyrino-localization-tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 endif()
 
 if(BUILD_TESTS)
@@ -359,3 +386,16 @@ if(BUILD_BENCHMARKS)
 endif()
 
 feature_summary(WHAT ALL)
+
+
+option(LEAFYRINO_NETWORK_RECOVERY_TESTS "Build offline network recovery regressions" OFF)
+if(LEAFYRINO_NETWORK_RECOVERY_TESTS)
+    add_executable(Leafyrino-network-recovery-tests tests/NetworkRecoveryStandalone.cpp)
+    if(WIN32)
+        set_target_properties(Leafyrino-network-recovery-tests PROPERTIES WIN32_EXECUTABLE TRUE)
+    endif()
+    target_link_libraries(Leafyrino-network-recovery-tests PRIVATE chatterino-lib)
+    set_target_properties(Leafyrino-network-recovery-tests PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+    add_executable(Leafyrino-image-retry-tests tests/ImageLoadRetryStandalone.cpp)
+    target_include_directories(Leafyrino-image-retry-tests PRIVATE "${CMAKE_SOURCE_DIR}/src")
+endif()

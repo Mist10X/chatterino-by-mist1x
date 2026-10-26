@@ -4,6 +4,7 @@
 
 #include "providers/limerino/LimerinoBadges.hpp"
 
+#include "common/network/NetworkProxy.hpp"
 #include "common/network/NetworkRequest.hpp"
 #include "common/network/NetworkResult.hpp"
 #include "common/QLogging.hpp"
@@ -578,7 +579,7 @@ void LimerinoBadges::listen()
     }
     if (this->network_ == nullptr)
     {
-        this->network_ = new QNetworkAccessManager(this);
+        this->network_ = createNetworkAccessManager(this);
     }
 
     QNetworkRequest request{QUrl{QString::fromLatin1(EVENTS_URL)}};

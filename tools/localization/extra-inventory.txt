@@ -1,0 +1,289 @@
+English extra 277 Russian existing 119 Changed ['src/widgets/dialogs/UserInfoPopup.cpp', 'src/widgets/helper/ArchiveActions.cpp', 'src/widgets/helper/ArchiveUserCard.cpp', 'src/widgets/helper/CornerBanners.cpp', 'src/widgets/settingspages/GeneralPage.cpp']
+0	1 second (instant)
+1	10 seconds
+2	10th channel
+3	1st channel
+4	2nd channel
+5	3 seconds
+6	3rd channel
+7	4th channel
+8	5 seconds
+9	5th channel
+10	6th channel
+11	7th channel
+12	8th channel
+13	9th channel
+14	<ban, unban or number of the timeout button to use>
+15	<direction: up or down>
+16	<direction: up, down, left or right>
+17	<forward/backward> <loop/noloop>
+18	<name of command>
+19	<next, previous, or index of tab to select>
+20	<selection mode: withSelection or withoutSelection>
+21	<source of text: auto, split or splitInput>
+22	<split or window>
+23	<target popup: this or thisOrAll or all>
+24	<up or down>
+25	<where to move the tab: next, previous, or new index of tab>
+26	<which tab to select: last, next, previous, or index>
+27	A description of what the hotkey does.
+28	Action
+29	Action name cannot be empty
+30	Action:
+31	All
+32	All emotes
+33	Always show
+34	AlwaysShow
+35	Anonymous
+36	Anonymous (parallel)
+37	AnonymousParallel
+38	Any
+39	Apple
+40	Argument:
+41	Arguments do not match what's expected. The argument picker is not available.
+42	Arguments:
+43	Audio only
+44	AudioOnly
+45	Authenticated
+46	Authenticated (default)
+47	Automatic
+48	Automatic (Detect streaming software)
+49	Avatar and name
+50	Avatar only, name on the selected tab
+51	AvatarAndName
+52	AvatarOnly
+53	Backward (looping)
+54	Backward (no looping)
+55	Behavior:
+56	Blacklisted Users
+57	Bottom left
+58	Bottom right
+59	BottomLeft
+60	BottomRight
+61	Case-
+sensitive
+62	Case-sensitive
+63	Category:
+64	Centrifugo
+65	Change multi channel context
+66	Channel emotes only
+67	Choose
+68	Choose next sent message
+69	Choose previously sent message
+70	Chrome
+71	Clear message
+72	Clear messages
+73	Command
+74	Compact
+75	Confirmable popups: Cancel
+76	Confirmable popups: Confirm
+77	Copy
+78	Create a new split
+79	Create a new tab
+80	Custom
+sound
+81	Debug: Add cheer test message
+82	Debug: Add emote test message
+83	Debug: Add misc test message
+84	Debug: Add reward test message
+85	Debug: Add sub test message
+86	Debug: Add test message with a link
+87	Default behavior
+88	DetectStreamingSoftware
+89	Direction or index to change context to
+90	Direction:
+91	Don't show
+92	DontShow
+93	Dotted
+94	Down
+95	Edit Hotkey
+96	Emote type:
+97	Enable
+regex
+98	Enable regex
+99	Enabled
+100	Entire Tab
+101	Facebook
+102	Filter
+103	Firefox
+104	Flash
+taskbar
+105	Focus neighbouring split
+106	Focus search box
+107	Focused Split
+108	Forward (looping)
+109	Forward (no looping)
+110	Google
+111	Helix
+112	High
+113	Hold shift
+114	Hotkey name
+115	Hotkey name is missing
+116	Hotkey with this name already exists.
+117	Huge
+118	IRC
+119	Icon
+120	Include:
+121	Incrementally search through the input history
+122	Invalid Hotkey Category.
+123	Invalid Hotkey category.
+124	Invalid action, make sure you select the correct action before saving.
+125	Keep message in input after sending it
+126	Key Sequence is missing
+127	Keybinding
+128	Keybinding needs to be unique in the category.
+129	Keybinding:
+130	Lilb
+131	Logs
+132	Low
+133	Medium (default)
+134	Miniaudio
+135	Moderation buttons
+136	Move tab
+137	New overlay popup
+138	New popup
+139	New value:
+140	Newline separated arguments for the action
+141	Next
+142	Nickname
+143	No
+144	Normal
+145	Null
+146	Open account selector
+147	Open channel in browser
+148	Open chatter list
+149	Open emotes list
+150	Open mod view in browser
+151	Open reward queue
+152	Open settings
+153	Open stream in browser player
+154	Open stream in custom player
+155	Open stream in streamlink
+156	Open subscription page
+157	Open the quick switcher
+158	Option:
+159	Options
+160	Paste
+161	Pattern
+162	Pick filters
+163	Play
+sound
+164	Popup Windows
+165	Pressing this keybinding will invoke the hotkey
+166	Previous
+167	Pusher
+168	Quit Chatterino
+169	Reconnect to chat
+170	Redo
+171	Regex
+172	Reload emotes
+173	Remove current tab
+174	Reopen closed split
+175	Replacement
+176	Reset zoom
+177	Robotty
+178	Robotty - recent-messages.robotty.de
+179	Run a command
+180	Same as the text
+181	SameAsText
+182	Scroll
+183	Scroll to the bottom
+184	Scroll to the top
+185	Search current channel
+186	Seconds1
+187	Seconds10
+188	Seconds3
+189	Seconds5
+190	Select Tab
+191	Select next tab from visit history
+192	Select previous tab from visit history
+193	Select tab
+194	Select text from cursor to end:
+195	Select text from cursor to start:
+196	Select word
+197	Selected Channels
+198	Send message
+199	Set a name for the hotkey so you will be able to identify it later
+200	Set channel live notification
+201	Set highlight sounds
+202	Set moderation mode
+203	Set streamer mode
+204	Set tab visibility
+205	Set to automatic
+206	Set to off
+207	Set to on
+208	Should highlight sounds be enabled, disabled or toggled
+209	Should streamer mode be enabled, disabled, toggled (on/off) or set to auto
+210	Should the channel live notification be enabled, disabled or toggled
+211	Should the moderation mode be enabled, disabled or toggled
+212	Should the tabs be enabled, disabled, toggled, or live-only.
+213	Show In
+Mentions
+214	Show In
+Message Menu
+215	Show debug popup
+216	Show in
+Mentions
+217	ShowOnShift
+218	Small (80%)
+219	Smaller
+220	Smaller (70%)
+221	Solid
+222	Something went wrong, you should never
+see this message :)
+223	Source
+224	Source of text:
+225	Split
+226	Split Input
+227	Split input box
+228	Subscriber emotes only
+229	System
+230	Target popup:
+231	This
+232	This or all
+233	To end of message
+234	To start of message
+235	Toggle
+236	Toggle local unique chat (R9K)
+237	Toggle on/off
+238	Toggle overlay click-through
+239	Toggle translate on send
+240	Top left
+241	Top right
+242	TopLeft
+243	TopRight
+244	Trigger
+245	Twitch channels
+246	Twitter
+247	Undo
+248	Up
+249	User Timeout Buttons
+250	Usercard, reply thread: pin window
+251	Usercard: Open profile picture menu
+252	Usercard: execute moderation action
+253	Users
+254	Valid
+255	Warning: using keybindings without modifiers can lead to not being
+able to use the key for the normal purpose.
+Press the submit button again to do it anyway.
+256	What should be included in the new popup
+257	Which direction do you want to see more messages
+258	Which direction to look for a split to focus?
+259	Which emotes should Chatterino reload
+260	Yes
+261	You are not supposed to see this, please report this!
+262	You should never see this message :)
+263	Zneix
+264	Zneix - recent-messages.zneix.eu
+265	Zonian
+266	Zonian - logs.zonian.dev
+267	Zoom in
+268	Zoom in/out
+269	Zoom out
+270	[keepInput to not clear the text after sending]
+271	[on or off. default: toggle]
+272	[on, off, toggle, or auto. default: toggle]
+273	[on, off, toggle, or liveOnly. default: toggle]
+274	[type: channel or subscriber; default: all emotes]
+275	[{index} or next or prev. default: next]
+276	lilb - rm.lilb.dev

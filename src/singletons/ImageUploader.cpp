@@ -102,9 +102,8 @@ void ImageUploader::logToFile(const QString &originalFilePath,
                               const QString &deletionLink, ChannelPtr channel)
 {
     const QString logFileName =
-        combinePath((getSettings()->logPath.getValue().isEmpty()
-                         ? getApp()->getPaths().messageLogDirectory
-                         : getSettings()->logPath),
+        combinePath(getApp()->getPaths().messageLogsIn(
+                        getSettings()->logPath.getValue()),
                     "ImageUploader.json");
 
     QFile logReadFile(logFileName);

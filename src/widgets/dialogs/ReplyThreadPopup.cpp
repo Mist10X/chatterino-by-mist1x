@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/ReplyThreadPopup.hpp"
 
 #include "Application.hpp"
@@ -18,16 +19,48 @@
 #include "util/LayoutCreator.hpp"
 #include "widgets/buttons/Button.hpp"
 #include "widgets/helper/ChannelView.hpp"
-#include "widgets/helper/InvisibleSizeGrip.hpp"
 #include "widgets/Scrollbar.hpp"
 #include "widgets/splits/Split.hpp"
 #include "widgets/splits/SplitInput.hpp"
 
 #include <QCheckBox>
+#include <QPainter>
+#include <QResizeEvent>
+#include <QSizeGrip>
 
 const QString TEXT_TITLE("Reply Thread - @%1 in #%2");
 
 namespace chatterino {
+
+namespace {
+
+/// The frameless popup's resize corner, drawn so it can be found.
+class CornerGrip final : public QSizeGrip
+{
+public:
+    explicit CornerGrip(QWidget *parent)
+        : QSizeGrip(parent)
+    {
+        this->setMouseTracking(true);
+        this->setCursor(Qt::SizeFDiagCursor);
+    }
+
+protected:
+    void paintEvent(QPaintEvent * /*event*/) override
+    {
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setPen(QPen(QColor(255, 255, 255, 110), 1.4));
+        const qreal w = this->width();
+        const qreal h = this->height();
+        for (qreal step : {0.25, 0.5, 0.75})
+        {
+            painter.drawLine(QPointF(w * step, h - 2), QPointF(w - 2, h * step));
+        }
+    }
+};
+
+}  // namespace
 
 ReplyThreadPopup::ReplyThreadPopup(bool closeAutomatically, Split *split)
     : DraggablePopup(closeAutomatically, split)
@@ -35,7 +68,7 @@ ReplyThreadPopup::ReplyThreadPopup(bool closeAutomatically, Split *split)
 {
     assert(split != nullptr);
 
-    this->setWindowTitle(QStringLiteral("Reply Thread"));
+    this->setWindowTitle(uiText(QStringLiteral("Reply Thread")));
 
     HotkeyController::HotkeyMap actions{
         {"delete",
@@ -154,7 +187,7 @@ ReplyThreadPopup::ReplyThreadPopup(bool closeAutomatically, Split *split)
         if (addCheckbox)
         {
             this->ui_.notificationCheckbox =
-                new QCheckBox("Subscribe to thread", this);
+                new QCheckBox(uiText("Subscribe to thread"), this);
             QObject::connect(this->ui_.notificationCheckbox,
                              &QCheckBox::toggled, [this](bool checked) {
                                  if (!this->thread_ ||
@@ -193,11 +226,30 @@ ReplyThreadPopup::ReplyThreadPopup(bool closeAutomatically, Split *split)
     layout->addWidget(this->ui_.threadView, 1);
     layout->addWidget(this->ui_.replyInput);
 
-    // size grip
+    // size grip: visible, in the margin below the input's icons
     if (closeAutomatically)
     {
-        layers->addWidget(new InvisibleSizeGrip(this), 0, 0,
-                          Qt::AlignRight | Qt::AlignBottom);
+        auto *grip = new CornerGrip(this);
+        grip->setFixedSize(14, 14);
+        layers->addWidget(grip, 0, 0, Qt::AlignRight | Qt::AlignBottom);
+        grip->raise();
+    }
+
+    // Roomier than the old minimum, and the size the user last chose.
+    const int width = getSettings()->replyThreadPopupWidth.getValue();
+    const int height = getSettings()->replyThreadPopupHeight.getValue();
+    this->setScaleIndependentSize(width >= 320 ? width : 520,
+                                  height >= 200 ? height : 420);
+}
+
+void ReplyThreadPopup::resizeEvent(QResizeEvent *event)
+{
+    DraggablePopup::resizeEvent(event);
+    if (this->isVisible())
+    {
+        const auto scale = std::max(0.1F, this->scale());
+        getSettings()->replyThreadPopupWidth = int(this->width() / scale);
+        getSettings()->replyThreadPopupHeight = int(this->height() / scale);
     }
 }
 
@@ -321,11 +373,11 @@ void ReplyThreadPopup::updateInputUI()
     QString placeholderText;
     if (name.isEmpty())
     {
-        placeholderText = QStringLiteral("Log in to send messages...");
+        placeholderText = uiText(QStringLiteral("Log in to send messages..."));
     }
     else
     {
-        placeholderText = QStringLiteral("Reply as %1...").arg(name);
+        placeholderText = uiText(QStringLiteral("Reply as %1...")).arg(name);
     }
 
     this->ui_.replyInput->setPlaceholderText(placeholderText);

@@ -6,6 +6,8 @@
 
 #include "Application.hpp"
 #include "common/ChatterinoSetting.hpp"
+#include "common/UiLanguage.hpp"
+#include "widgets/settingspages/UiComboBox.hpp"
 #include "singletons/WindowManager.hpp"
 #include "widgets/buttons/SignalLabel.hpp"
 
@@ -36,7 +38,7 @@ class TitleLabel : public QLabel
 
 public:
     TitleLabel(const QString &text)
-        : QLabel(text)
+        : QLabel(uiText(text))
     {
     }
 };
@@ -47,7 +49,7 @@ class SubtitleLabel : public QLabel
 
 public:
     SubtitleLabel(const QString &text)
-        : QLabel(text)
+        : QLabel(uiText(text))
     {
     }
 };
@@ -60,7 +62,7 @@ public:
     NavigationLabel(const QString &text)
         : SignalLabel()
     {
-        this->setText(text);
+        this->setText(uiText(text));
     }
 };
 
@@ -70,12 +72,12 @@ class DescriptionLabel : public QLabel
 
 public:
     DescriptionLabel(const QString &text)
-        : QLabel(text)
+        : QLabel(uiText(text))
     {
     }
 };
 
-class ComboBox : public QComboBox
+class ComboBox : public UiComboBox
 {
     Q_OBJECT
 
@@ -139,7 +141,7 @@ public:
     template <typename OnClick>
     QPushButton *makeButton(const QString &text, OnClick onClick)
     {
-        auto *button = new QPushButton(text);
+        auto *button = new QPushButton(uiText(text));
         this->groups_.back().widgets.push_back({button, {text}});
         QObject::connect(button, &QPushButton::clicked, onClick);
         return button;
@@ -191,7 +193,7 @@ public:
         }
         else if (selected.which() == 1)
         {
-            combo->setEditText(boost::get<QString>(selected));
+            combo->setSourceText(boost::get<QString>(selected));
         }
 
         setting.connect(
@@ -203,8 +205,7 @@ public:
                 }
                 else
                 {
-                    combo->setCurrentText(boost::get<QString>(var));
-                    combo->setEditText(boost::get<QString>(var));
+                    combo->setSourceText(boost::get<QString>(var));
                 }
             },
             this->managedConnections_);
@@ -212,7 +213,7 @@ public:
         auto updateSetting = [combo, &setting, setValue = std::move(setValue)](
                                  const int newIndex) {
             setting = setValue(DropdownArgs{
-                .value = combo->itemText(newIndex),
+                .value = combo->sourceText(newIndex),
                 .index = combo->currentIndex(),
                 .combobox = combo,
             });

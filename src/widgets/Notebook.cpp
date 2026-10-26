@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/Notebook.hpp"
 
 #include "Application.hpp"
@@ -77,7 +78,7 @@ Notebook::Notebook(QWidget *parent)
             page->insertSplit(draggedSplit);
         });
 
-    this->lockNotebookLayoutAction_ = new QAction("Lock Tab Layout", this);
+    this->lockNotebookLayoutAction_ = new QAction(uiText("Lock Tab Layout"), this);
 
     // Load lock notebook layout state from settings
     this->setLockNotebookLayout(getSettings()->lockNotebookLayout.getValue());
@@ -91,7 +92,7 @@ Notebook::Notebook(QWidget *parent)
                          this->setLockNotebookLayout(value);
                      });
 
-    this->toggleTopMostAction_ = new QAction("Top most window", this);
+    this->toggleTopMostAction_ = new QAction(uiText("Top most window"), this);
     this->toggleTopMostAction_->setCheckable(true);
     auto *window = dynamic_cast<BaseWindow *>(this->window());
     if (window)
@@ -758,15 +759,15 @@ void Notebook::showTabVisibilityInfoPopup()
             ")";
     }
     QMessageBox msgBox(this->window());
-    msgBox.window()->setWindowTitle("Leafyrino - hidden tabs");
-    msgBox.setText("You've just hidden your tabs.");
+    msgBox.window()->setWindowTitle(uiText("Leafyrino - hidden tabs"));
+    msgBox.setText(uiText("You've just hidden your tabs."));
     msgBox.setInformativeText(
-        "You can toggle tabs by using the keyboard shortcut " + hotkeyInfo +
-        " or right-clicking the tab area and selecting \"Toggle "
-        "visibility of tabs\".");
+        uiText("You can toggle tabs by using the keyboard shortcut ") + hotkeyInfo +
+        uiText(" or right-clicking the tab area and selecting \"Toggle "
+        "visibility of tabs\"."));
     msgBox.addButton(QMessageBox::Ok);
     auto *dsaButton =
-        msgBox.addButton("Don't show again", QMessageBox::YesRole);
+        msgBox.addButton(uiText("Don't show again"), QMessageBox::YesRole);
 
     msgBox.setDefaultButton(QMessageBox::Ok);
 
@@ -1456,7 +1457,7 @@ SplitNotebook::SplitNotebook(Window *parent)
     tabVisibilityActionGroup->setExclusionPolicy(
         QActionGroup::ExclusionPolicy::Exclusive);
 
-    this->showAllTabsAction = new QAction("Show all tabs", this);
+    this->showAllTabsAction = new QAction(uiText("Show all tabs"), this);
     this->showAllTabsAction->setCheckable(true);
     this->showAllTabsAction->setShortcut(
         getApp()->getHotkeys()->getDisplaySequence(
@@ -1470,7 +1471,7 @@ SplitNotebook::SplitNotebook(Window *parent)
                      });
     tabVisibilityActionGroup->addAction(this->showAllTabsAction);
 
-    this->onlyShowLiveTabsAction = new QAction("Only show live tabs", this);
+    this->onlyShowLiveTabsAction = new QAction(uiText("Only show live tabs"), this);
     this->onlyShowLiveTabsAction->setCheckable(true);
     this->onlyShowLiveTabsAction->setShortcut(
         getApp()->getHotkeys()->getDisplaySequence(
@@ -1484,7 +1485,7 @@ SplitNotebook::SplitNotebook(Window *parent)
                      });
     tabVisibilityActionGroup->addAction(this->onlyShowLiveTabsAction);
 
-    this->hideAllTabsAction = new QAction("Hide all tabs", this);
+    this->hideAllTabsAction = new QAction(uiText("Hide all tabs"), this);
     this->hideAllTabsAction->setCheckable(true);
     this->hideAllTabsAction->setShortcut(
         getApp()->getHotkeys()->getDisplaySequence(
@@ -1499,7 +1500,7 @@ SplitNotebook::SplitNotebook(Window *parent)
     tabVisibilityActionGroup->addAction(this->hideAllTabsAction);
 
     this->sortTabsAlphabeticallyAction_ =
-        new QAction("Sort Tabs Alphabetically", this);
+        new QAction(uiText("Sort Tabs Alphabetically"), this);
     if (this->isNotebookLayoutLocked())
     {
         this->sortTabsAlphabeticallyAction_->setEnabled(false);
@@ -1605,7 +1606,7 @@ void SplitNotebook::addNotebookActionsToMenu(QMenu *menu)
 
     menu->addAction(this->sortTabsAlphabeticallyAction_);
 
-    auto *submenu = menu->addMenu("Tab visibility");
+    auto *submenu = menu->addMenu(uiText("Tab visibility"));
     submenu->addAction(this->showAllTabsAction);
     submenu->addAction(this->onlyShowLiveTabsAction);
     submenu->addAction(this->hideAllTabsAction);

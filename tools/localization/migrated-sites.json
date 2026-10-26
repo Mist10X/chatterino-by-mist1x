@@ -1,0 +1,46 @@
+[
+  {
+    "file": "src/widgets/Notebook.cpp",
+    "sites": 2
+  },
+  {
+    "file": "src/widgets/dialogs/ChannelManagementDialog.cpp",
+    "sites": 9
+  },
+  {
+    "file": "src/widgets/dialogs/ChannelPointsDialog.cpp",
+    "sites": 16
+  },
+  {
+    "file": "src/widgets/dialogs/GifPickerDialog.cpp",
+    "sites": 7
+  },
+  {
+    "file": "src/widgets/dialogs/MoltorinoAuthPage.cpp",
+    "sites": 14
+  },
+  {
+    "file": "src/widgets/dialogs/PredictionDialog.cpp",
+    "sites": 3
+  },
+  {
+    "file": "src/widgets/dialogs/RewardQueueDialog.cpp",
+    "sites": 6
+  },
+  {
+    "file": "src/widgets/dialogs/TwitchBadgePickerDialog.cpp",
+    "sites": 13
+  },
+  {
+    "file": "src/widgets/dialogs/UserBadgesDialog.cpp",
+    "sites": 3
+  },
+  {
+    "file": "src/widgets/settingspages/MoltorinoPage.cpp",
+    "sites": 13
+  },
+  {
+    "file": "src/widgets/splits/SplitInput.cpp",
+    "sites": 1
+  }
+]

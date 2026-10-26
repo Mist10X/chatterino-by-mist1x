@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "widgets/settingspages/NotificationPage.hpp"
 
 #include "Application.hpp"
@@ -32,33 +33,33 @@ NotificationPage::NotificationPage()
     {
         auto tabs = layout.emplace<QTabWidget>();
         {
-            auto settings = tabs.appendTab(new QVBoxLayout, "Options");
+            auto settings = tabs.appendTab(new QVBoxLayout, uiText("Options"));
             {
                 settings.emplace<QLabel>(
-                    "You can be informed when certain channels go live. You "
+                    uiText("You can be informed when certain channels go live. You "
                     "must be logged in to receive live notifications."
-                    "\nYou can be informed in multiple ways:");
+                    "\nYou can be informed in multiple ways:"));
 
                 settings.append(this->createCheckBox(
-                    "Flash taskbar", getSettings()->notificationFlashTaskbar));
+                    uiText("Flash taskbar"), getSettings()->notificationFlashTaskbar));
                 settings.append(
-                    this->createCheckBox("Play sound for selected channels",
+                    this->createCheckBox(uiText("Play sound for selected channels"),
                                          getSettings()->notificationPlaySound));
                 settings.append(this->createCheckBox(
-                    "Play sound for any channel going live",
+                    uiText("Play sound for any channel going live"),
                     getSettings()->notificationOnAnyChannel));
 
                 settings.append(this->createCheckBox(
-                    "Suppress live notifications on startup",
+                    uiText("Suppress live notifications on startup"),
                     getSettings()->suppressInitialLiveNotification));
 #if defined(Q_OS_WIN) || defined(CHATTERINO_WITH_LIBNOTIFY)
                 settings.append(this->createCheckBox(
-                    "Show notification", getSettings()->notificationToast));
+                    uiText("Show notification"), getSettings()->notificationToast));
 #endif
 #ifdef Q_OS_WIN
                 settings.append(this->createCheckBox(
-                    "Create start menu shortcut (requires "
-                    "restart)",
+                    uiText("Create start menu shortcut (requires "
+                    "restart)"),
                     getSettings()->createShortcutForToasts,
                     "When enabled, a shortcut will be created inside your "
                     "start menu folder if needed by live notifications."
@@ -70,7 +71,7 @@ NotificationPage::NotificationPage()
                 {
                     openIn
                         .emplace<QLabel>(
-                            "Action when clicking on a notification:  ")
+                            uiText("Action when clicking on a notification:  "))
                         ->setSizePolicy(QSizePolicy::Maximum,
                                         QSizePolicy::Preferred);
 
@@ -85,10 +86,10 @@ NotificationPage::NotificationPage()
                     layout.emplace<QHBoxLayout>().withoutMargin();
                 {
                     customSound.append(this->createCheckBox(
-                        "Custom sound",
+                        uiText("Custom sound"),
                         getSettings()->notificationCustomSound));
                     auto selectFile = customSound.emplace<QPushButton>(
-                        "Select custom sound file");
+                        uiText("Select custom sound file"));
                     QObject::connect(
                         selectFile.getElement(), &QPushButton::clicked, this,
                         [this] {
@@ -102,11 +103,11 @@ NotificationPage::NotificationPage()
                 settings->addStretch(1);
             }
             auto twitchChannels =
-                tabs.appendTab(new QVBoxLayout, "Selected Channels");
+                tabs.appendTab(new QVBoxLayout, uiText("Selected Channels"));
             {
                 twitchChannels.emplace<QLabel>(
-                    "These are the channels for which you will be informed "
-                    "when they go live:");
+                    uiText("These are the channels for which you will be informed "
+                    "when they go live:"));
 
                 EditableModelView *view =
                     twitchChannels
@@ -114,7 +115,7 @@ NotificationPage::NotificationPage()
                             getApp()->getNotifications()->createModel(
                                 nullptr, Platform::Twitch))
                         .getElement();
-                view->setTitles({"Twitch channels"});
+                view->setTitles({uiText("Twitch channels")});
                 view->setValidationRegexp(twitchUserNameRegexp());
 
                 view->getTableView()->horizontalHeader()->setSectionResizeMode(

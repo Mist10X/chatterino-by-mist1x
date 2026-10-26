@@ -33,6 +33,7 @@ class PredictionBanner;
 class SplitInput;
 class SplitContainer;
 class SplitOverlay;
+class CornerBannerStack;
 class SplitMpsOverlay;
 class SelectChannelDialog;
 class OverlayWindow;
@@ -229,6 +230,8 @@ private:
     ChannelView *const view_;
     SplitInput *const input_;
     SplitOverlay *const overlay_;
+    /// Raid / mass-gift cards in the chat's top-right corner.
+    CornerBannerStack *cornerBanners_ = nullptr;
     SplitMpsOverlay *mpsOverlay_{};
 
     QPointer<OverlayWindow> overlayWindow_;
