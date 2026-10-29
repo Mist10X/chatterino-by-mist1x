@@ -4,6 +4,8 @@
 
 #include "common/Version.hpp"
 
+#include "common/Mist1XVersion.hpp"
+
 #include <QFileInfo>
 #include <QStringBuilder>
 
@@ -23,7 +25,7 @@ Version::Version()
     , isNightly_(CHATTERINO_NIGHTLY_BUILD == 1)
 {
     this->fullVersion_ = "Chatterino by Mist1X ";
-    this->fullVersion_ += this->version_;
+    this->fullVersion_ += QStringLiteral(MIST1X_VERSION);
 
 #ifndef NDEBUG
     this->fullVersion_ += " DEBUG";

@@ -22,6 +22,10 @@ $staging = Join-Path $Out 'staging'
 $dist = Join-Path $Out 'dist'
 
 if (Test-Path $Out) { throw "Output folder already exists: $Out" }
+# The program compares itself with the releases by this number.
+$versionHeader = Join-Path $PSScriptRoot '..\..\src\common\Mist1XVersion.hpp'
+$inSource = [regex]::Match((Get-Content $versionHeader -Raw), 'MIST1X_VERSION "([^"]+)"').Groups[1].Value
+if ($inSource -ne $Version) { throw "MIST1X_VERSION in src/common/Mist1XVersion.hpp is '$inSource', not '$Version'. Change it and rebuild first." }
 New-Item -ItemType Directory -Force $staging, $dist | Out-Null
 
 # 1. Program: the built exe and the runtime it needs (allowlist).

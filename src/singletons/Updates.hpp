@@ -42,7 +42,15 @@ public:
 
     void deleteOldFiles();
 
+    /// Asks GitHub for the newest release of Chatterino by Mist1X.
     void checkForUpdates();
+    /// Checks shortly after the start and then every few hours.
+    void startPeriodicChecks();
+    /// Installed with the setup (not a portable copy): the update can be
+    /// downloaded and installed from inside the program.
+    static bool isInstalledCopy();
+    const QString &getReleaseNotes() const;
+    const QString &getReleasePage() const;
     const QString &getCurrentVersion() const;
     const QString &getOnlineVersion() const;
     void installUpdates();
@@ -68,6 +76,11 @@ private:
     QString updateExe_;
     QString updatePortable_;
     QString updateGuideLink_;
+    QString updateSums_;
+    QString releaseNotes_;
+    QString releasePage_;
+
+    void updateFailed_(Status status, const QString &reason);
 
     void setStatus_(Status status);
 

@@ -1,6 +1,9 @@
 #include "common/UiLanguage.hpp"
 #include "widgets/Window.hpp"
 
+#include "widgets/buttons/InitUpdateButton.hpp"
+#include "widgets/helper/UpdateBanner.hpp"
+
 #include "Application.hpp"
 #include "common/Args.hpp"
 #include "common/Common.hpp"
@@ -231,9 +234,10 @@ void Window::addCustomTitlebarButtons()
         },
         TitleBarButtonStyle::Settings);
 
-    // auto *update = this->addTitleBarButton<PixmapButton>([] {});
-    //
-    // initMoltorinoUpdateButton(*update, [] {}, this->signalHolder_);
+    // shown only while a newer Chatterino by Mist1X is out
+    auto *update = this->addTitleBarButton<PixmapButton>([] {});
+    initUpdateButton(*update, [] {}, this->signalHolder_);
+    initUpdateBanner(this, this->signalHolder_);
 
     this->userLabel_ = this->addTitleBarLabel([this] {
         getApp()->getWindows()->showAccountSelectPopup(

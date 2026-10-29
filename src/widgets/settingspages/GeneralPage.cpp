@@ -4,6 +4,8 @@
 
 #include "common/UiLanguage.hpp"
 #include "widgets/settingspages/GeneralPage.hpp"
+#include "widgets/helper/UpdateBanner.hpp"
+#include "singletons/Updates.hpp"
 
 #include "Application.hpp"
 #include "common/Literals.hpp"  // IWYU pragma: keep
@@ -998,10 +1000,62 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     if (Version::instance().isSupportedOS())
     {
         layout.addDescription(
-            uiText("You can receive updates earlier by ticking the box below. Report "
-            "issues <a href='https://chatterino.com/link/issues'>here</a>."));
+            uiText("The program checks for a new version by itself at startup "
+            "and every 6 hours. When one is out, a card appears at the top "
+            "of the window: click it to update. Releases and the list of "
+            "changes: <a href='https://github.com/Mist10X/chatterino-by-mist1x/"
+            "releases'>GitHub</a>."));
 
-        SettingWidget::checkbox(uiText("Receive beta updates"), s.betaUpdates)
+        auto *status = new QLabel;
+        status->setWordWrap(true);
+        const auto showStatus = [status](Updates::Status st) {
+            auto &updates = getApp()->getUpdates();
+            switch (st)
+            {
+                case Updates::Searching:
+                    status->setText(uiText("Checking…"));
+                    break;
+                case Updates::UpdateAvailable:
+                    status->setText(uiText("Update %1 is available")
+                                        .arg(updates.getOnlineVersion()));
+                    break;
+                case Updates::NoUpdateAvailable:
+                    status->setText(uiText("You have the newest version (%1).")
+                                        .arg(updates.getCurrentVersion()));
+                    break;
+                case Updates::SearchFailed:
+                    status->setText(uiText("Could not reach GitHub. Check "
+                                           "the internet connection."));
+                    break;
+                case Updates::Downloading:
+                    status->setText(uiText("Downloading the update…"));
+                    break;
+                default:
+                    status->setText(uiText("Your version: %1")
+                                        .arg(updates.getCurrentVersion()));
+                    break;
+            }
+        };
+        showStatus(getApp()->getUpdates().getStatus());
+        this->managedConnections_.managedConnect(
+            getApp()->getUpdates().statusUpdated, showStatus);
+
+        auto *check = layout.makeButton(uiText("Check for updates now"), [] {
+            auto &updates = getApp()->getUpdates();
+            if (updates.getStatus() == Updates::UpdateAvailable)
+            {
+                showUpdatePrompt(nullptr);
+                return;
+            }
+            updates.checkForUpdates();
+        });
+        auto *row = new QHBoxLayout;
+        row->addWidget(check);
+        row->addWidget(status, 1);
+        layout.addLayout(row);
+
+        SettingWidget::checkbox(uiText("Also offer test versions"),
+                                s.betaUpdates)
             ->addTo(layout);
     }
     else

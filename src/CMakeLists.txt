@@ -1027,6 +1027,8 @@ set(SOURCE_FILES
         widgets/helper/CornerBanners.cpp
         widgets/helper/HighlightToast.cpp
         widgets/helper/HighlightToast.hpp
+        widgets/helper/UpdateBanner.cpp
+        widgets/helper/UpdateBanner.hpp
         widgets/helper/CornerBanners.hpp
         widgets/helper/NotebookTab.cpp
         widgets/helper/NotebookTab.hpp

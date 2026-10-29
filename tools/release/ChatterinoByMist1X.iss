@@ -68,6 +68,8 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; AppUserModelID: "
 [Run]
 Filename: "{app}\Руководство.html"; Description: "Открыть руководство (как пользоваться)"; Flags: postinstall shellexec skipifsilent nowait
 Filename: "{app}\{#AppExe}"; Description: "Запустить {#AppName}"; Flags: postinstall nowait skipifsilent
+; Started from the program's own update (/AUTOUPDATE=1): start it again.
+Filename: "{app}\{#AppExe}"; Flags: nowait; Check: IsAutoUpdate
 
 [UninstallDelete]
 ; Files the program itself creates next to it that are not settings.
@@ -76,6 +78,11 @@ Type: filesandordirs; Name: "{app}\Crashes"
 Type: filesandordirs; Name: "{app}\IPC"
 
 [Code]
+function IsAutoUpdate: Boolean;
+begin
+  Result := ExpandConstant('{param:AUTOUPDATE|0}') = '1';
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   Dir: String;

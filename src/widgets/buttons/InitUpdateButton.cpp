@@ -5,8 +5,10 @@
 #include "widgets/buttons/InitUpdateButton.hpp"
 
 #include "Application.hpp"
+#include "common/UiLanguage.hpp"
+#include "singletons/Updates.hpp"
 #include "widgets/buttons/PixmapButton.hpp"
-#include "widgets/dialogs/UpdateDialog.hpp"
+#include "widgets/helper/UpdateBanner.hpp"
 
 namespace chatterino {
 
@@ -17,38 +19,15 @@ void initUpdateButton(PixmapButton &button,
     button.hide();
 
     // show update prompt when clicking the button
-    QObject::connect(&button, &Button::leftClicked, [&button, relayout] {
-        auto *dialog = new UpdateDialog();
-
-        auto globalPoint = button.mapToGlobal(
-            QPoint(int(-100 * button.scale()), button.height()));
-
-        // Make sure that update dialog will not go off left edge of screen
-        if (globalPoint.x() < 0)
-        {
-            globalPoint.setX(0);
-        }
-
-        dialog->moveTo(globalPoint, widgets::BoundsChecking::DesiredPosition);
-        dialog->show();
-        dialog->raise();
-
-        // We can safely ignore the signal connection because the dialog will always
-        // be destroyed before the button is destroyed, since it is destroyed on focus loss
-        //
-        // The button is either attached to a Notebook, or a Window frame
-        std::ignore = dialog->dismissed.connect([&button, relayout]() {
-            button.hide();
-            relayout();
-        });
-
-        //        handle.reset(dialog);
-        //        dialog->closing.connect([&handle] { handle.release(); });
+    QObject::connect(&button, &Button::leftClicked, [&button] {
+        showUpdatePrompt(button.window());
     });
 
     // update image when state changes
     auto updateChange = [&button, relayout](auto) {
         button.setVisible(getApp()->getUpdates().shouldShowUpdateButton());
+        button.setToolTip(uiText("Update %1 is available")
+                              .arg(getApp()->getUpdates().getOnlineVersion()));
 
         const auto *imageUrl = getApp()->getUpdates().isError()
                                    ? ":/buttons/updateError.png"

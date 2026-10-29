@@ -286,6 +286,7 @@ void Application::initialize(Settings &settings, const Paths &paths)
     this->accounts->load();
 
     this->windows->initialize();
+    this->updates.startPeriodicChecks();
 
     this->ffzBadges->load();
     this->bttvBadges->load();
