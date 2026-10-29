@@ -423,6 +423,12 @@ private:
                 this->check_("history preserves original rich same-ID message",
                              this->original_ &&
                                  this->find("demo-30") == this->original_);
+                // Saved rows carry no colour: they take the person's own (the
+                // card's, from Twitch), not one picked from the user ID.
+                const auto saved = this->find("local-18");
+                this->check_("saved history rows use the person's chat colour",
+                             saved && saved->usernameColor ==
+                                          QColor(QStringLiteral("#E07700")));
                 this->up();
                 this->wait(
                     [this] {

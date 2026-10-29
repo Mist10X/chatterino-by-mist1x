@@ -780,6 +780,25 @@ MoltorinoPage::MoltorinoPage()
                      "are not shown."))
         ->addTo(*view);
 
+    SettingWidget::checkbox(uiText("Show the slow mode countdown in the chat input"),
+                            s.showSlowModeInInput)
+        ->setTooltip(uiText("After your message in a slow mode channel, the input "
+                     "shows how long until the next one can be sent. The input "
+                     "stays usable."))
+        ->addTo(*view);
+
+    SettingWidget::checkbox(uiText("Queue messages sent during slow mode"),
+                            s.queueSlowModeMessages)
+        ->setTooltip(uiText("A message sent before the slow mode wait is over is "
+                     "kept and sent by itself as soon as the wait ends."))
+        ->addTo(*view);
+
+    SettingWidget::checkbox(uiText("Hide community sub gift messages"),
+                            s.hideCommunityGiftMessages)
+        ->setTooltip(uiText("No chat lines for \"X is gifting N subs to the "
+                     "community\" and for each gifted sub that belongs to it."))
+        ->addTo(*view);
+
     SettingWidget::checkbox(uiText("Show a card for highlights in other channels"),
                             s.showHighlightToasts)
         ->setTooltip(uiText("When a highlight that flashes the taskbar comes from a "

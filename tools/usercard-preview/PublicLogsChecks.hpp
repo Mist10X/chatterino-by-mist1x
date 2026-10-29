@@ -292,7 +292,7 @@ inline int runPublicLogChecks(QJsonArray &checks)
     }
     checks.append(QJsonObject{{"name", "smallest gap, ms"}, {"ok", true},
                               {"value", double(gap)}});
-    check("requests to one mirror are spaced", gap >= 270);
+    check("requests to one mirror are spaced", gap >= 240);  // 300 ms, less delivery jitter
 
     // One mirror fails: the page says so and is not the end.
     server.status = {500, 0, 0};

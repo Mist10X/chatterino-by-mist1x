@@ -3081,6 +3081,12 @@ void UserInfoPopup::setOfflinePreviewData(const UserInfoPreviewData &data)
     this->userId_ = data.userId;
     this->userName_ = data.login;
     this->archiveLoginHint_ = data.login;
+    if (this->ui_.userColorRow)
+    {
+        this->ui_.userColorRow->setProperty(
+            "swatch-color",
+            data.chatColor.isEmpty() ? QVariant() : QVariant(data.chatColor));
+    }
     this->offlinePublicHistoryAllowed_ =
         data.allowPublicHistory && this->archiveHistorySyntheticEndpoint_;
     this->resetArchiveHistory();
@@ -4371,6 +4377,8 @@ void UserInfoPopup::resetArchiveHistory()
     this->archiveLocalCursor_ = {};
     this->archivePublicCursor_ = {};
     this->archiveHistoryMessages_.clear();
+    this->archiveHistoryUncolored_.clear();
+    this->archiveHistoryColor_.clear();
     this->archiveHistoryRowMetadata_.clear();
     this->archiveHistoryStatus_.clear();
     this->archiveHistoryStarted_ = false;
@@ -4570,6 +4578,12 @@ void UserInfoPopup::applyArchiveHistory(const QJsonObject &data)
             {
                 continue;
             }
+            if (message.senderColor.isEmpty())
+            {
+                this->archiveHistoryUncolored_.insert(id, message);
+                this->archiveHistoryColor_ = this->knownChatColor();
+                message.senderColor = this->archiveHistoryColor_;
+            }
             this->archiveHistoryMessages_.push_back(makeUsercardModLogMessage(
                 message, renderChannel, this->underlyingChannel_->getName(),
                 this->userId_));
@@ -4635,6 +4649,72 @@ void UserInfoPopup::applyArchiveHistory(const QJsonObject &data)
     }
     this->updateArchiveHistoryButton();
     this->updateUsercardMessagesVisibility();
+}
+
+QString UserInfoPopup::knownChatColor() const
+{
+    if (this->ui_.userColorRow)
+    {
+        const QColor own(
+            this->ui_.userColorRow->property("swatch-color").toString());
+        if (own.isValid())
+        {
+            return own.name(QColor::HexRgb);
+        }
+    }
+    if (!this->underlyingChannel_)
+    {
+        return {};
+    }
+    const auto snapshot = this->underlyingChannel_->getMessageSnapshot();
+    for (auto it = snapshot.rbegin(); it != snapshot.rend(); ++it)
+    {
+        if ((*it)->userID == this->userId_ && (*it)->usernameColor.isValid() &&
+            !(*it)->flags.has(MessageFlag::System))
+        {
+            return (*it)->usernameColor.name(QColor::HexRgb);
+        }
+    }
+    if (auto *chatters =
+            dynamic_cast<ChannelChatters *>(this->underlyingChannel_.get()))
+    {
+        const auto color = chatters->getUserColor(this->userName_);
+        if (color.isValid())
+        {
+            return color.name(QColor::HexRgb);
+        }
+    }
+    return {};
+}
+
+void UserInfoPopup::refreshArchiveHistoryColors()
+{
+    if (this->archiveHistoryUncolored_.isEmpty() || !this->underlyingChannel_)
+    {
+        return;
+    }
+    const auto color = this->knownChatColor();
+    if (color.isEmpty() || color == this->archiveHistoryColor_)
+    {
+        return;
+    }
+    this->archiveHistoryColor_ = color;
+    auto *renderChannel =
+        dynamic_cast<TwitchChannel *>(this->underlyingChannel_.get());
+    for (auto &message : this->archiveHistoryMessages_)
+    {
+        auto source = this->archiveHistoryUncolored_.find(message->id);
+        if (source == this->archiveHistoryUncolored_.end())
+        {
+            continue;
+        }
+        auto colored = source.value();
+        colored.senderColor = color;
+        message = makeUsercardModLogMessage(colored, renderChannel,
+                                            this->underlyingChannel_->getName(),
+                                            this->userId_);
+    }
+    this->rebuildArchiveHistoryView(true);
 }
 
 void UserInfoPopup::rebuildArchiveHistoryView(bool preserveAnchor)
@@ -5683,6 +5763,7 @@ void UserInfoPopup::updateUserData()
                     this->ui_.userColorLabel->setText(
                         uiText(TEXT_COLOR).arg(userInfo.chatColor));
                     this->updateUsercardStatusIcons();
+                    this->refreshArchiveHistoryColors();
                 }
                 else
                 {
@@ -6777,6 +6858,7 @@ void UserInfoPopup::applyIvrUserProfile(const IvrUserProfile &profile)
             this->ui_.userColorRow->setProperty("swatch-color", colorHex);
             this->ui_.userColorLabel->setText(uiText("Color: ") + colorHex);
             this->updateUsercardStatusIcons();
+            this->refreshArchiveHistoryColors();
             this->ui_.userColorRow->setVisible(true);
             this->updateSeventvPaintPixmap();
         }

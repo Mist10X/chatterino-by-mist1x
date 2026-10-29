@@ -610,6 +610,19 @@ public:
      */
     void setSendWait(int seconds);
 
+    /// Seconds (rounded up) until the next message may be sent; 0 if none.
+    int sendWaitSeconds() const;
+    /// Slow mode: a chat message sent before the wait is over is kept and goes
+    /// by itself when it ends. False when there is nothing to wait for.
+    bool queueWhileSlow(const QString &message, const QString &replyId = {});
+    size_t slowQueueSize() const;
+    /// Tests only: receives queued messages instead of Twitch.
+    std::function<void(const QString &text, const QString &replyId)>
+        slowQueueSenderForTesting;
+    /// Our own chat message just went out: start the slow mode wait now
+    /// (Twitch confirms it with USERSTATE a moment later).
+    void noteOwnMessageSent();
+
     bool isLoadingRecentMessages() const;
 
     const std::vector<HelixMinimalUser> &getSharedChatSessionParticipants()
@@ -921,6 +934,14 @@ private:
     QTimer sendWaitTimer_;
     // Timepoint at which the user can send messages again
     std::optional<std::chrono::steady_clock::time_point> sendWaitEnd_;
+    struct QueuedMessage {
+        QString text;
+        QString replyId;
+    };
+    std::vector<QueuedMessage> slowQueue_;
+    QTimer slowQueueTimer_;
+    void scheduleSlowQueue();
+    void flushSlowQueue();
     /// Twitch user ID => restriction, for each of the user's own accounts.
     std::unordered_map<QString, OwnRestriction> ownRestrictions_;
     QTimer ownRestrictionProbe_;

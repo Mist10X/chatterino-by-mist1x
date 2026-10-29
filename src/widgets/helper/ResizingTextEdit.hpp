@@ -11,6 +11,8 @@
 
 #include <functional>
 
+class QLabel;
+
 namespace chatterino {
 
 class ResizingTextEdit : public QTextEdit
@@ -38,6 +40,9 @@ public:
     const QString &ghostText() const;
     /// Empty space above and below the text, as a share of the line height.
     void setVerticalPadding(qreal share);
+    /// A small label at the right end of the input (slow mode countdown); the
+    /// text never runs under it. Empty text hides it.
+    void setSideBadge(const QString &text);
 
     /// Painted over the text after each repaint (inline emote preview).
     std::function<void(QPainter &)> paintOverlay;
@@ -50,6 +55,7 @@ protected:
     void focusInEvent(QFocusEvent *event) override;
     void focusOutEvent(QFocusEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
     bool canInsertFromMimeData(const QMimeData *source) const override;
     void insertFromMimeData(const QMimeData *source) override;
@@ -67,6 +73,8 @@ private:
     QString ignoredCompletionPrefix_;
     QString ghostText_;
     qreal verticalPadding_ = 0;
+    QLabel *sideBadge_ = nullptr;
+    void placeSideBadge();
     /**
      * This is true if a completion was done but the user didn't type yet,
      * and might want to press `Tab` again to get the next completion

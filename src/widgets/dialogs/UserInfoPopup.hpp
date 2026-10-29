@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "providers/twitch/api/TwitchGql.hpp"
 #include "providers/twitch/TwitchNameHistory.hpp"
 #include "singletons/Paths.hpp"
 #include "widgets/BaseWindow.hpp"
@@ -74,6 +75,8 @@ struct UserInfoPreviewData {
     QString createdText;
     QString followersText;
     QString pronouns;
+    /// The chat colour Twitch reports for the person (#RRGGBB), if any.
+    QString chatColor;
     ChannelPtr messages;
     /// Optional unfiltered buffer for exercising the real identity filter.
     ChannelPtr sourceMessages;
@@ -191,6 +194,11 @@ private:
     void applyArchiveHistory(const QJsonObject &data);
     bool archiveConfigured() const;
     void rebuildArchiveHistoryView(bool preserveAnchor);
+    /// The person's chat colour: the card's own (from Twitch), else the one
+    /// seen in this channel's chat; empty if unknown.
+    QString knownChatColor() const;
+    /// Recolour history rows that came without a colour once it is known.
+    void refreshArchiveHistoryColors();
     void updateArchiveHistoryButton();
     bool hasCachedOlderHistory() const;
 
@@ -287,6 +295,10 @@ private:
     QJsonObject archiveLocalCursor_;
     QJsonObject archivePublicCursor_;
     std::vector<MessagePtr> archiveHistoryMessages_;
+    // Saved Archive rows carry no colour: what they were built from, by ID,
+    // and the colour they were given (Chatterino would pick one by user ID).
+    QHash<QString, GqlUsercardMessage> archiveHistoryUncolored_;
+    QString archiveHistoryColor_;
     QHash<QString, QJsonObject> archiveHistoryRowMetadata_;
     QString archiveHistoryStatus_;
     bool archiveHistoryStarted_ = false;

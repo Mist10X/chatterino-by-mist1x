@@ -928,9 +928,16 @@ TwitchChannel::TwitchChannel(const QString &name, bool anonymous)
                 this->liftOwnRestriction(message->timeoutUserID);
             }
         });
+    this->sendWaitTimer_.setSingleShot(true);
+    this->sendWaitTimer_.setTimerType(Qt::PreciseTimer);
     QObject::connect(&this->sendWaitTimer_, &QTimer::timeout,
                      &this->lifetimeGuard_, [this] {
                          this->syncSendWaitTimer();
+                     });
+    this->slowQueueTimer_.setSingleShot(true);
+    QObject::connect(&this->slowQueueTimer_, &QTimer::timeout,
+                     &this->lifetimeGuard_, [this] {
+                         this->flushSlowQueue();
                      });
 
     // debugging
@@ -4374,20 +4381,24 @@ void TwitchChannel::listenSevenTVCosmetics() const
 void TwitchChannel::syncSendWaitTimer()
 {
     auto now = std::chrono::steady_clock::now();
-    const auto remaining =
+    const auto leftMs =
         this->sendWaitEnd_.has_value()
-            ? std::chrono::duration_cast<std::chrono::seconds>(
+            ? std::chrono::duration_cast<std::chrono::milliseconds>(
                   this->sendWaitEnd_.value() - now)
-            : 0s;
-    if (remaining <= 0s)
+                  .count()
+            : 0;
+    if (leftMs <= 0)
     {
         this->sendWaitTimer_.stop();
         this->sendWaitUpdate.invoke("");
+        return;
     }
-    else
-    {
-        this->sendWaitUpdate.invoke(formatTime(remaining, 2));
-    }
+    // The next tick lands where the shown (rounded up) second changes, so the
+    // countdown never sticks at "1 s" after the wait is over.
+    const auto toNextSecond = leftMs % 1000 == 0 ? 1000 : leftMs % 1000;
+    this->sendWaitTimer_.start(int(toNextSecond) + 2);
+    this->sendWaitUpdate.invoke(
+        formatTime(std::chrono::seconds((leftMs + 999) / 1000), 2));
 }
 
 namespace {
@@ -4559,11 +4570,104 @@ void TwitchChannel::setSendWait(int seconds)
     }
     this->sendWaitEnd_ =
         std::chrono::steady_clock::now() + std::chrono::seconds(seconds);
-    if (!this->sendWaitTimer_.isActive())
+    this->syncSendWaitTimer();
+    this->scheduleSlowQueue();
+}
+
+int TwitchChannel::sendWaitSeconds() const
+{
+    if (!this->sendWaitEnd_)
     {
-        this->sendWaitTimer_.start(1s);
-        this->syncSendWaitTimer();
+        return 0;
     }
+    const auto left = std::chrono::duration_cast<std::chrono::milliseconds>(
+                          *this->sendWaitEnd_ - std::chrono::steady_clock::now())
+                          .count();
+    return left > 0 ? int((left + 999) / 1000) : 0;
+}
+
+bool TwitchChannel::queueWhileSlow(const QString &message,
+                                   const QString &replyId)
+{
+    using Kind = OwnRestriction::Kind;
+    const auto kind = this->ownRestriction().kind;
+    // Only slow mode: a timeout or ban is not a wait to queue for.
+    if (!getSettings()->queueSlowModeMessages || this->sendWaitSeconds() <= 0 ||
+        this->hasHighRateLimit() || kind == Kind::TimedOut ||
+        kind == Kind::Banned || this->accessRoomModes()->slowMode <= 0)
+    {
+        return false;
+    }
+    this->slowQueue_.push_back({message, replyId});
+    this->scheduleSlowQueue();
+    this->syncSendWaitTimer();
+    return true;
+}
+
+size_t TwitchChannel::slowQueueSize() const
+{
+    return this->slowQueue_.size();
+}
+
+void TwitchChannel::noteOwnMessageSent()
+{
+    if (this->hasHighRateLimit())
+    {
+        return;
+    }
+    const auto slow = this->accessRoomModes()->slowMode;
+    if (slow > 0)
+    {
+        this->setSendWait(slow);
+    }
+}
+
+void TwitchChannel::scheduleSlowQueue()
+{
+    if (this->slowQueue_.empty())
+    {
+        this->slowQueueTimer_.stop();
+        return;
+    }
+    qint64 left = 0;
+    if (this->sendWaitEnd_)
+    {
+        left = std::chrono::duration_cast<std::chrono::milliseconds>(
+                   *this->sendWaitEnd_ - std::chrono::steady_clock::now())
+                   .count();
+    }
+    // A small margin: Twitch counts the wait from its own receipt.
+    this->slowQueueTimer_.start(int(std::max<qint64>(0, left)) + 250);
+}
+
+void TwitchChannel::flushSlowQueue()
+{
+    if (this->slowQueue_.empty())
+    {
+        return;
+    }
+    if (this->sendWaitSeconds() > 0)
+    {
+        this->scheduleSlowQueue();
+        return;
+    }
+    const auto next = this->slowQueue_.front();
+    this->slowQueue_.erase(this->slowQueue_.begin());
+    if (this->slowQueueSenderForTesting)
+    {
+        this->slowQueueSenderForTesting(next.text, next.replyId);
+    }
+    else if (next.replyId.isEmpty())
+    {
+        this->sendMessage(next.text);
+    }
+    else
+    {
+        this->sendReply(next.text, next.replyId);
+    }
+    this->noteOwnMessageSent();
+    this->scheduleSlowQueue();
+    this->syncSendWaitTimer();
 }
 
 bool TwitchChannel::isLoadingRecentMessages() const

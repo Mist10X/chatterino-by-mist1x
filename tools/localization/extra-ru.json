@@ -159,6 +159,15 @@
   "Twitch hides a channel's chat from a banned account. While you are banned, the chat is read through Twitch's anonymous guest connection (read only, like a viewer who is not logged in).": "Twitch скрывает чат канала от забаненного аккаунта. Пока вы забанены, чат читается через гостевое подключение Twitch (только чтение, как у зрителя без входа).",
   "Load older messages from public chat logs": "Подгружать старые сообщения из публичных логов",
   "The History button in the usercard reads the person's older messages in this channel from the public chat logs (logs.zonian.dev, logs.twitchmetrics.xyz, logs.spanix.team) without the Archive. People and channels that opted out are not shown.": "Кнопка «История» в карточке берёт старые сообщения человека в этом канале из публичных логов чата (logs.zonian.dev, logs.twitchmetrics.xyz, logs.spanix.team) без Архива. Люди и каналы, отказавшиеся от логирования, не показываются.",
+  "Show the slow mode countdown in the chat input": "Показывать отсчёт медленного режима в строке ввода",
+  "After your message in a slow mode channel, the input shows how long until the next one can be sent. The input stays usable.": "После вашего сообщения на канале с медленным режимом в строке ввода видно, сколько ждать до следующего. Строка ввода при этом не блокируется.",
+  "Queue messages sent during slow mode": "Ставить в очередь сообщения во время медленного режима",
+  "A message sent before the slow mode wait is over is kept and sent by itself as soon as the wait ends.": "Сообщение, отправленное до конца ожидания медленного режима, сохраняется и уходит само, как только ожидание закончится.",
+  "Hide community sub gift messages": "Скрывать сообщения о подаренных подписках",
+  "No chat lines for \"X is gifting N subs to the community\" and for each gifted sub that belongs to it.": "Не показывать в чате строки «X дарит N подписок сообществу» и строки о каждой подаренной в этом подарке подписке.",
+  "%1 s": "%1 с",
+  "Slow mode · %1": "Медленный режим · %1",
+  "Slow mode · %1 · queued: %2": "Медленный режим · %1 · в очереди: %2",
   "Show a card for highlights in other channels": "Показывать плашку о подсветках из других каналов",
   "When a highlight that flashes the taskbar comes from a channel that is not on the open tab, a card appears at the top of the window. Click it to go to the message.": "Когда срабатывает подсветка с миганием на панели задач в канале, которого нет в открытой вкладке, сверху окна появляется плашка. Клик по ней — переход к сообщению."
 }

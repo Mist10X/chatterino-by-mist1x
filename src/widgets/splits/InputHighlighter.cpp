@@ -142,6 +142,7 @@ struct ShownEmote {
     int start;
     EmotePtr emote;
     QSizeF size;
+    int length = 0;
 };
 
 class EmoteBlockData final : public QTextBlockUserData
@@ -352,8 +353,8 @@ void InputHighlighter::highlightEmotes(const QString &text)
         format.setFontLetterSpacing(
             (width - metrics.horizontalAdvance(match.captured())) / length);
         this->setFormat(int(match.capturedStart()), length, format);
-        data->emotes.push_back(
-            {int(match.capturedStart()), emote, QSizeF(width, height)});
+        data->emotes.push_back({int(match.capturedStart()), emote,
+                                QSizeF(width, height), int(length)});
     }
 
     this->shownEmotes_ += int(data->emotes.size());
@@ -371,6 +372,8 @@ void InputHighlighter::paintEmotes(QPainter &painter,
     }
     painter.setRenderHint(QPainter::SmoothPixmapTransform);
     const auto scale = float(std::max(1.0, edit.devicePixelRatioF() * 1.5));
+    const auto selection = edit.textCursor();
+    const auto highlight = edit.palette().color(QPalette::Highlight);
     for (auto block = document->begin(); block.isValid(); block = block.next())
     {
         const auto *data = dynamic_cast<EmoteBlockData *>(block.userData());
@@ -386,6 +389,22 @@ void InputHighlighter::paintEmotes(QPainter &painter,
             const QRectF target(caret.left() + 1,
                                 caret.center().y() - shown.size.height() / 2,
                                 shown.size.width(), shown.size.height());
+            // A selection paints the hidden letters in a visible colour:
+            // cover them with the selection colour under the emote.
+            const auto from = block.position() + shown.start;
+            if (selection.hasSelection() &&
+                selection.selectionStart() < from + shown.length &&
+                selection.selectionEnd() > from)
+            {
+                QTextCursor end(block);
+                end.setPosition(from + shown.length);
+                const auto right = edit.cursorRect(end).left();
+                const auto line = edit.cursorRect(cursor);
+                painter.fillRect(QRectF(caret.left(), line.top(),
+                                        std::max<qreal>(1, right - caret.left()),
+                                        line.height()),
+                                 highlight);
+            }
             const auto &image = shown.emote->images.getImageOrLoaded(scale);
             if (auto pixmap = image->pixmapOrLoad())
             {

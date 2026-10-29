@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include <QElapsedTimer>
+#include <QLabel>
+
 // The own timeout in the input box (like Chatterino+): red with a countdown,
 // green once it is over, normal after the first message. Synthetic channel,
 // no IRC / PubSub connection; the state is driven through the same
@@ -42,6 +45,24 @@ inline QString before(const QString &pattern)
 {
     return pattern.section(QStringLiteral("%1"), 0, 0);
 }
+
+}  // namespace owntimeout
+
+namespace chatterino {
+/// Room modes are set by Twitch's ROOMSTATE; this fixture sets them directly.
+class TwitchChannelTestAccess
+{
+public:
+    static void setSlowMode(TwitchChannel &channel, int seconds)
+    {
+        auto modes = *channel.accessRoomModes();
+        modes.slowMode = seconds;
+        channel.setRoomModes(modes);
+    }
+};
+}  // namespace chatterino
+
+namespace owntimeout {
 
 inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
                                const QString &screenshotBase)
@@ -221,6 +242,93 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
     getSettings()->showOwnTimeoutInInput = true;
     channel->liftOwnRestriction();
     channel->acknowledgeOwnRestrictionLifted();
+    pump(100);
+
+    // 10. slow mode: a countdown at the end of the input, a queue for early
+    // messages.
+    auto badge = [&]() -> QString {
+        for (auto *label : edit->findChildren<QLabel *>())
+        {
+            if (!label->isHidden())
+            {
+                return label->text();
+            }
+        }
+        return {};
+    };
+    QStringList sent;
+    channel->slowQueueSenderForTesting = [&sent](const QString &text,
+                                                 const QString &) {
+        sent.append(text);
+    };
+    auto sends = [&] {
+        return int(sent.size());
+    };
+    const auto slowPrefix = before(uiText("Slow mode · %1"));
+    TwitchChannelTestAccess::setSlowMode(*channel, 3);
+    channel->setSendWait(0);
+    pump(50);
+    check("no wait: no countdown and nothing to queue",
+          badge().isEmpty() && !channel->queueWhileSlow(QStringLiteral("hi")));
+    channel->noteOwnMessageSent();
+    pump(100);
+    check("after a message: the countdown is in the input, which stays usable",
+          badge().startsWith(slowPrefix) &&
+              badge().contains(uiText("%1 s").arg(3)) && !edit->isReadOnly());
+    shot(QStringLiteral("-slow"));
+    // Long text wraps earlier next to the badge: the box grows, nothing is cut.
+    // (A standalone box of the same kind: typing into the split's own input
+    // needs app services this fixture lacks.)
+    {
+        ResizingTextEdit box;
+        box.setFont(edit->font());
+        box.setVerticalPadding(0.15);
+        box.setSideBadge(uiText("Slow mode · %1").arg(uiText("%1 s").arg(1)));
+        box.setPlainText(QString(QStringLiteral("ХЪЗАЫФХ ")).repeated(30));
+        const int width = 560;
+        box.resize(width, static_cast<QWidget &>(box).heightForWidth(width));
+        box.show();
+        pump(150);
+        check("a long message next to the countdown is not cut off",
+              box.document()->size().height() <= box.viewport()->height() + 1);
+        box.grab().save(screenshotBase + "-slow-long.png", "PNG");
+    }
+    const auto before0 = sends();
+    check("a message during the wait is queued",
+          channel->queueWhileSlow(QStringLiteral("first")) &&
+              channel->queueWhileSlow(QStringLiteral("second")) &&
+              channel->slowQueueSize() == 2 && sends() == before0);
+    pump(100);
+    check("the countdown shows the queue",
+          badge().contains(QStringLiteral("2")) &&
+              badge() != uiText("Slow mode · %1").arg(uiText("%1 s").arg(3)));
+    shot(QStringLiteral("-slow-queued"));
+    QElapsedTimer clock;
+    clock.start();
+    pump(3600);
+    const auto firstAt = clock.elapsed();
+    check("the first queued message goes by itself when the wait ends",
+          sends() == before0 + 1 && channel->slowQueueSize() == 1);
+    check("…and starts the next wait", channel->sendWaitSeconds() >= 2);
+    pump(3400);
+    check("the second goes one wait later, in order",
+          sends() == before0 + 2 && channel->slowQueueSize() == 0 &&
+              clock.elapsed() - firstAt >= 2900 &&
+              sent == QStringList{QStringLiteral("first"),
+                                  QStringLiteral("second")});
+    pump(3300);
+    check("then the countdown disappears", badge().isEmpty());
+    channel->setOwnTimedOut(QDateTime::currentDateTimeUtc().addSecs(60));
+    channel->setSendWait(60);
+    pump(50);
+    check("a timeout is not a slow mode wait: nothing queued, no slow badge",
+          !channel->queueWhileSlow(QStringLiteral("x")) &&
+              !badge().startsWith(slowPrefix));
+    channel->liftOwnRestriction();
+    channel->acknowledgeOwnRestrictionLifted();
+    channel->setSendWait(0);
+    TwitchChannelTestAccess::setSlowMode(*channel, 0);
+    channel->slowQueueSenderForTesting = nullptr;
     pump(100);
 
     QFile out(report);

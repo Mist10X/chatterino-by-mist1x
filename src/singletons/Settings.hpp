@@ -1400,6 +1400,14 @@ public:
     /// Size of the reply thread popup the user last chose (logical px; 0 = default).
     IntSetting replyThreadPopupWidth{"/moltorino/replyThread/width", 0};
     IntSetting replyThreadPopupHeight{"/moltorino/replyThread/height", 0};
+    /// Slow mode: a countdown inside the input until the next message may go.
+    BoolSetting showSlowModeInInput{"/moltorino/input/slowModeTimer", true};
+    /// Slow mode: a message sent too early waits and goes by itself.
+    BoolSetting queueSlowModeMessages{"/moltorino/input/slowModeQueue", true};
+    /// No chat line for community sub gifts ("X is gifting 5 subs…") and their
+    /// per-recipient lines; the corner banner for big gifts stays.
+    BoolSetting hideCommunityGiftMessages{"/moltorino/chat/hideCommunityGifts",
+                                          true};
     /// Red input with a countdown while timed out, green once it is over.
     BoolSetting showOwnTimeoutInInput{"/moltorino/input/showOwnTimeout", true};
     IntSetting incomingRaidBannerSeconds{

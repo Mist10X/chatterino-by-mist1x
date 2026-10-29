@@ -899,6 +899,16 @@ void IrcMessageHandler::parseUserNoticeMessageInto(Communi::IrcMessage *message,
         return;
     }
 
+    // A community gift ("X is gifting 5 subs…") and each sub it hands out:
+    // no chat lines (the corner banner for big gifts is raised separately).
+    if (getSettings()->hideCommunityGiftMessages &&
+        (msgType == "submysterygift" || msgType == "anonsubmysterygift" ||
+         ((msgType == "subgift" || msgType == "anonsubgift") &&
+          !tags.getOrEmpty("msg-param-community-gift-id").isEmpty())))
+    {
+        return;
+    }
+
     if (msgType == "subgift")
     {
         // subgifts are special because they include two users

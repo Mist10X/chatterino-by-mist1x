@@ -12,6 +12,7 @@
 #include <QAbstractTextDocumentLayout>
 #include <QEvent>
 #include <QFontMetrics>
+#include <QLabel>
 #include <QLayout>
 #include <QMenu>
 #include <QMimeData>
@@ -124,7 +125,65 @@ void ResizingTextEdit::applyVerticalPadding()
 {
     auto padding =
         qRound(QFontMetricsF(this->font()).height() * this->verticalPadding_);
-    this->setViewportMargins(0, padding, 0, padding);
+    const int right = this->sideBadge_ && !this->sideBadge_->isHidden()
+                          ? this->sideBadge_->sizeHint().width() + 6
+                          : 0;
+    this->setViewportMargins(0, padding, right, padding);
+}
+
+void ResizingTextEdit::setSideBadge(const QString &text)
+{
+    if (text.isEmpty() && !this->sideBadge_)
+    {
+        return;
+    }
+    if (!this->sideBadge_)
+    {
+        this->sideBadge_ = new QLabel(this);
+        this->sideBadge_->setAttribute(Qt::WA_TransparentForMouseEvents);
+        this->sideBadge_->setAlignment(Qt::AlignCenter);
+        this->sideBadge_->setStyleSheet(QStringLiteral(
+            "QLabel { color: #f2d67e; background: rgba(242, 214, 126, 38);"
+            " border-radius: 8px; padding: 1px 8px; }"));
+    }
+    if (this->sideBadge_->text() == text &&
+        this->sideBadge_->isHidden() == text.isEmpty())
+    {
+        return;
+    }
+    const auto before = this->viewportMargins().right();
+    auto font = this->font();
+    font.setPointSizeF(std::max(7.0, font.pointSizeF() * 0.85));
+    this->sideBadge_->setFont(font);
+    this->sideBadge_->setText(text);
+    this->sideBadge_->setHidden(text.isEmpty());
+    this->applyVerticalPadding();
+    this->placeSideBadge();
+    if (this->viewportMargins().right() != before)
+    {
+        // Narrower text may need more lines (and the other way round).
+        this->invalidateAncestorLayouts();
+    }
+}
+
+void ResizingTextEdit::placeSideBadge()
+{
+    if (!this->sideBadge_ || this->sideBadge_->isHidden())
+    {
+        return;
+    }
+    const auto size = this->sideBadge_->sizeHint();
+    const auto frame = this->frameWidth();
+    this->sideBadge_->setGeometry(this->width() - frame - size.width() - 3,
+                                  (this->height() - size.height()) / 2,
+                                  size.width(), size.height());
+    this->sideBadge_->raise();
+}
+
+void ResizingTextEdit::resizeEvent(QResizeEvent *event)
+{
+    QTextEdit::resizeEvent(event);
+    this->placeSideBadge();
 }
 
 void ResizingTextEdit::invalidateAncestorLayouts()
@@ -188,7 +247,10 @@ int ResizingTextEdit::heightForWidth(int width) const
 {
     auto margins = this->contentsMargins();
     auto padding = this->viewportMargins();
-    auto documentWidth = qMax(width - margins.left() - margins.right(), 1);
+    // The side badge takes room on the right: the text wraps earlier.
+    auto documentWidth = qMax(width - margins.left() - margins.right() -
+                                  padding.left() - padding.right(),
+                              1);
 
     return margins.top() + padding.top() +
            qCeil(this->documentHeightForWidth(documentWidth)) +

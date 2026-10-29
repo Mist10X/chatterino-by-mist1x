@@ -220,6 +220,7 @@ PreviewData fixture(const QString &scenario)
     }
     data.createdText = QStringLiteral("Создан 2021-04-15 · тестовые данные");
     data.followersText = QStringLiteral("Фолловеров 1 234 · тестовые данные");
+    data.chatColor = QStringLiteral("#E07700");
     data.pronouns = QStringLiteral("Местоимения: they/them · тестовые данные");
     data.avatar = QPixmap(128, 128);
     data.avatar.fill(QColor(secondIdentity ? "#355b77" : "#67418b"));

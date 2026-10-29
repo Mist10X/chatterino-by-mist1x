@@ -1592,11 +1592,28 @@ QString SplitInput::handleSendMessage(const std::vector<QString> &arguments)
         return "";
     }
 
+    // Slow mode: a plain chat message sent too early waits for its turn.
+    auto *slowChannel = dynamic_cast<TwitchChannel *>(c.get());
+    const auto trimmed = message.trimmed();
+    const bool plainChat = slowChannel != nullptr && !trimmed.isEmpty() &&
+                           !trimmed.startsWith('/') && !trimmed.startsWith('.');
+    if (plainChat &&
+        slowChannel->queueWhileSlow(
+            message, this->replyTarget_ ? this->replyTarget_->id : QString()))
+    {
+        this->postMessageSend(message, arguments);
+        return "";
+    }
+
     if (!c->isTwitchOrKickChannel() || this->replyTarget_ == nullptr)
     {
         QString sendMessage =
             getApp()->getCommands()->execCommand(message, c, false);
         c->sendMessage(sendMessage);
+        if (plainChat)
+        {
+            slowChannel->noteOwnMessageSent();
+        }
 
         this->postMessageSend(message, arguments);
         return "";
@@ -1618,6 +1635,10 @@ QString SplitInput::handleSendMessage(const std::vector<QString> &arguments)
     if (tc)
     {
         tc->sendReply(sendMessage, this->replyTarget_->id);
+        if (plainChat)
+        {
+            tc->noteOwnMessageSent();
+        }
     }
     else if (kc)
     {
@@ -2654,6 +2675,7 @@ void SplitInput::updateOwnRestriction()
         this->ownRestrictionTimer_.stop();
     }
 
+    this->updateSlowModeBadge();
     const int tint = blocked ? 1 : kind == Kind::Lifted ? 2 : 0;
     const bool wasShowing = this->ownRestrictionShowing_;
     this->ownRestrictionShowing_ = kind != Kind::None;
@@ -2720,6 +2742,41 @@ bool SplitInput::applyOwnRestrictionPlaceholder()
     }
     this->ui_.textEdit->setPlaceholderText(text);
     return true;
+}
+
+void SplitInput::updateSlowModeBadge()
+{
+    using Kind = TwitchChannel::OwnRestriction::Kind;
+    // Also runs from the constructor, before the input box exists.
+    if (this->ui_.textEdit == nullptr || this->split_ == nullptr)
+    {
+        return;
+    }
+    auto *channel =
+        dynamic_cast<TwitchChannel *>(this->split_->getSelectedChannel().get());
+    QString text;
+    if (channel != nullptr && getSettings()->showSlowModeInInput)
+    {
+        const auto kind = channel->ownRestriction().kind;
+        const auto seconds = channel->sendWaitSeconds();
+        const auto queued = channel->slowQueueSize();
+        // A timeout has its own countdown in the input.
+        if (kind != Kind::TimedOut && kind != Kind::Banned &&
+            (seconds > 0 || queued > 0))
+        {
+            const auto left =
+                seconds >= 60 ? QStringLiteral("%1:%2")
+                                    .arg(seconds / 60)
+                                    .arg(seconds % 60, 2, 10, QChar('0'))
+                              : uiText("%1 s").arg(seconds);
+            text = queued > 0
+                       ? uiText("Slow mode · %1 · queued: %2")
+                             .arg(left)
+                             .arg(queued)
+                       : uiText("Slow mode · %1").arg(left);
+        }
+    }
+    this->ui_.textEdit->setSideBadge(text);
 }
 
 QColor SplitInput::inputBackground() const
@@ -4858,6 +4915,7 @@ void SplitInput::updateHistorySearchStatus(bool failed, const QString &message)
 
 void SplitInput::setSendWaitStatus(const QString &text)
 {
+    this->updateSlowModeBadge();
     this->ui_.sendWaitStatus->setText(text);
     this->sendWaitStatusWanted_ =
         !text.isEmpty() && getSettings()->showSendWaitTimer;
@@ -4885,6 +4943,7 @@ void SplitInput::updateChannel()
         this->updateRaidStatus();
         this->bindOwnRestrictionChannel();
         this->updateOwnRestriction();
+        this->updateSlowModeBadge();
         this->resetCommandCompletionSession();
         this->commandHintKey_.clear();
         this->commandHintChannel_.reset();
