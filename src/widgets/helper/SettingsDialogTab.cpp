@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "widgets/helper/SettingsDialogTab.hpp"
+
+#include "singletons/Theme.hpp"
 #include "common/UiLanguage.hpp"
 
 #include "widgets/dialogs/SettingsDialog.hpp"
@@ -27,8 +29,7 @@ SettingsDialogTab::SettingsDialogTab(SettingsDialog *_dialog,
     this->ui_.icon.addFile(imageFileName);
 
     this->setCursor(QCursor(Qt::PointingHandCursor));
-
-    this->setStyleSheet("color: #FFF");
+    this->setAttribute(Qt::WA_Hover);
 }
 
 void SettingsDialogTab::setSelected(bool _selected)
@@ -41,6 +42,7 @@ void SettingsDialogTab::setSelected(bool _selected)
     //    height: <checkbox-size>px;
 
     this->selected_ = _selected;
+    this->update();
     this->selectedChanged(this->selected_);
 }
 
@@ -64,25 +66,45 @@ SettingsPage *SettingsDialogTab::createdPage() const
 void SettingsDialogTab::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
 
-    QStyleOption opt;
-    opt.initFrom(this);
+    // a soft pill behind the selected (and hovered) entry, an accent bar at
+    // its left edge
+    const auto accent = getTheme()->accent;
+    const QRectF pill = QRectF(this->rect()).adjusted(8, 1, -6, -1);
+    painter.setPen(Qt::NoPen);
+    if (this->selected_)
+    {
+        auto background = accent;
+        background.setAlpha(42);
+        painter.setBrush(background);
+        painter.drawRoundedRect(pill, 7, 7);
+        painter.setBrush(accent);
+        painter.drawRoundedRect(
+            QRectF(pill.left(), pill.top() + 7, 3, pill.height() - 14), 1.5,
+            1.5);
+    }
+    else if (this->underMouse())
+    {
+        painter.setBrush(QColor(255, 255, 255, 14));
+        painter.drawRoundedRect(pill, 7, 7);
+    }
 
-    this->style()->drawPrimitive(QStyle::PE_Widget, &opt, &painter, this);
+    const int iconSize = 18;
+    const int iconX = static_cast<int>(pill.left()) + 12;
+    painter.setOpacity(this->selected_ ? 1.0 : 0.72);
+    painter.drawPixmap(iconX, (this->height() - iconSize) / 2,
+                       this->ui_.icon.pixmap(QSize(iconSize, iconSize)));
+    painter.setOpacity(1.0);
 
-    int iconSize = 20 * this->scale();
-    int pad = (this->height() - iconSize) / 2;
-    QPixmap pixmap = this->ui_.icon.pixmap(
-        QSize(this->height() - pad * 2, this->height() - pad * 2));
-
-    painter.drawPixmap(pad, pad, pixmap);
-
-    pad = (3 * pad) + iconSize;
-
-    this->style()->drawItemText(
-        &painter, QRect(pad, 0, this->width() - pad, this->height()),
-        Qt::AlignLeft | Qt::AlignVCenter, this->palette(), false,
-        this->ui_.labelText);
+    const int textX = iconX + iconSize + 11;
+    painter.setPen(this->selected_ ? QColor("#ffffff") : QColor("#c4c3cf"));
+    painter.setFont(this->font());
+    painter.drawText(QRect(textX, 0, this->width() - textX - 6, this->height()),
+                     Qt::AlignLeft | Qt::AlignVCenter,
+                     this->fontMetrics().elidedText(this->ui_.labelText,
+                                                    Qt::ElideRight,
+                                                    this->width() - textX - 6));
 }
 
 void SettingsDialogTab::mousePressEvent(QMouseEvent *event)

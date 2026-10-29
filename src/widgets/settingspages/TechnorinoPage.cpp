@@ -106,18 +106,22 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
 {
     auto &s = *getSettings();
 
-    layout.addTitle(uiText("Chat"));
+    routeSetting(layout, QStringLiteral("Chat input"),
+                 QStringLiteral("Input Box"));
     // SettingWidget::checkbox("", s.hideModerated)->setTooltip("")->addTo(layout);
     SettingWidget::checkbox(
         uiText("Show placeholder in text input box (requires restart)"),
         s.showTextInputPlaceholder)
         ->setTooltip(uiText("Show placeholder in text input box (requires restart)"))
         ->addTo(layout);
+    routeSetting(layout, QStringLiteral("Links and search"),
+                 QStringLiteral("Links"));
     SettingWidget::checkbox(uiText("Convert #text to channel links"), s.channelLinks)
         ->setTooltip(uiText("Convert #text to channel links"))
         ->addTo(layout);
 
-    layout.addTitle(uiText("Miscellaneous"));
+    routeSetting(layout, QStringLiteral("Chat input"),
+                 QStringLiteral("Sending"));
     SettingWidget::checkbox(uiText("Fake messages as webchat"), s.fakeWebChat)
         ->setTooltip(uiText("Fake messages as webchat"))
         ->addTo(layout);
@@ -128,6 +132,8 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
     SettingWidget::checkbox(uiText("Use bot limits for JOINs"), s.useBotLimitsJoin)
         ->setTooltip(uiText("Use bot limits for JOINs"))
         ->addTo(layout);
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Client detection"));
     SettingWidget::checkbox(
         uiText("Enable. Required for abnormal nonce and webchat detection to work!"),
         s.nonceFuckeryEnabled)
@@ -139,7 +145,8 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
         ->setTooltip(uiText("Abnormal nonce detection"))
         ->addTo(layout);
 
-    layout.addTitle(uiText("Client detection"));
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Client detection"));
     SettingWidget::checkbox(uiText("Client detection highlights. "),
                             s.normalNonceDetection)
         ->setTooltip(uiText("Highlights messages sent from specified clients "
@@ -158,6 +165,8 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
         ->setTooltip(uiText("Displays client icons beside messages"))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Tabs"));
     SettingWidget::checkbox(uiText("Watching tab live sound"), s.watchingTabLiveSound)
         ->setTooltip(uiText("Watching tab live sound"))
         ->addTo(layout);
@@ -165,6 +174,8 @@ void TechnorinoPage::initLayout(GeneralPageView &layout)
                             s.autoDetachLiveTab)
         ->setTooltip(uiText("Auto detach watching tab (~10s timeout)"))
         ->addTo(layout);
+    routeSetting(layout, QStringLiteral("System settings"),
+                 QStringLiteral("Experimental"));
     SettingWidget::checkbox(uiText("Markdown parsing (Experimental)"),
                             s.markdownParsing)
         ->setTooltip(uiText("Markdown parsing (Experimental)"))

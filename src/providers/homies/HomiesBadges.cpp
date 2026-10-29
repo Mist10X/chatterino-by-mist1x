@@ -11,15 +11,23 @@
 #include "common/QLogging.hpp"
 #include "messages/Emote.hpp"
 #include "messages/Image.hpp"
+#include "singletons/Paths.hpp"
 #include "singletons/WindowManager.hpp"
 
+#include <QCoreApplication>
+#include <QFile>
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <QJsonObject>
+#include <QSaveFile>
+#include <QThreadPool>
 #include <QStringBuilder>
 #include <QTimer>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
+#include <tuple>
 
 namespace chatterino {
 
@@ -33,21 +41,43 @@ constexpr auto HOMIES_USER_AGENT =
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36";
 constexpr auto HOMIES_BADGE_FRAME_LIFETIME = std::chrono::minutes{4};
+/// The lists change now and then: fetched again this often.
+constexpr auto HOMIES_REFRESH_INTERVAL = std::chrono::hours{1};
 
-QJsonArray extractBadgesArray(const NetworkResult &result,
+struct HomiesSource {
+    const char *url;
+    /// The last good answer is kept here, so badges show up right at
+    /// startup even when the site is slow or down.
+    const char *cacheFile;
+    bool userCentric;
+};
+constexpr std::array<HomiesSource, 3> HOMIES_SOURCES{{
+    {"https://chatterinohomies.com/api/badges/list", "homies-badges-1.json",
+     true},
+    {"https://itzalex.github.io/badges", "homies-badges-2.json", false},
+    {"https://itzalex.github.io/badges2", "homies-badges-3.json", false},
+}};
+
+/// Which lists already came fresh from the site this run.
+std::array<std::atomic_bool, 3> HOMIES_FRESH{};
+
+QString homiesCachePath(const HomiesSource &source)
+{
+    return getApp()->getPaths().cacheFilePath(
+        QString::fromLatin1(source.cacheFile));
+}
+
+QJsonArray extractBadgesArray(const QByteArray &data,
                               const QString &sourceName)
 {
-    const auto object = result.parseJson();
-    if (!object.isEmpty() && object.contains("badges") &&
-        object.value("badges").isArray())
+    const auto doc = QJsonDocument::fromJson(data);
+    if (doc.isObject() && doc.object().value("badges").isArray())
     {
-        return object.value("badges").toArray();
+        return doc.object().value("badges").toArray();
     }
-
-    const auto array = result.parseJsonArray();
-    if (!array.isEmpty())
+    if (doc.isArray() && !doc.array().isEmpty())
     {
-        return array;
+        return doc.array();
     }
 
     qCWarning(chatterinoApp) << "[Homies] Unexpected payload shape from"
@@ -109,6 +139,10 @@ void storeUserCentricBadges(const QJsonArray &badges, const QString &sourceTag,
 
     for (const auto &badgeValue : badges)
     {
+        if (isAppAboutToQuit())
+        {
+            return;
+        }
         const auto badgeJson = badgeValue.toObject();
         const auto userId = badgeJson.value("userId").toString().trimmed();
         if (userId.isEmpty())
@@ -146,6 +180,10 @@ void storeBadgeCentricBadges(const QJsonArray &badges, const QString &sourceTag,
 
     for (const auto &badgeValue : badges)
     {
+        if (isAppAboutToQuit())
+        {
+            return;
+        }
         const auto badgeJson = badgeValue.toObject();
         auto emote = createBadgeEmote(
             sourceTag, badgeJson.value("tooltip").toString(), badgeJson);
@@ -185,6 +223,12 @@ void HomiesBadges::startLoading()
     }
 
     this->loadHomiesBadges();
+
+    auto *refresh = new QTimer();  // lives as long as the app
+    QObject::connect(refresh, &QTimer::timeout, [this] {
+        this->loadHomiesBadges();
+    });
+    refresh->start(HOMIES_REFRESH_INTERVAL);
 }
 
 void HomiesBadges::queueRefresh()
@@ -194,7 +238,8 @@ void HomiesBadges::queueRefresh()
         return;
     }
 
-    QTimer::singleShot(250, [this] {
+    // may be called off the GUI thread: the redraw runs on it
+    QTimer::singleShot(250, QCoreApplication::instance(), [this] {
         this->refreshQueued_.store(false);
         if (auto *windows = getApp()->getWindows())
         {
@@ -205,114 +250,113 @@ void HomiesBadges::queueRefresh()
 
 void HomiesBadges::loadHomiesBadges()
 {
-    NetworkRequest("https://chatterinohomies.com/api/badges/list")
-        .header("Accept", "application/json")
-        .header("User-Agent", HOMIES_USER_AGENT)
-        .timeout(5000)
-        .concurrent()
-        .onSuccess([this](const NetworkResult &result) {
-            const auto badges = extractBadgesArray(
-                result, u"chatterinohomies.com/api/badges/list"_s);
+    // Shows the badges in the parsed answer; false: nothing usable in it.
+    const auto apply = [this](size_t index, const QByteArray &data,
+                              bool fresh) {
+        if (isAppAboutToQuit())
+        {
+            return false;
+        }
+        const auto &source = HOMIES_SOURCES.at(index);
+        const auto badges =
+            extractBadgesArray(data, QString::fromLatin1(source.url));
 
-            BadgeMap badgeMap;
-            BadgeStorage emotes;
+        BadgeMap badgeMap;
+        BadgeStorage emotes;
+        if (source.userCentric)
+        {
             storeUserCentricBadges(badges, u"homies"_s, badgeMap, emotes);
-            const auto loadedCount = emotes.size();
-
-            {
-                std::unique_lock lock(this->mutex_);
-                this->badgeMap_ = std::move(badgeMap);
-                this->emotes_ = std::move(emotes);
-            }
-
-            if (loadedCount > 0)
-            {
-                this->hasLoadedBadges_.store(true);
-                this->queueRefresh();
-            }
-
-            qCDebug(chatterinoApp) << "[Homies] Loaded" << loadedCount
-                                   << "badges from chatterinohomies.com";
-        })
-        .onError([](const NetworkResult &result) {
-            qCWarning(chatterinoApp)
-                << "[Homies] Failed to load chatterinohomies.com badges:"
-                << result.formatError();
-        })
-        .execute();
-
-    NetworkRequest("https://itzalex.github.io/badges")
-        .header("Accept", "application/json")
-        .header("User-Agent", HOMIES_USER_AGENT)
-        .timeout(5000)
-        .concurrent()
-        .onSuccess([this](const NetworkResult &result) {
-            const auto badges =
-                extractBadgesArray(result, u"itzalex.github.io/badges"_s);
-
-            BadgeMap badgeMap;
-            BadgeStorage emotes;
+        }
+        else
+        {
             storeBadgeCentricBadges(badges, u"homies"_s, badgeMap, emotes);
-            const auto loadedCount = emotes.size();
+        }
+        const auto loadedCount = emotes.size();
+        // a bad answer keeps the old list; nothing more while closing (this
+        // runs in the background and the app is being torn down)
+        if (loadedCount == 0 || isAppAboutToQuit())
+        {
+            return false;
+        }
 
+        {
+            std::unique_lock lock(this->mutex_);
+            // the saved copy never replaces a list fresh from the site
+            if (!fresh && HOMIES_FRESH.at(index).load())
             {
-                std::unique_lock lock(this->mutex_);
-                this->badgeMap2_ = std::move(badgeMap);
-                this->emotes2_ = std::move(emotes);
+                return false;
             }
-
-            if (loadedCount > 0)
+            if (fresh)
             {
-                this->hasLoadedBadges_.store(true);
-                this->queueRefresh();
+                HOMIES_FRESH.at(index).store(true);
             }
+            auto [targetMap, targetEmotes] =
+                index == 0   ? std::tie(this->badgeMap_, this->emotes_)
+                : index == 1 ? std::tie(this->badgeMap2_, this->emotes2_)
+                             : std::tie(this->badgeMap3_, this->emotes3_);
+            targetMap = std::move(badgeMap);
+            targetEmotes = std::move(emotes);
+        }
+        this->hasLoadedBadges_.store(true);
+        this->queueRefresh();
 
-            qCDebug(chatterinoApp) << "[Homies] Loaded" << loadedCount
-                                   << "badges from itzalex.github.io/badges";
-        })
-        .onError([](const NetworkResult &result) {
-            qCWarning(chatterinoApp)
-                << "[Homies] Failed to load itzalex.github.io/badges:"
-                << result.formatError();
-        })
-        .execute();
+        qCDebug(chatterinoApp) << "[Homies] Loaded" << loadedCount
+                               << "badges from" << source.url;
+        return true;
+    };
 
-    NetworkRequest("https://itzalex.github.io/badges2")
-        .header("Accept", "application/json")
-        .header("User-Agent", HOMIES_USER_AGENT)
-        .timeout(5000)
-        .concurrent()
-        .onSuccess([this](const NetworkResult &result) {
-            const auto badges =
-                extractBadgesArray(result, u"itzalex.github.io/badges2"_s);
-
-            BadgeMap badgeMap;
-            BadgeStorage emotes;
-            storeBadgeCentricBadges(badges, u"homies"_s, badgeMap, emotes);
-            const auto loadedCount = emotes.size();
-
+    // First run: what was saved last time, until the fresh list is in (read
+    // off the GUI thread, the main list is a few MB of JSON).
+    if (!this->hasLoadedBadges_.load())
+    {
+        QThreadPool::globalInstance()->start([apply] {
+            for (size_t index = 0; index < HOMIES_SOURCES.size(); ++index)
             {
-                std::unique_lock lock(this->mutex_);
-                this->badgeMap3_ = std::move(badgeMap);
-                this->emotes3_ = std::move(emotes);
+                if (isAppAboutToQuit())
+                {
+                    return;
+                }
+                QFile cached(homiesCachePath(HOMIES_SOURCES.at(index)));
+                if (!HOMIES_FRESH.at(index).load() &&
+                    cached.open(QIODevice::ReadOnly))
+                {
+                    apply(index, cached.readAll(), false);
+                }
             }
+        });
+    }
 
-            if (loadedCount > 0)
-            {
-                this->hasLoadedBadges_.store(true);
-                this->queueRefresh();
-            }
+    for (size_t index = 0; index < HOMIES_SOURCES.size(); ++index)
+    {
+        const auto &source = HOMIES_SOURCES.at(index);
 
-            qCDebug(chatterinoApp) << "[Homies] Loaded" << loadedCount
-                                   << "badges from itzalex.github.io/badges2";
-        })
-        .onError([](const NetworkResult &result) {
-            qCWarning(chatterinoApp)
-                << "[Homies] Failed to load itzalex.github.io/badges2:"
-                << result.formatError();
-        })
-        .execute();
+        NetworkRequest(QString::fromLatin1(source.url))
+            .header("Accept", "application/json")
+            .header("User-Agent", HOMIES_USER_AGENT)
+            // the main list is ~0.6 MB compressed: 5 s often was not enough
+            .timeout(60000)
+            .concurrent()
+            .onSuccess([apply, index](const NetworkResult &result) {
+                if (isAppAboutToQuit() || !apply(index, result.getData(), true))
+                {
+                    return;
+                }
+                QSaveFile file(homiesCachePath(HOMIES_SOURCES.at(index)));
+                if (file.open(QIODevice::WriteOnly))
+                {
+                    file.write(result.getData());
+                    file.commit();
+                }
+            })
+            .onError([url = source.url](const NetworkResult &result) {
+                qCWarning(chatterinoApp) << "[Homies] Failed to load" << url
+                                         << ":" << result.formatError();
+            })
+            .execute();
+    }
+
 }
+
 
 std::array<EmotePtr, 3> HomiesBadges::getBadges(const QString &userId) const
 {

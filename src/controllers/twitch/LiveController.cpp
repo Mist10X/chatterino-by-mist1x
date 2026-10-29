@@ -5,7 +5,10 @@
 #include "controllers/twitch/LiveController.hpp"
 
 #include "common/QLogging.hpp"
+#include "Application.hpp"
 #include "providers/twitch/api/Helix.hpp"
+#include "providers/twitch/api/TwitchGql.hpp"
+#include "singletons/WindowManager.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "util/Helpers.hpp"
 
@@ -48,6 +51,61 @@ TwitchLiveController::TwitchLiveController()
     });
     this->immediateRequestTimer.start(
         TwitchLiveController::IMMEDIATE_REQUEST_INTERVAL);
+
+    QObject::connect(&this->viewerCountTimer, &QTimer::timeout, [this] {
+        this->refreshVisibleViewerCounts();
+    });
+    this->viewerCountTimer.start(TwitchLiveController::VIEWER_COUNT_INTERVAL);
+}
+
+void TwitchLiveController::refreshVisibleViewerCounts()
+{
+    auto *app = tryGetApp();
+    if (app == nullptr || app->getWindows() == nullptr)
+    {
+        return;
+    }
+    const auto visible = app->getWindows()->getVisibleChannelNames();
+    if (visible.empty())
+    {
+        return;
+    }
+    // Live channels that are open on screen, by login.
+    QHash<QString, std::weak_ptr<TwitchChannel>> open;
+    {
+        std::shared_lock lock(this->channelsMutex);
+        for (const auto &[id, entry] : this->channels)
+        {
+            auto channel = entry.ptr.lock();
+            if (!channel || !channel->isLive())
+            {
+                continue;
+            }
+            const auto login = channel->getName().toLower();
+            if (visible.contains(login))
+            {
+                open.insert(login, channel);
+            }
+        }
+    }
+    if (open.isEmpty())
+    {
+        return;
+    }
+    QStringList logins = open.keys();
+    while (logins.size() > VIEWER_COUNT_BATCH)
+    {
+        logins.removeLast();
+    }
+    TwitchGql::getViewerCounts(logins, [open](QHash<QString, unsigned> counts) {
+        for (auto it = counts.begin(); it != counts.end(); ++it)
+        {
+            if (auto channel = open.value(it.key()).lock())
+            {
+                channel->updateViewerCount(it.value());
+            }
+        }
+    });
 }
 
 void TwitchLiveController::add(const std::shared_ptr<TwitchChannel> &newChannel)

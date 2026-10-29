@@ -172,7 +172,8 @@ MoltorinoPage::MoltorinoPage()
 
     auto &s = *getSettings();
 
-    view->addTitle(uiText("Authentication"));
+    routeSetting(*view, QStringLiteral("Sign-in for extra features"),
+                 QStringLiteral("Authentication"));
     view->addDescription(
         uiText("Logging in enables Leafyrino features like pins, polls, "
         "predictions, and channel points."));
@@ -345,7 +346,8 @@ MoltorinoPage::MoltorinoPage()
     this->populateBotBadgeFieldsFromSettings();
     this->revealBotBadgeSettings(false);
 
-    view->addTitle(uiText("Pinned Messages"));
+    routeSetting(*view, QStringLiteral("Chat"),
+                 QStringLiteral("Pinned Messages"));
     view->addDescription(uiText("Pinned message banner and pin action options."));
 
     auto addBannerScaleDropdown = [view](const QString &label, auto &setting,
@@ -538,7 +540,8 @@ MoltorinoPage::MoltorinoPage()
         ->setTooltip(uiText("Show a chat message when a moderator unpins something."))
         ->addTo(*view);
 
-    view->addTitle(uiText("Poll and Prediction"));
+    routeSetting(*view, QStringLiteral("Chat"),
+                 QStringLiteral("Poll and Prediction"));
     view->addDescription(uiText("Poll, prediction, and banner behavior options."));
 
     SettingWidget::checkbox(uiText("Show predictions"), s.enablePredictions)
@@ -674,7 +677,8 @@ MoltorinoPage::MoltorinoPage()
         ->setToolTip(uiText("Choose how pinned, poll, and prediction banners share "
                      "the space above chat."));
 
-    view->addTitle(uiText("Points and Rewards"));
+    routeSetting(*view, QStringLiteral("Chat"),
+                 QStringLiteral("Points and Rewards"));
     view->addDescription(uiText("Channel points balance and rewards menu options."));
 
     SettingWidget::checkbox(uiText("Show points balance"), s.enableChannelPointsDisplay)
@@ -710,6 +714,8 @@ MoltorinoPage::MoltorinoPage()
             "chat. The /gigantify command still works when this is off."))
         ->addTo(*view);
 
+    routeSetting(*view, QStringLiteral("Appearance"),
+                 QStringLiteral("Messages"));
     view->addDropdown<float>(
             uiText("Twitch GIF size"), {"0.5x", "Default", "1x", "1.25x", "1.5x", "2x"},
             s.twitchGifScale,
@@ -726,10 +732,11 @@ MoltorinoPage::MoltorinoPage()
             true, "Scale Twitch GIFs from 0.5x to 2x.")
         ->setToolTip(uiText("Scale Twitch GIFs from 0.5x to 2x."));
 
-    view->addTitle(uiText("Input Box"));
-    view->addDescription(
-        uiText("Chat input buttons, typing helpers, and quick controls."));
+    routeSetting(*view, QStringLiteral("Chat input"),
+                 QStringLiteral("Input Box"));
 
+    routeSetting(*view, QStringLiteral("Chat input"),
+                 QStringLiteral("Autocompletion"));
     SettingWidget::checkbox(uiText("Hide unavailable mod commands"),
                             s.hideUnavailableModCommands)
         ->setTooltip(
@@ -737,6 +744,8 @@ MoltorinoPage::MoltorinoPage()
             "not available in the current channel."))
         ->addTo(*view);
 
+    routeSetting(*view, QStringLiteral("Chat input"),
+                 QStringLiteral("Input Box"));
     SettingWidget::checkbox(uiText("Show prediction button"), s.showPredictionButton)
         ->setTooltip(uiText("Show the prediction button next to the message input."))
         ->addTo(*view);
@@ -756,6 +765,8 @@ MoltorinoPage::MoltorinoPage()
                      "the message input."))
         ->addTo(*view);
 
+    routeSetting(*view, QStringLiteral("Chat"),
+                 QStringLiteral("If I am banned or timed out"));
     SettingWidget::checkbox(uiText("Show my timeout in the chat input"),
                             s.showOwnTimeoutInInput)
         ->setTooltip(uiText("While you are timed out the input turns red and "
@@ -771,6 +782,8 @@ MoltorinoPage::MoltorinoPage()
                      "is not logged in)."))
         ->addTo(*view);
 
+    routeSetting(*view, QStringLiteral("User cards"),
+                 QStringLiteral("Usercard"));
     SettingWidget::checkbox(uiText("Load older messages from public chat logs"),
                             s.usercardPublicLogs)
         ->setTooltip(uiText("The History button in the usercard reads the person's "
@@ -780,6 +793,8 @@ MoltorinoPage::MoltorinoPage()
                      "are not shown."))
         ->addTo(*view);
 
+    routeSetting(*view, QStringLiteral("Chat input"),
+                 QStringLiteral("Slow mode"));
     SettingWidget::checkbox(uiText("Show the slow mode countdown in the chat input"),
                             s.showSlowModeInInput)
         ->setTooltip(uiText("After your message in a slow mode channel, the input "
@@ -793,12 +808,21 @@ MoltorinoPage::MoltorinoPage()
                      "kept and sent by itself as soon as the wait ends."))
         ->addTo(*view);
 
+    routeSetting(*view, QStringLiteral("Chat"),
+                 QStringLiteral("Hidden messages"));
     SettingWidget::checkbox(uiText("Hide community sub gift messages"),
                             s.hideCommunityGiftMessages)
         ->setTooltip(uiText("No chat lines for \"X is gifting N subs to the "
                      "community\" and for each gifted sub that belongs to it."))
         ->addTo(*view);
 
+    SettingWidget::checkbox(uiText("Hide raid messages"), s.hideRaidMessages)
+        ->setTooltip(uiText("No chat line for \"N raiders from X have joined!\". "
+                     "The raid banner in the corner of the chat stays."))
+        ->addTo(*view);
+
+    routeSetting(*view, QStringLiteral("Chat"),
+                 QStringLiteral("Mentions and whispers"));
     SettingWidget::checkbox(uiText("Show a card for highlights in other channels"),
                             s.showHighlightToasts)
         ->setTooltip(uiText("When a highlight that flashes the taskbar comes from a "
@@ -806,12 +830,16 @@ MoltorinoPage::MoltorinoPage()
                      "top of the window. Click it to go to the message."))
         ->addTo(*view);
 
+    routeSetting(*view, QStringLiteral("Chat input"),
+                 QStringLiteral("Input Box"));
     SettingWidget::checkbox(uiText("Show emotes in the chat input"),
                             s.showEmotesInInput)
         ->setTooltip(uiText("An emote name turns into the emote once a space or Tab "
                      "follows it. The message text stays the same."))
         ->addTo(*view);
 
+    routeSetting(*view, QStringLiteral("Chat"),
+                 QStringLiteral("Raids and gifted subs"));
     SettingWidget::checkbox(uiText("Show incoming raid banner"),
                             s.showIncomingRaidBanner)
         ->setTooltip(uiText("A card in the top-right corner of the chat: who raided "
@@ -838,7 +866,8 @@ MoltorinoPage::MoltorinoPage()
                             s.massGiftBannerSeconds, {.min = 3, .max = 600})
         ->addTo(*view);
 
-    view->addTitle(uiText("Translation"));
+    routeSetting(*view, QStringLiteral("Translation"),
+                 QStringLiteral("Translation"));
 
     SettingWidget::dropdown(uiText("Translation service"), s.translationProvider,
                             translationProviderItems())
@@ -910,7 +939,8 @@ MoltorinoPage::MoltorinoPage()
         ->setTooltip(uiText("Show muted (translated) text after translated messages."))
         ->addTo(*view);
 
-    view->addTitle(uiText("Moderation"));
+    routeSetting(*view, QStringLiteral("Moderation tools"),
+                 QStringLiteral("Moderation"));
     view->addDescription(uiText("Moderation tools and chat safety options."));
 
     SettingWidget::checkbox(uiText("Show repeated-message counters"),
@@ -1088,6 +1118,8 @@ MoltorinoPage::MoltorinoPage()
     view->addWidget(nukeMessageRow,
                     {"Nuke mod message", "Nuke timeout ban message"});
 
+    routeSetting(*view, QStringLiteral("Appearance"),
+                 QStringLiteral("Chat header"));
     SettingWidget::checkbox(
         uiText("Show the edit stream info button in the chat header"),
         s.showEditStreamInfoButtonInSplitHeader)
@@ -1095,6 +1127,8 @@ MoltorinoPage::MoltorinoPage()
                      "when broadcaster or editor access is available."))
         ->addTo(*view);
 
+    routeSetting(*view, QStringLiteral("Moderation tools"),
+                 QStringLiteral("Moderation"));
     view->addSubtitle(uiText("Commercials"));
     view->addDropdown<int>(
             uiText("Default commercial duration"),
@@ -1114,12 +1148,11 @@ MoltorinoPage::MoltorinoPage()
         ->setToolTip(uiText("Used when /commercial has no duration. An explicit "
                      "duration, such as /commercial 60, overrides this."));
 
-    view->addTitle(uiText("Client"));
-    view->addDescription(
-        uiText("Twitch chat behavior, compatibility, and client experience options."));
+    routeSetting(*view, QStringLiteral("User cards"),
+                 QStringLiteral("Buttons and actions"));
 
-    view->addTitle(uiText("Usercards"));
-
+    routeSetting(*view, QStringLiteral("User cards"),
+                 QStringLiteral("Usercard"));
     SettingWidget::checkbox(uiText("Show relative followage"),
                             s.showUsercardFollowageRelativeTime)
         ->setTooltip(uiText("Show a duration next to the follow date, like (1y 3m), "
@@ -1132,6 +1165,8 @@ MoltorinoPage::MoltorinoPage()
         ->setTooltip(uiText("Show a compact year and month value next to subscription "
                      "month counts after the first year."))
         ->addTo(*view);
+    routeSetting(*view, QStringLiteral("User cards"),
+                 QStringLiteral("Buttons and actions"));
     SettingWidget::checkbox(uiText("Show 7TV profile button"),
                             s.showSevenTVUsercardButton)
         ->setTooltip(uiText("Show a usercard button that opens the user's 7TV profile "
@@ -1173,9 +1208,8 @@ MoltorinoPage::MoltorinoPage()
         ->addTo(*view);
 
 #ifndef Q_OS_MACOS
-    view->addTitle(uiText("Tray"));
-    view->addDescription(
-        uiText("Keep Leafyrino running in the tray after closing the window."));
+    routeSetting(*view, QStringLiteral("System settings"),
+                 QStringLiteral("Startup and tray"));
 
     const bool trayAvailable = QSystemTrayIcon::isSystemTrayAvailable();
     const bool notificationAvailable =
@@ -1212,7 +1246,8 @@ MoltorinoPage::MoltorinoPage()
     notifyWidget->addTo(*view);
 #endif
 
-    view->addTitle(uiText("Fun"));
+    routeSetting(*view, QStringLiteral("Fun"),
+                 QStringLiteral("Fun"));
     view->addDescription(uiText("Spam, pyramid, and playful chat command options."));
 
     auto *modifierRow = new QWidget;
@@ -1392,9 +1427,10 @@ MoltorinoPage::MoltorinoPage()
         ->addTo(*view);
     view->addDescription(uiText("Spam, pyramid, and playful chat command options."));
 
-    view->addTitle(uiText("Miscellaneous"));
+    routeSetting(*view, QStringLiteral("Sign-in for extra features"),
+                 QStringLiteral("Authentication"));
     auto *miscDesc = new SignalLabel(this);
-    miscDesc->setText(uiText("General Leafyrino tweaks and interface adjustments."));
+    miscDesc->setText(uiText("Signing in is only needed for these features; chat works without it."));
     miscDesc->setWordWrap(true);
     miscDesc->setStyleSheet("QLabel { color: #9aa0a6; }");
     view->addWidget(miscDesc);
@@ -1407,6 +1443,8 @@ MoltorinoPage::MoltorinoPage()
         }
     });
 
+    routeSetting(*view, QStringLiteral("Chat"),
+                 QStringLiteral("Chatter list"));
     SettingWidget::checkbox(uiText("Show chatter list in all Twitch channels"),
                             s.showChatterListInAllTwitchChannels)
         ->setTooltip(
@@ -1424,6 +1462,8 @@ MoltorinoPage::MoltorinoPage()
             "the list after changing its source."))
         ->addTo(*view);
 
+    routeSetting(*view, QStringLiteral("Appearance"),
+                 QStringLiteral("Chat header"));
     SettingWidget::checkbox(uiText("Show follow button in chat header"),
                             s.showFollowButtonInSplitHeader)
         ->setTooltip(uiText("Show a follow/unfollow button in the top bar above "
@@ -1437,6 +1477,8 @@ MoltorinoPage::MoltorinoPage()
                      "without a prompt."))
         ->addTo(*view);
 
+    routeSetting(*view, QStringLiteral("User cards"),
+                 QStringLiteral("Buttons and actions"));
     SettingWidget::checkbox(uiText("Hide mod actions on moderator usercards"),
                             s.hideModActionsOnModUsercards)
         ->setTooltip(
@@ -1456,6 +1498,8 @@ MoltorinoPage::MoltorinoPage()
 
     view->addStretch();
 
+    routeSetting(*view, QStringLiteral("Sign-in for extra features"),
+                 QStringLiteral("Authentication"));
     view->addWidget(this->botBadgeFrame_, {"Bot Badge", "Developer", "Verify",
                                            "Client ID", "Client Secret"});
 }

@@ -4557,6 +4557,19 @@ void TwitchChannel::handleOwnModerationPubSub(const QJsonObject &data)
     }
 }
 
+void TwitchChannel::updateViewerCount(unsigned count)
+{
+    {
+        auto status = this->streamStatus_.access();
+        if (!status->live || status->viewerCount == count)
+        {
+            return;
+        }
+        status->viewerCount = count;
+    }
+    this->streamStatusChanged.invoke();
+}
+
 void TwitchChannel::setSendWait(int seconds)
 {
     if (seconds <= 0)
@@ -4607,6 +4620,19 @@ bool TwitchChannel::queueWhileSlow(const QString &message,
 size_t TwitchChannel::slowQueueSize() const
 {
     return this->slowQueue_.size();
+}
+
+QString TwitchChannel::takeLastQueued()
+{
+    if (this->slowQueue_.empty())
+    {
+        return {};
+    }
+    auto text = this->slowQueue_.back().text;
+    this->slowQueue_.pop_back();
+    this->scheduleSlowQueue();
+    this->syncSendWaitTimer();
+    return text;
 }
 
 void TwitchChannel::noteOwnMessageSent()
@@ -4665,8 +4691,10 @@ void TwitchChannel::flushSlowQueue()
     {
         this->sendReply(next.text, next.replyId);
     }
-    this->noteOwnMessageSent();
-    this->scheduleSlowQueue();
+    // The next one waits for this one to show up in the chat (that starts
+    // the slow mode wait). If it never does, it did not go through: the next
+    // one goes after a short while instead of the queue getting stuck.
+    this->slowQueueTimer_.start(2500);
     this->syncSendWaitTimer();
 }
 

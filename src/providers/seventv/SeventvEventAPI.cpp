@@ -11,6 +11,7 @@
 #include <QJsonArray>
 #include <QRandomGenerator>
 
+#include <unordered_map>
 #include <utility>
 
 namespace chatterino {
@@ -39,9 +40,16 @@ public:
     std::unordered_set<QString> subscribedUsers;
 
     std::unordered_set<QString> subscribedTwitchChannels;
+    std::unordered_map<QString, QString> channelPlatforms;
 
     std::chrono::milliseconds heartbeatInterval;
     QTimer heartbeatTimer;
+
+    /// Every 30 min all channels are subscribed anew, one every few seconds.
+    QTimer resubscribeTimer;
+    QTimer resubscribeStepTimer;
+    std::vector<QString> resubscribeQueue;
+    void resubscribeNext();
 
     SeventvEventAPI &parent;
 
@@ -61,6 +69,35 @@ SeventvEventAPIPrivate::SeventvEventAPIPrivate(
     this->heartbeatTimer.setInterval(this->heartbeatInterval);
     this->heartbeatTimer.setSingleShot(false);
     this->heartbeatTimer.start();
+
+    QObject::connect(&this->resubscribeTimer, &QTimer::timeout, this, [this] {
+        this->resubscribeQueue.assign(this->subscribedTwitchChannels.begin(),
+                                      this->subscribedTwitchChannels.end());
+        this->resubscribeStepTimer.start();
+    });
+    this->resubscribeTimer.start(std::chrono::minutes(30));
+    QObject::connect(&this->resubscribeStepTimer, &QTimer::timeout, this,
+                     &SeventvEventAPIPrivate::resubscribeNext);
+    this->resubscribeStepTimer.setInterval(std::chrono::seconds(3));
+}
+
+void SeventvEventAPIPrivate::resubscribeNext()
+{
+    if (this->resubscribeQueue.empty())
+    {
+        this->resubscribeStepTimer.stop();
+        return;
+    }
+    const auto id = this->resubscribeQueue.back();
+    this->resubscribeQueue.pop_back();
+    auto platform = this->channelPlatforms.find(id);
+    if (platform != this->channelPlatforms.end() &&
+        this->subscribedTwitchChannels.contains(id))
+    {
+        const auto name = platform->second;
+        this->parent.unsubscribePlatformChannel(id, name);
+        this->parent.subscribePlatformChannel(id, name);
+    }
 }
 
 SeventvEventAPIPrivate::~SeventvEventAPIPrivate()
@@ -133,6 +170,7 @@ void SeventvEventAPI::subscribePlatformChannel(const QString &userID,
 {
     if (this->private_->subscribedTwitchChannels.insert(userID).second)
     {
+        this->private_->channelPlatforms[userID] = platform;
         this->private_->subscribe({
             ChannelCondition{userID, platform},
             SubscriptionType::CreateCosmetic,
@@ -185,6 +223,7 @@ void SeventvEventAPI::unsubscribePlatformChannel(const QString &userID,
 {
     if (this->private_->subscribedTwitchChannels.erase(userID) > 0)
     {
+        this->private_->channelPlatforms.erase(userID);
         this->private_->unsubscribe({
             ChannelCondition{userID, platform},
             SubscriptionType::CreateCosmetic,
@@ -202,6 +241,15 @@ void SeventvEventAPI::unsubscribePlatformChannel(const QString &userID,
             SubscriptionType::AnyEmoteSet,
         });
     }
+}
+
+void SeventvEventAPI::resubscribeTwitchChannel(const QString &id)
+{
+    if (this->private_->subscribedTwitchChannels.contains(id))
+    {
+        this->unsubscribePlatformChannel(id, "TWITCH");
+    }
+    this->subscribePlatformChannel(id, "TWITCH");
 }
 
 void SeventvEventAPI::stop()

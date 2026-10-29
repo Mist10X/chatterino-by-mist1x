@@ -23,6 +23,7 @@
 #include "OwnTimeoutChecks.hpp"
 #include "LinkPreviewChecks.hpp"
 #include "PublicLogsChecks.hpp"
+#include "providers/twitch/api/TwitchGql.hpp"
 #include "mocks/BaseApplication.hpp"
 #include "mocks/EmoteController.hpp"
 #include "mocks/TwitchIrcServer.hpp"
@@ -609,6 +610,9 @@ int main(int argc, char **argv)
          QStringLiteral("One real page from the public mirrors: "
                         "user-id,login,channel (network!)"),
          QStringLiteral("who")},
+        {{QStringLiteral("viewer-counts-live")},
+         QStringLiteral("Real viewer counts for logins a,b,c (network!)"),
+         QStringLiteral("logins")},
         {{QStringLiteral("show-archive")},
          QStringLiteral("Open the Archive page before the screenshot")},
         {{QStringLiteral("render-hidden")},
@@ -680,6 +684,35 @@ int main(int argc, char **argv)
                           .toJson());
         }
         return failed == 0 ? 0 : 32;
+    }
+    if (parser.isSet(QStringLiteral("viewer-counts-live")))
+    {
+        NetworkManager::init();
+        std::optional<QHash<QString, unsigned>> counts;
+        chatterino::TwitchGql::getViewerCounts(
+            parser.value(QStringLiteral("viewer-counts-live")).split(','),
+            [&](QHash<QString, unsigned> value) {
+                counts = value;
+            });
+        publiclogchecks::waitUntil([&] {
+            return counts.has_value();
+        }, 20000);
+        QJsonObject result;
+        if (counts)
+        {
+            for (auto it = counts->begin(); it != counts->end(); ++it)
+            {
+                result.insert(it.key(), double(it.value()));
+            }
+        }
+        QFile out(parser.value(QStringLiteral("report")));
+        if (out.open(QIODevice::WriteOnly))
+        {
+            out.write(QJsonDocument(QJsonObject{{"answered", counts.has_value()},
+                                                {"counts", result}})
+                          .toJson());
+        }
+        return counts ? 0 : 35;
     }
     if (parser.isSet(QStringLiteral("public-logs-live")))
     {

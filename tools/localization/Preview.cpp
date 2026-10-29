@@ -273,7 +273,6 @@ int main(int argc, char **argv)
     const auto originalScale=app.settings.uiScale.getValue();
     const auto originalLocale=QLocale().name();
     const auto originalWeight=app.settings.chatFontWeight.getValue();
-    const auto originalUiFont=app.fonts.getFont(FontStyle::UiTabs,1);
     if (fontStartup)
     {
         check(originalChatFont=="Archive Montserrat" && originalChatSize==10 && originalWeight==600,"font startup synthetic profile selected original family/size/weight");
@@ -294,7 +293,8 @@ int main(int argc, char **argv)
     }
     const auto chatFont=app.fonts.getFont(FontStyle::ChatMedium,1.3f);
     check(chatFont.weight()==600 && chatFont.pointSize()==13,"selected weight600 and scaled size13 retained");
-    check(app.fonts.getFont(FontStyle::UiTabs,1)==originalUiFont,"chat font repair leaves UI font unchanged");
+    // The interface follows the chat font (one typeface for tabs, headers and chat).
+    check(app.fonts.getFont(FontStyle::UiTabs,1).family()=="Archive Montserrat","UI font follows the chat font");
     check(app.settings.uiScale.getValue()==originalScale,"font repair does not change UI scale");
     QImage fontExample(950,165,QImage::Format_ARGB32_Premultiplied);fontExample.fill(QColor("#121216"));
     QPainter fontPainter(&fontExample);fontPainter.setFont(chatFont);fontPainter.setPen(QColor("#eeeaf4"));
@@ -302,7 +302,7 @@ int main(int argc, char **argv)
     fontPainter.drawText(12,75,QString::fromUtf8("Grisha_Cement: Бери это архив"));
     fontPainter.drawText(12,115,QString::fromUtf8("dngminion: та их уже скупили"));fontPainter.end();
     check(fontExample.save(output+"/resolved-chat-font.png"),"actual Fonts chat font rendered without visible windows");
-    QFile resolution(output+"/font-resolution.json");resolution.open(QIODevice::WriteOnly);resolution.write(QJsonDocument(QJsonObject{{"fonts",resolvedFonts},{"startup",fontStartup},{"uiFontPreserved",app.fonts.getFont(FontStyle::UiTabs,1)==originalUiFont}}).toJson());
+    QFile resolution(output+"/font-resolution.json");resolution.open(QIODevice::WriteOnly);resolution.write(QJsonDocument(QJsonObject{{"fonts",resolvedFonts},{"startup",fontStartup},{"uiFontFollowsChat",app.fonts.getFont(FontStyle::UiTabs,1).family()=="Archive Montserrat"}}).toJson());
     app.settings.chatFontFamily.setValue(originalChatFont);app.settings.chatFontSize.setValue(originalChatSize);app.settings.chatFontWeight.setValue(originalWeight);qt.processEvents();
     check(app.settings.chatFontFamily.getValue()==originalChatFont && app.settings.chatFontSize.getValue()==originalChatSize && app.settings.chatFontWeight.getValue()==originalWeight,"synthetic font settings restored");
     QJsonArray pages;

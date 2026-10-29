@@ -104,6 +104,85 @@ void Label::setElideSuffix(const QString &suffix)
     this->update();
 }
 
+void Label::setDetails(const QString &details)
+{
+    if (this->details_ == details)
+    {
+        return;
+    }
+    this->details_ = details;
+    this->updateSize();
+    this->update();
+}
+
+void Label::setLeadingDot(const QColor &color)
+{
+    if (this->dotColor_ == color)
+    {
+        return;
+    }
+    this->dotColor_ = color;
+    this->updateSize();
+    this->update();
+}
+
+void Label::paintWithDetails(QPainter &painter, const QFontMetricsF &metrics)
+{
+    painter.setRenderHint(QPainter::Antialiasing);
+    const QRectF area = this->textRect();
+    const qreal dot = this->dotColor_.isValid() ? metrics.height() * 0.42 : 0;
+    const qreal dotGap = dot > 0 ? metrics.height() * 0.38 : 0;
+    const qreal gap = this->details_.isEmpty() ? 0 : metrics.height() * 0.55;
+    qreal available = area.width() - dot - dotGap;
+
+    QString main = this->text_;
+    QString details = this->details_;
+    qreal mainWidth = metrics.horizontalAdvance(main);
+    // The details give way first, then the name.
+    qreal detailsWidth = 0;
+    if (!details.isEmpty())
+    {
+        details = metrics.elidedText(details, Qt::ElideRight,
+                                     std::max<qreal>(0, available - mainWidth - gap));
+        if (details.size() <= 2)
+        {
+            details.clear();
+        }
+        detailsWidth = details.isEmpty() ? 0 : metrics.horizontalAdvance(details);
+    }
+    if (mainWidth + (details.isEmpty() ? 0 : gap + detailsWidth) > available)
+    {
+        main = metrics.elidedText(main, Qt::ElideRight, available);
+        mainWidth = metrics.horizontalAdvance(main);
+    }
+    const qreal total =
+        dot + dotGap + mainWidth + (details.isEmpty() ? 0 : gap + detailsWidth);
+    qreal x = this->centered_ && total < area.width()
+                  ? area.left() + (area.width() - total) / 2
+                  : area.left();
+    const qreal baseline =
+        area.top() + (area.height() - metrics.height()) / 2 + metrics.ascent();
+
+    if (dot > 0)
+    {
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(this->dotColor_);
+        painter.drawEllipse(QRectF(x, area.center().y() - dot / 2, dot, dot));
+        x += dot + dotGap;
+    }
+    const auto text = this->palette().windowText().color();
+    painter.setPen(text);
+    painter.drawText(QPointF(x, baseline), main);
+    x += mainWidth;
+    if (!details.isEmpty())
+    {
+        auto muted = text;
+        muted.setAlphaF(text.alphaF() * 0.62);
+        painter.setPen(muted);
+        painter.drawText(QPointF(x + gap, baseline), details);
+    }
+}
+
 void Label::setFontStyle(FontStyle style)
 {
     this->fontStyle_ = style;
@@ -151,6 +230,12 @@ void Label::paintEvent(QPaintEvent *)
                                   : Qt::AlignCenter;
 
     painter.setBrush(this->palette().windowText());
+
+    if (!this->details_.isEmpty() || this->dotColor_.isValid())
+    {
+        this->paintWithDetails(painter, metrics);
+        return;
+    }
 
     QTextOption option(alignment);
     if (this->wordWrap_)
@@ -220,8 +305,23 @@ void Label::updateSize()
         auto width = metrics.horizontalAdvance(this->text_) +
                      this->currentPadding_.left() +
                      this->currentPadding_.right();
+        if (this->dotColor_.isValid())
+        {
+            width += metrics.height() * 0.8;
+        }
+        auto minimum = width;
+        if (!this->details_.isEmpty())
+        {
+            width += metrics.height() * 0.55 +
+                     metrics.horizontalAdvance(this->details_);
+        }
         this->sizeHint_ = QSizeF(width, height).toSize();
-        this->minimumSizeHint_ = this->sizeHint_;
+        // The details may be cut: only the name has to fit.
+        this->minimumSizeHint_ =
+            this->details_.isEmpty() && !this->dotColor_.isValid()
+                ? this->sizeHint_
+                : QSizeF(std::min(minimum, metrics.height() * 6), height)
+                      .toSize();
     }
 
     this->updateGeometry();

@@ -17,6 +17,7 @@
 #include "providers/twitch/TwitchChannel.hpp"
 #include "singletons/Settings.hpp"
 #include "widgets/helper/ResizingTextEdit.hpp"
+#include "widgets/Label.hpp"
 #include "widgets/splits/Split.hpp"
 #include "widgets/splits/SplitInput.hpp"
 
@@ -257,9 +258,17 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
         return {};
     };
     QStringList sent;
-    channel->slowQueueSenderForTesting = [&sent](const QString &text,
-                                                 const QString &) {
+    // A sent message "shows up in the chat" like Twitch's echo would, which
+    // starts the next wait; echo=false: it never shows up (not delivered).
+    bool echo = true;
+    channel->slowQueueSenderForTesting = [&sent, &echo, &channel](
+                                             const QString &text,
+                                             const QString &) {
         sent.append(text);
+        if (echo)
+        {
+            channel->noteOwnMessageSent();
+        }
     };
     auto sends = [&] {
         return int(sent.size());
@@ -303,6 +312,23 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
           badge().contains(QStringLiteral("2")) &&
               badge() != uiText("Slow mode · %1").arg(uiText("%1 s").arg(3)));
     shot(QStringLiteral("-slow-queued"));
+    {
+        QLabel *badgeLabel = nullptr;
+        for (auto *label : edit->findChildren<QLabel *>())
+        {
+            if (!label->isHidden())
+            {
+                badgeLabel = label;
+            }
+        }
+        check("with a queue the countdown can be clicked to cancel",
+              badgeLabel != nullptr && !badgeLabel->toolTip().isEmpty() &&
+                  !badgeLabel->testAttribute(Qt::WA_TransparentForMouseEvents));
+        check("cancelling gives back the newest queued message",
+              channel->takeLastQueued() == QStringLiteral("second") &&
+                  channel->slowQueueSize() == 1);
+        channel->queueWhileSlow(QStringLiteral("second"));
+    }
     QElapsedTimer clock;
     clock.start();
     pump(3600);
@@ -318,6 +344,25 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
                                   QStringLiteral("second")});
     pump(3300);
     check("then the countdown disappears", badge().isEmpty());
+
+    // A message that does not go through starts no countdown, and a queued
+    // one behind it is not stuck.
+    echo = false;
+    channel->noteOwnMessageSent();
+    pump(50);
+    channel->queueWhileSlow(QStringLiteral("third"));
+    channel->queueWhileSlow(QStringLiteral("fourth"));
+    pump(3400);
+    check("a message that never shows up in the chat starts no countdown",
+          sent.size() >= 3 && sent[2] == QStringLiteral("third") &&
+              channel->sendWaitSeconds() == 0);
+    pump(2700);
+    check("…and the next queued one still goes",
+          sent.size() == 4 && sent[3] == QStringLiteral("fourth") &&
+              channel->slowQueueSize() == 0);
+    pump(300);
+    check("nothing left on the countdown", badge().isEmpty());
+    echo = true;
     channel->setOwnTimedOut(QDateTime::currentDateTimeUtc().addSecs(60));
     channel->setSendWait(60);
     pump(50);
@@ -330,6 +375,33 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
     TwitchChannelTestAccess::setSlowMode(*channel, 0);
     channel->slowQueueSenderForTesting = nullptr;
     pump(100);
+
+    // 11. a live channel's name in a split header: dot, name, muted details
+    // (no live stream in this fixture, so the label is shown on its own).
+    {
+        Label live(QStringLiteral("kopsteep"), FontStyle::UiMediumBold);
+        live.setCentered(true);
+        QPalette palette;
+        palette.setColor(QPalette::Window, QColor("#20202a"));
+        palette.setColor(QPalette::WindowText, QColor("#e8e8ee"));
+        live.setPalette(palette);
+        live.setAutoFillBackground(true);
+        live.setLeadingDot(QColor(0xff, 0x4f, 0x5e));
+        live.setDetails(QString::fromUtf8(
+            "2 ч 14 мин · 22 326 зрителей · IRL"));
+        live.resize(620, 30);
+        live.show();
+        pump(50);
+        check("a live header shows the details next to the name",
+              static_cast<QWidget &>(live).sizeHint().width() > 200);
+        if (!screenshotBase.isEmpty())
+        {
+            live.grab().save(screenshotBase + "-live-header.png", "PNG");
+            live.resize(260, 30);
+            pump(30);
+            live.grab().save(screenshotBase + "-live-header-narrow.png", "PNG");
+        }
+    }
 
     QFile out(report);
     if (out.open(QIODevice::WriteOnly))

@@ -19,6 +19,7 @@
 #include "controllers/notifications/NotificationController.hpp"
 #include "providers/kick/KickChannel.hpp"
 #include "providers/moltorino/MoltorinoAuth.hpp"
+#include "providers/seventv/SeventvEventAPI.hpp"
 #include "providers/twitch/api/Helix.hpp"
 #include "providers/twitch/ChannelManagement.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
@@ -76,39 +77,40 @@ constexpr const qint64 THUMBNAIL_MAX_AGE_MS = 5LL * 60 * 1000;
 
 auto formatRoomModeUnclean(const TwitchChannel::RoomModes &modes) -> QString
 {
-    QString text;
+    // One short line: "unique · slow 3 s · followers".
+    QStringList parts;
 
     if (modes.r9k)
     {
-        text += "unique, ";
+        parts << uiText("unique");
     }
     if (modes.slowMode > 0)
     {
-        text += uiText(QString("slow(%1), ")).arg(localizeNumbers(modes.slowMode));
+        parts << uiText("slow %1 s").arg(localizeNumbers(modes.slowMode));
     }
     if (modes.emoteOnly)
     {
-        text += "emote, ";
+        parts << uiText("emote only");
     }
     if (modes.submode)
     {
-        text += "sub, ";
+        parts << uiText("subscribers");
     }
     if (modes.followerOnly != -1)
     {
         if (modes.followerOnly != 0)
         {
-            text += uiText(QString("follow(%1), "))
-                        .arg(formatDurationExact(
-                            std::chrono::minutes{modes.followerOnly}));
+            parts << uiText("followers %1")
+                         .arg(formatDurationExact(
+                             std::chrono::minutes{modes.followerOnly}));
         }
         else
         {
-            text += uiText(QString("follow, "));
+            parts << uiText("followers");
         }
     }
 
-    return text;
+    return parts.join(QStringLiteral(" · "));
 }
 
 QString formatRoomModeUnclean(const KickChannel::RoomModes &modes)
@@ -201,25 +203,11 @@ bool canShowChannelManagementButton(const TwitchChannel &channel)
 
 void cleanRoomModeText(QString &text, bool hasModRights)
 {
-    if (text.length() > 2)
-    {
-        text = text.mid(0, text.size() - 2);
-    }
-
-    if (!text.isEmpty())
-    {
-        static QRegularExpression commaReplacement("^(.+?, .+?,) (.+)$");
-
-        auto match = commaReplacement.match(text);
-        if (match.hasMatch())
-        {
-            text = match.captured(1) + '\n' + match.captured(2);
-        }
-    }
-
+    // Already one line (formatRoomModeUnclean); a moderator sees the button
+    // even without modes, to open the menu.
     if (text.isEmpty() && hasModRights)
     {
-        text = "none";
+        text = uiText("no modes");
     }
 }
 
@@ -373,59 +361,77 @@ QString formatYouTubeOfflineTooltip(const YouTubeChannel::StreamData &s)
         .arg(youtubeHeaderName(s).toHtmlEscaped());
 }
 
-auto formatTitle(const TwitchChannel::StreamStatus &s, Settings &settings,
-                 const std::vector<HelixMinimalUser> &sharedChatParticipants)
+/// "2h 14m" -> "2 ч 14 мин" (and the same in English: "2 h 14 min").
+QString niceUptime(const QString &uptime)
 {
-    auto title = QString();
+    static const QRegularExpression parts(R"((\d+)\s*([hm]))");
+    QStringList out;
+    auto it = parts.globalMatch(uptime);
+    while (it.hasNext())
+    {
+        const auto m = it.next();
+        out << (m.captured(2) == u"h" ? uiText("%1 h") : uiText("%1 min"))
+                   .arg(m.captured(1));
+    }
+    return out.isEmpty() ? uptime : out.join(u' ');
+}
 
-    // live
+/// 22326 -> "22 326 зрителей" (Russian plural forms), "22,326 viewers".
+QString niceViewers(unsigned count)
+{
+    auto number = localizeNumbers(count);
+    if (activeUiLanguage() == u"ru")
+    {
+        number.replace(QChar(','), QChar(0x202F));
+        const auto n100 = count % 100;
+        const auto n10 = count % 10;
+        const char *word = (n100 >= 11 && n100 <= 14) ? "зрителей"
+                           : n10 == 1                 ? "зритель"
+                           : (n10 >= 2 && n10 <= 4)   ? "зрителя"
+                                                      : "зрителей";
+        return number + QChar(' ') + QString::fromUtf8(word);
+    }
+    return number + (count == 1 ? QStringLiteral(" viewer")
+                                : QStringLiteral(" viewers"));
+}
+
+/// The muted part after a live channel's name: "2 ч 14 мин · 22 326 зрителей · IRL".
+QString formatStreamDetails(
+    const TwitchChannel::StreamStatus &s, Settings &settings,
+    const std::vector<HelixMinimalUser> &sharedChatParticipants)
+{
+    QStringList parts;
     if (s.rerun)
     {
-        title += " (rerun)";
+        parts << uiText("rerun");
     }
-    else if (s.streamType.isEmpty())
+    if (!sharedChatParticipants.empty())
     {
-        title += " (" + s.streamType + ")";
-    }
-    else
-    {
-        if (sharedChatParticipants.empty())
+        const auto mode = getSettings()->usernameDisplayMode.getEnum();
+        QStringList names;
+        for (const auto &p : sharedChatParticipants)
         {
-            title += " (live)";
+            names.push_back(p.formatted(mode));
         }
-        else
-        {
-            const auto mode = getSettings()->usernameDisplayMode.getEnum();
-            QStringList names;
-            for (const auto &p : sharedChatParticipants)
-            {
-                auto name = p.formatted(mode);
-                names.push_back(std::move(name));
-            }
-
-            title += " (live with " + names.join(", ") + ")";
-        }
+        parts << uiText("shared chat with %1").arg(names.join(", "));
     }
-
-    // description
-    if (settings.headerUptime)
+    if (settings.headerUptime && !s.uptime.isEmpty())
     {
-        title += " - " + s.uptime;
+        parts << niceUptime(s.uptime);
     }
     if (settings.headerViewerCount)
     {
-        title += " - " + localizeNumbers(s.viewerCount);
+        parts << niceViewers(s.viewerCount);
     }
     if (settings.headerGame && !s.game.isEmpty())
     {
-        title += " - " + s.game;
+        parts << s.game;
     }
     if (settings.headerStreamTitle && !s.title.isEmpty())
     {
-        title += " - " + s.title.simplified();
+        parts << s.title.simplified();
     }
-
-    return title;
+    return parts.join(QStringLiteral(" · "));
 }
 
 TwitchChannel::StreamStatus toTwitchStreamStatus(
@@ -943,6 +949,7 @@ void SplitHeader::initializeLayout()
         }),
         // title
         this->titleLabel_ = makeWidget<Label>([](auto w) {
+            w->setFontStyle(FontStyle::UiMediumBold);
             w->setSizePolicy(QSizePolicy::MinimumExpanding,
                              QSizePolicy::Preferred);
             w->setCentered(true);
@@ -1957,6 +1964,8 @@ void SplitHeader::updateChannelText()
             suffix += " - filtered";
         }
 
+        this->titleLabel_->setDetails(QString());
+        this->titleLabel_->setLeadingDot(QColor());
         this->titleLabel_->setShouldElide(true);
         this->titleLabel_->setElideSuffix(suffix);
         this->titleLabel_->setText(mainText.isEmpty() ? uiText("<empty>") : mainText);
@@ -1966,6 +1975,8 @@ void SplitHeader::updateChannelText()
 
     this->titleLabel_->setShouldElide(false);
     this->titleLabel_->setElideSuffix(QString());
+    this->titleLabel_->setDetails(QString());
+    this->titleLabel_->setLeadingDot(QColor());
 
     auto selectedChannel = this->split_->getSelectedChannel();
 
@@ -2033,9 +2044,13 @@ void SplitHeader::updateChannelText()
             }
             this->tooltipText_ = formatTooltip(*streamStatus, this->thumbnail_);
 
-            title +=
-                formatTitle(*streamStatus, *getSettings(),
-                            twitchChannel->getSharedChatSessionParticipants());
+            // A dot instead of "(live)", the details muted after the name.
+            this->titleLabel_->setLeadingDot(
+                streamStatus->rerun ? this->theme->tabs.rerunIndicator
+                                    : QColor(0xff, 0x4f, 0x5e));
+            this->titleLabel_->setDetails(formatStreamDetails(
+                *streamStatus, *getSettings(),
+                twitchChannel->getSharedChatSessionParticipants()));
         }
         else
         {
@@ -2068,7 +2083,9 @@ void SplitHeader::updateChannelText()
                 this->lastThumbnail_.restart();
             }
             this->tooltipText_ = formatTooltip(twitch, this->thumbnail_, true);
-            title += formatTitle(twitch, *getSettings(), {});
+            this->titleLabel_->setLeadingDot(QColor(0xff, 0x4f, 0x5e));
+            this->titleLabel_->setDetails(
+                formatStreamDetails(twitch, *getSettings(), {}));
         }
         else
         {
@@ -2347,9 +2364,18 @@ void SplitHeader::themeChangedEvent()
     }
     else
     {
-        palette.setColor(QPalette::WindowText, this->theme->splits.header.text);
+        // The channel name is the main thing in the header: bright, not the
+        // dim header grey (the modes next to it are the quiet part).
+        palette.setColor(QPalette::WindowText,
+                         this->theme->messages.textColors.regular);
     }
     this->titleLabel_->setPalette(palette);
+
+    QPalette modes;
+    modes.setColor(QPalette::WindowText, this->theme->splits.header.text);
+    this->modeButton_->setPalette(modes);
+    this->modeButton_->setFont(
+        getApp()->getFonts()->getFont(FontStyle::UiMedium, this->scale()));
 
     auto bg = this->theme->splits.header.background;
     this->addButton_->setOptions({
@@ -2379,6 +2405,11 @@ void SplitHeader::reloadChannelEmotes()
         twitchChannel->refreshBTTVChannelEmotes(true);
         twitchChannel->refreshSevenTVChannelEmotes(true);
         twitchChannel->refreshBadgesProviders();
+        // New paints and personal emotes that the live updates missed.
+        if (auto *eventApi = getApp()->getSeventvEventAPI())
+        {
+            eventApi->resubscribeTwitchChannel(twitchChannel->roomId());
+        }
     }
     else if (auto *kc = dynamic_cast<KickChannel *>(channel.get()))
     {

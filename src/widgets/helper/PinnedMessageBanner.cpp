@@ -540,7 +540,7 @@ void PinnedMessageBanner::setPinnedMessage(
 
     this->pinnerName_ =
         pin->pinnerName.isEmpty() ? "Moderator" : pin->pinnerName;
-    this->pinnerLabel_->setText(uiText("Pinned by ") + this->pinnerName_);
+    this->pinnerLabel_->clear();
 
     int displayMode = getSettings()->pinTimerDisplay;
 
@@ -700,19 +700,26 @@ void PinnedMessageBanner::themeChangedEvent()
 
 void PinnedMessageBanner::updateLabelStyles()
 {
+    // Readable, in the chat font: the "Pinned by …" line was tiny and faint.
     QColor textColor = this->theme->splits.header.text;
-    auto colorStr = QString("rgba(%1, %2, %3, 0.55)")
+    auto colorStr = QString("rgba(%1, %2, %3, 0.85)")
                         .arg(textColor.red())
                         .arg(textColor.green())
                         .arg(textColor.blue());
     int fs = this->headerFontSize_;
+    const auto family =
+        QString("font-family: '%1';").arg(getSettings()->chatFontFamily.getValue());
 
     this->pinnerLabel_->setStyleSheet(
-        QString("font-size: %1px; color: %2;").arg(fs).arg(colorStr));
+        QString("%1 font-size: %2px; font-weight: 600; color: %3;")
+            .arg(family)
+            .arg(fs)
+            .arg(colorStr));
     this->timerLabel_->setStyleSheet(
-        QString("font-size: %1px; color: %2;").arg(fs).arg(colorStr));
+        QString("%1 font-size: %2px; color: %3;").arg(family).arg(fs).arg(colorStr));
     this->moreLabel_->setStyleSheet(
-        QString("font-size: %1px; font-weight: bold; color: %2;")
+        QString("%1 font-size: %2px; font-weight: bold; color: %3;")
+            .arg(family)
             .arg(fs)
             .arg(colorStr));
 }
@@ -762,9 +769,9 @@ void PinnedMessageBanner::paintEvent(QPaintEvent * /*event*/)
         border = this->theme->splits.header.focusedBorder;
     }
 
+    // A calm strip under the header: no box around it, a divider below.
     painter.fillRect(this->rect(), background);
-    painter.setPen(border);
-    painter.drawRect(0, 0, this->width() - 1, this->height() - 1);
+    painter.fillRect(QRect(0, this->height() - 1, this->width(), 1), border);
 }
 
 void PinnedMessageBanner::resizeEvent(QResizeEvent *event)
@@ -1059,15 +1066,9 @@ void PinnedMessageBanner::updateTimer()
         }
     }
 
-    if ((displayMode == 0 || displayMode == 1) && !timeStr.isEmpty())
-    {
-        this->pinnerLabel_->setText(uiText(QString("Pinned by %1 \xC2\xB7 %2"))
-                                        .arg(this->pinnerName_, timeStr));
-    }
-    else
-    {
-        this->pinnerLabel_->setText(uiText("Pinned by ") + this->pinnerName_);
-    }
+    // No "Pinned by ..." line above the message (who pinned it stays in the
+    // pin icon's tooltip); the label only keeps the row's layout.
+    this->pinnerLabel_->clear();
 
     if ((displayMode == 0 || displayMode == 2) && !countdownStr.isEmpty())
     {

@@ -131,7 +131,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
 {
     auto &s = *getSettings();
 
-    layout.addTitle(uiText("Interface"));
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Language and theme"));
 
     SettingWidget::dropdown(uiText("Language (requires restart)"), s.uiLanguage,
                             {{uiText("Русский"), QString("ru")},
@@ -195,6 +196,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             "--use-old-scaling on the command line for a single run."))
         ->addKeywords({"dpi", "hidpi", "high dpi", "fractional"})
         ->addTo(layout);
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Tabs"));
     ComboBox *tabDirectionDropdown =
         layout.addDropdown<std::underlying_type_t<NotebookTabLocation>>(
             uiText("Tab layout"), {"Top", "Left", "Right", "Bottom"}, s.tabDirection,
@@ -270,10 +273,14 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                      "the whole width of the window."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Language and theme"));
     layout.addWidget(new FontSettingWidget(s.chatFontFamily, s.chatFontSize,
                                            s.chatFontWeight),
                      {"font", "weight", "size"});
 
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Messages"));
     SettingWidget::inverseCheckbox(uiText("Show message reply context"),
                                    s.hideReplyContext)
         ->setTooltip(
@@ -294,6 +301,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             removeTabSeq.toString(QKeySequence::SequenceFormat::NativeText);
     }
 
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Tabs"));
     SettingWidget::checkbox(uiText("Show tab close button"), s.showTabCloseButton)
         ->setTooltip(
             uiText("When disabled, the x to close a tab will be hidden.\nTabs can "
@@ -301,11 +310,15 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             removeTabShortcut + ".")
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Window"));
     SettingWidget::checkbox(uiText("Always on top"), s.windowTopMost)
         ->setTooltip(uiText("Always keep Leafyrino as the top window."))
         ->addTo(layout);
 
 #ifdef USEWINSDK
+    routeSetting(layout, QStringLiteral("System settings"),
+                 QStringLiteral("Startup and tray"));
     SettingWidget::checkbox(uiText("Start with Windows"), s.autorun)
         ->setTooltip(uiText("Start Leafyrino when your computer starts."))
         ->addTo(layout);
@@ -323,6 +336,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                                QKeySequence::SequenceFormat::NativeText));
         }
 
+        routeSetting(layout, QStringLiteral("Appearance"),
+                     QStringLiteral("Window"));
         SettingWidget::inverseCheckbox(uiText("Show preferences button") + shortcut,
                                        s.hidePreferencesButton)
             ->addTo(layout);
@@ -331,12 +346,15 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             ->addTo(layout);
     }
 
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Tabs"));
     SettingWidget::checkbox(uiText("Mark tabs with live channels"), s.showTabLive)
         ->setTooltip(uiText("Shows a red dot in the top right corner of a tab to "
                      "indicate one of the channels in the tab is live."))
         ->addTo(layout);
 
-    layout.addTitle(uiText("Chat"));
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("Scrolling"));
 
     layout.addDropdown<float>(
         uiText("Pause on mouse hover"),
@@ -397,6 +415,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                             s.enableSmoothScrollingNewMessages)
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat input"),
+                 QStringLiteral("Input Box"));
     SettingWidget::checkbox(uiText("Show input when it's empty"), s.showEmptyInput)
         ->setTooltip(uiText("Show the chat box even when there is nothing typed."))
         ->addTo(layout);
@@ -409,6 +429,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             "limit, or a lower limit enforced by a moderation bot"))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat input"),
+                 QStringLiteral("Slow mode"));
     SettingWidget::checkbox(uiText("Show countdown on slow mode or when timed out"),
                             s.showSendWaitTimer)
         ->setTooltip(uiText("Show how long you may need to wait before being able to "
@@ -417,6 +439,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         ->addKeywords({"slowmode", "timeout"})
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat input"),
+                 QStringLiteral("Sending"));
     SettingWidget::checkbox(uiText("Allow sending duplicate messages"),
                             s.allowDuplicateMessages)
         ->setTooltip(
@@ -435,6 +459,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         false,
         "Specify how Leafyrino will handle messages that exceed Twitch "
         "message limits");
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("Mouse"));
     layout.addDropdown<std::underlying_type_t<UsernameRightClickBehavior>>(
         uiText("Username right-click behavior"),
         {
@@ -504,6 +530,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         },
         false);
 
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("Scrolling"));
     SettingWidget::checkbox(uiText("Hide scrollbar thumb"), s.hideScrollbarThumb)
         ->setTooltip(uiText("Hiding the scrollbar thumb (the handle you can drag) "
                      "will disable all mouse interaction in the scrollbar."))
@@ -515,6 +543,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         ->addKeywords({"scroll bar"})
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat input"),
+                 QStringLiteral("Input Box"));
     SettingWidget::checkbox(
         uiText("Pulse text input when one of your messages is successfully sent"),
         s.pulseTextInputOnSelfMessage)
@@ -523,7 +553,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             "yours is successfully sent in the matching channel."))
         ->addTo(layout);
 
-    layout.addTitle(uiText("Messages"));
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Messages"));
     SettingWidget::checkbox(uiText("Separate with lines"), s.separateMessages)
         ->setTooltip(
             uiText("Adds a line between each message to help better tell them apart."))
@@ -541,11 +572,15 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             "was started or while re-connecting."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("Hidden messages"));
     SettingWidget::checkbox(uiText("Hide deleted messages"), s.hideModerated)
         ->setTooltip(
             uiText("When enabled, messages deleted by moderators will be hidden."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Messages"));
     SettingWidget::checkbox(uiText("Hide message timestamps when channel is live"),
                             s.hideMessageTimestampsWhenLive)
         ->addTo(layout);
@@ -580,6 +615,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     SettingWidget::checkbox(uiText("Show header timestamps"), s.showHeaderTimestamps)
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("What to show in chat"));
     SettingWidget::checkbox(uiText("Show announcement header"),
                             s.showAnnouncementHeader)
         ->addTo(layout);
@@ -596,6 +633,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                      "shown as links."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Messages"));
     layout.addDropdown<int>(
         uiText("Limit message height"),
         {"Never", "2 lines", "3 lines", "4 lines", "5 lines"},
@@ -606,6 +645,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         [](auto args) {
             return fuzzyToInt(args.value, 0);
         });
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("Hidden messages"));
     layout.addDropdown<int>(
         uiText("Limit length of deleted messages"),
         {"No limit", "50 characters", "100 characters", "200 characters",
@@ -622,6 +663,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         {"Limits the amount of characters displayed in deleted messages "
          "when announced via system message."});
 
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Messages"));
     layout.addSeparator();
 
     SettingWidget::checkbox(uiText("Draw a line below the most recent message before "
@@ -635,7 +678,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
 
     SettingWidget::colorButton(uiText("Line color"), s.lastMessageColor)->addTo(layout);
 
-    layout.addTitle(uiText("Emotes"));
+    routeSetting(layout, QStringLiteral("Emotes and badges"),
+                 QStringLiteral("Emotes"));
 
     SettingWidget::checkbox(uiText("Enable"), s.enableEmoteImages)->addTo(layout);
 
@@ -651,6 +695,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             "cvMask and 7TV's RainTime, will appear as normal emotes."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat input"),
+                 QStringLiteral("Autocompletion"));
     SettingWidget::checkbox(uiText("Enable emote completion by typing :"),
                             s.emoteCompletionWithColon)
         ->setTooltip(
@@ -663,6 +709,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                             s.useSmartEmoteCompletion)
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Emotes and badges"),
+                 QStringLiteral("Emotes"));
     layout.addDropdown<float>(
         uiText("Size"), {"0.5x", "0.75x", "Default", "1.25x", "1.5x", "2x"},
         s.emoteScale,
@@ -717,6 +765,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
 
     SettingWidget::dropdown(uiText("Emoji style"), s.emojiSet)->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Emotes and badges"),
+                 QStringLiteral("Emote providers"));
     SettingWidget::checkbox(uiText("Show BetterTTV global emotes"),
                             s.enableBTTVGlobalEmotes)
         ->addKeywords({"bttv"})
@@ -776,7 +826,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         ->addKeywords({"seventv"})
         ->addTo(layout);
 
-    layout.addTitle(uiText("Streamer Mode"));
+    routeSetting(layout, QStringLiteral("Streamer Mode"),
+                 QStringLiteral("Streamer Mode"));
     layout.addDescription(
         uiText("Leafyrino can automatically change behavior if it detects that any "
         "streaming software is running.\nSelect which things you want to "
@@ -836,7 +887,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         ->setTooltip(uiText("Hide whispers sent to you from appearing in chat."))
         ->addTo(layout);
 
-    layout.addTitle(uiText("Link Previews"));
+    routeSetting(layout, QStringLiteral("Links and search"),
+                 QStringLiteral("Link Previews"));
     layout.addDescription(
         uiText("Extra information like \"youtube video stats\" or title of webpages "
         "can be loaded for all links if enabled. Optionally you can also show "
@@ -941,7 +993,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         });
 
     layout.addNavigationSpacing();
-    layout.addTitle(uiText("Beta"));
+    routeSetting(layout, QStringLiteral("System settings"),
+                 QStringLiteral("Updates"));
     if (Version::instance().isSupportedOS())
     {
         layout.addDescription(
@@ -959,7 +1012,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             "issues <a href='https://chatterino.com/link/issues'>here</a>."));
     }
 
-    layout.addTitle(uiText("Browser Integration"));
+    routeSetting(layout, QStringLiteral("System settings"),
+                 QStringLiteral("Browser Integration"));
 #ifdef Q_OS_WIN
     layout.addDescription(
         uiText("The browser extension replaces the default "
@@ -1022,7 +1076,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             ->addTo(layout, form);
     }
 
-    layout.addTitle(uiText("AppData & Cache"));
+    routeSetting(layout, QStringLiteral("System settings"),
+                 QStringLiteral("AppData & Cache"));
 
     layout.addSubtitle(uiText("Application Data"));
     layout.addDescription(uiText("All local files like settings and cache files are "
@@ -1081,7 +1136,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         layout.addLayout(box);
     }
 
-    layout.addTitle(uiText("Sound"));
+    routeSetting(layout, QStringLiteral("System settings"),
+                 QStringLiteral("Sound"));
 
     SettingWidget::dropdown(uiText("Sound backend (requires restart)"), s.soundBackend)
         ->setTooltip(uiText("Change this only if you're noticing issues with sound "
@@ -1097,9 +1153,9 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             "sleeping."))
         ->addTo(layout);
 
-    layout.addTitle(uiText("Advanced"));
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Chat header"));
 
-    layout.addSubtitle(uiText("Chat title"));
     layout.addDescription(uiText("In live channels show:"));
     SettingWidget::checkbox(uiText("Uptime"), s.headerUptime)
         ->setTooltip(uiText("Show how long the channel has been live"))
@@ -1114,7 +1170,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         ->setTooltip(uiText("Show the stream title"))
         ->addTo(layout);
 
-    layout.addSubtitle(uiText("Unique chat (R9K)"));
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("Unique chat (R9K)"));
     auto toggleLocalr9kSeq = getApp()->getHotkeys()->getDisplaySequence(
         HotkeyCategory::Window, "toggleLocalR9K");
     QString toggleLocalr9kShortcut =
@@ -1186,7 +1243,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         "establish its similarity rating. Messages in the history will be "
         "compared to only if they are new enough.");
 
-    layout.addSubtitle(uiText("Visible badges"));
+    routeSetting(layout, QStringLiteral("Emotes and badges"),
+                 QStringLiteral("Visible badges"));
     SettingWidget::checkbox(uiText("Authority"), s.showBadgesGlobalAuthority)
         ->setTooltip(uiText("e.g. staff, admin"))
         ->addTo(layout);
@@ -1246,7 +1304,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     SettingWidget::checkbox(uiText("Animate 7TV badges"), s.animateSevenTVBadges)
         ->addTo(layout);
 
-    layout.addSubtitle(uiText("Overlay"));
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Overlay"));
     layout.addDropdown<float>(
         uiText("Zoom factor"), ZOOM_LEVELS, s.overlayScaleFactor,
         [](auto val) {
@@ -1330,7 +1389,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         ->addTo(layout);
 
     {
-        layout.addSubtitle(uiText("Search"));
+        routeSetting(layout, QStringLiteral("Links and search"),
+                     QStringLiteral("Search"));
         layout.addDescription(
             uiText("Search engine which appears when you select text and right-click "
             "a message. Select a search engine preset from the dropdown below, "
@@ -1400,14 +1460,17 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             ->addTo(layout);
     }
 
-    layout.addSubtitle(uiText("Miscellaneous"));
     if (supportsIncognitoLinks())
     {
+        routeSetting(layout, QStringLiteral("Links and search"),
+                     QStringLiteral("Links"));
         SettingWidget::checkbox(uiText("Open links in incognito/private mode"),
                                 s.openLinksIncognito)
             ->addTo(layout);
     }
 
+    routeSetting(layout, QStringLiteral("System settings"),
+                 QStringLiteral("Startup and tray"));
     SettingWidget::customCheckbox(
         uiText("Restart on crash (requires restart)"),
         getApp()->getCrashHandler()->shouldRecover(),
@@ -1417,15 +1480,21 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         ->setTooltip(uiText("When possible, restart Chatterino if the program crashes"))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("User cards"),
+                 QStringLiteral("Usercard"));
     SettingWidget::checkbox(uiText("Show 7TV Animated Profile Picture"),
                             s.displaySevenTVAnimatedProfile)
         ->addTo(layout);
+    routeSetting(layout, QStringLiteral("Emotes and badges"),
+                 QStringLiteral("Emotes"));
     SettingWidget::checkbox(uiText("Load AVIF images"), s.allowAvifImages)
         ->setTooltip(
             uiText("When enabled and an AVIF decoder is found, AVIF images will be "
             "preferred over WEBP on 7TV. This saves bandwidth."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("What to show in chat"));
     SettingWidget::inverseCheckbox(uiText("Show moderation messages"),
                                    s.hideModerationActions)
         ->setTooltip(
@@ -1438,12 +1507,16 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                      "from TreuKS was deleted: abc"))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Usernames"));
     SettingWidget::checkbox(uiText("Colorize users without color set (gray names)"),
                             s.colorizeNicknames)
         ->setTooltip(uiText("Grant a random color to users who never set a color for "
                      "themselves"))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat input"),
+                 QStringLiteral("Autocompletion"));
     SettingWidget::checkbox(uiText("Mention users with a comma"),
                             s.mentionUsersWithComma)
         ->setTooltip(uiText("When using tab-completion, if the username is at the "
@@ -1451,6 +1524,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                      "name.\ne.g. pajl -> pajlada,"))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("What to show in chat"));
     SettingWidget::checkbox(uiText("Show joined users (< 1000 chatters)"), s.showJoins)
         ->setTooltip(
             uiText("Show a Twitch system message stating what users have joined the "
@@ -1463,16 +1538,22 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             "chat, only available when chat has less than 1000 users"))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("User cards"),
+                 QStringLiteral("Usercard"));
     SettingWidget::checkbox(
         uiText("Automatically close user popup when it loses focus"),
         s.autoCloseUserPopup)
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("Reply threads"));
     SettingWidget::checkbox(
         uiText("Automatically close reply thread popup when it loses focus"),
         s.autoCloseThreadPopup)
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Emotes and badges"),
+                 QStringLiteral("7TV paints"));
     SettingWidget::checkbox(uiText("Display 7TV Paints"), s.displaySevenTVPaints)
         ->addTo(layout);
     SettingWidget::checkbox(uiText("Display 7TV Paint Shadows"),
@@ -1492,17 +1573,23 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         s.largeSevenTVPaintShadows.connect(cb, false);
     }
 
+    routeSetting(layout, QStringLiteral("Links and search"),
+                 QStringLiteral("Links"));
     SettingWidget::checkbox(uiText("Lowercase domains (anti-phishing)"),
                             s.lowercaseDomains)
         ->setTooltip(
             uiText("Make all clickable links lowercase to deter phishing attempts."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("User cards"),
+                 QStringLiteral("Usercard"));
     SettingWidget::checkbox(uiText("Show user's pronouns in user card"), s.showPronouns)
         ->setDescription(
             uiText(R"(Pronouns are retrieved from <a href="https://pr.alejo.io">pr.alejo.io</a> when a user card is opened.)"))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("What to show in chat"));
     SettingWidget::checkbox(uiText("Show stream title in live message"),
                             s.showTitleInLiveMessage)
         ->setTooltip(uiText("The title in the message will be the title the streamer "
@@ -1510,6 +1597,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                      "streamer updates their title."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Usernames"));
     SettingWidget::checkbox(uiText("Bold @usernames"), s.boldUsernames)
         ->setTooltip(uiText("Bold @mentions to make them more noticeable."))
         ->addTo(layout);
@@ -1524,6 +1613,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         ->setTooltip(uiText("Find mentions of users in chat without the @ prefix."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat input"),
+                 QStringLiteral("Autocompletion"));
     SettingWidget::checkbox(uiText("Show username autocompletion popup menu"),
                             s.showUsernameCompletionMenu)
         ->addTo(layout);
@@ -1538,6 +1629,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     const QStringList usernameDisplayModes = {"Username", "Localized name",
                                               "Username and localized name"};
 
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Usernames"));
     ComboBox *nameDropdown =
         layout.addDropdown<std::underlying_type_t<UsernameDisplayMode>>(
             uiText("Username style"), usernameDisplayModes, s.usernameDisplayMode,
@@ -1572,6 +1665,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             return fuzzyToFloat(args.value, 63.f);
         });
 
+    routeSetting(layout, QStringLiteral("Links and search"),
+                 QStringLiteral("Links"));
     SettingWidget::checkbox(
         uiText("Double click to open links and other elements in chat"),
         s.linksDoubleClickOnly)
@@ -1589,6 +1684,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                      "https://bit.ly/mrfors -> https://forsen.tv/"))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat input"),
+                 QStringLiteral("Autocompletion"));
     SettingWidget::checkbox(
         uiText("Only search for emote autocompletion at the start of emote names"),
         s.prefixOnlyEmoteCompletion)
@@ -1602,6 +1699,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                      "when using @\ne.g. pajl -> pajl | @pajl -> @pajlada"))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("Mentions and whispers"));
     SettingWidget::checkbox(uiText("Show Twitch whispers inline"), s.inlineWhispers)
         ->setTooltip(uiText("Show whispers as messages in all splits instead of just "
                      "/whispers."))
@@ -1614,6 +1713,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             "whispers inline\" is disabled, this setting will do nothing."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("Reply threads"));
     SettingWidget::checkbox(
         uiText("Automatically subscribe to participated reply threads"),
         s.autoSubToParticipatedThreads)
@@ -1623,6 +1724,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             "will use your \"Subscribed Reply Threads\" highlight settings."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("Message history"));
     SettingWidget::checkbox(uiText("Load message history on connect"),
                             s.loadTwitchMessageHistoryOnConnect)
         ->addTo(layout);
@@ -1662,12 +1765,16 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                             })
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Moderation tools"),
+                 QStringLiteral("Moderation"));
     SettingWidget::dropdown(uiText("Show blocked term automod messages"),
                             s.showBlockedTermAutomodMessages)
         ->setTooltip(uiText("Show messages that are blocked by AutoMod for containing "
                      "a public blocked term in the current channel."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("What to show in chat"));
     layout.addDropdown<int>(
         uiText("Stack timeouts"), {"Stack", "Stack until timeout", "Don't stack"},
         s.timeoutStackStyle,
@@ -1684,12 +1791,16 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                      "message) into one cheermote."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("Mentions and whispers"));
     SettingWidget::checkbox(uiText("Messages in /mentions highlights tab"),
                             s.highlightMentions)
         ->setTooltip(uiText("When disabled, the /mentions tab will not highlight in "
                      "red when you are mentioned."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("Reply threads"));
     SettingWidget::checkbox(uiText("Strip leading mention in replies"),
                             s.stripReplyMention)
         ->setTooltip(
@@ -1698,27 +1809,37 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             "these mentions will never be stripped."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat input"),
+                 QStringLiteral("Sending"));
     SettingWidget::dropdown(uiText("Chat send protocol"), s.chatSendProtocol)
         ->setTooltip(uiText("'Helix' will use Twitch's Helix API to send messages. "
                      "'IRC' will use IRC to send messages."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat input"),
+                 QStringLiteral("Input Box"));
     SettingWidget::checkbox(uiText("Show send message button"), s.showSendButton)
         ->setTooltip(uiText("Show a Send button next to each split input that can be "
                      "clicked to send the message"))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("System settings"),
+                 QStringLiteral("Experimental"));
     SettingWidget::checkbox(
         uiText("Enable experimental Twitch EventSub support (requires restart)"),
         s.enableExperimentalEventSub)
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Tabs"));
     SettingWidget::checkbox(uiText("Disable renaming of tabs on double-click"),
                             s.disableTabRenamingOnClick)
         ->setTooltip(uiText("Prevents the rename dialog from opening when a tab is "
                      "double-clicked"))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("Shared chat"));
     SettingWidget::intInput(
         uiText("Shared chat session status refresh interval"),
         s.sharedChatSessionRefreshInterval,
@@ -1734,6 +1855,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             "shared chat badge"))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("System settings"),
+                 QStringLiteral("Connection"));
     SettingWidget::dropdown(uiText("Twitch read connection mode (requires restart)"),
                             s.twitchReadConnectionMode)
         ->setTooltip(uiText("The read connection is the one where Chatterino joins a "
@@ -1747,6 +1870,8 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                      "modes will join in delayed batches."))
         ->addTo(layout);
 
+    routeSetting(layout, QStringLiteral("YouTube and Kick"),
+                 QStringLiteral("Kick"));
     SettingWidget::dropdown(uiText("Kick connection preference (requires restart)"),
                             s.kickConnectionPreference)
         ->setTooltip(uiText("The transport to use for receiving Kick messages.\n"

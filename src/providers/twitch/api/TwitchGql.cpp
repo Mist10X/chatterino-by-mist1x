@@ -7855,6 +7855,51 @@ mutation MoltorinoUnbanUserFromChatRoom($input: UnbanUserFromChatRoomInput!) {
         .execute();
 }
 
+void TwitchGql::getViewerCounts(
+    const QStringList &logins,
+    std::function<void(QHash<QString, unsigned>)> callback)
+{
+    if (logins.isEmpty())
+    {
+        return;
+    }
+    QStringList fields;
+    QJsonObject variables;
+    QStringList definitions;
+    for (int i = 0; i < logins.size(); ++i)
+    {
+        definitions << QStringLiteral("$l%1: String!").arg(i);
+        fields << QStringLiteral("u%1: user(login: $l%1) { stream { viewersCount } }")
+                      .arg(i);
+        variables.insert(QStringLiteral("l%1").arg(i), logins.at(i));
+    }
+    const auto query = QStringLiteral("query MoltorinoViewerCounts(%1) { %2 }")
+                           .arg(definitions.join(", "), fields.join(' '))
+                           .toUtf8();
+    makeInlineGqlRequest(query.constData(), variables, QString())
+        .onSuccess([logins, callback](const NetworkResult &result) {
+            const auto data = payloadDataObject(result.parseJsonValue());
+            QHash<QString, unsigned> counts;
+            for (int i = 0; i < logins.size(); ++i)
+            {
+                const auto stream = data.value(QStringLiteral("u%1").arg(i))
+                                        .toObject()
+                                        .value("stream");
+                if (stream.isObject())
+                {
+                    const auto count =
+                        stream.toObject().value("viewersCount").toInteger(-1);
+                    if (count >= 0)
+                    {
+                        counts.insert(logins.at(i), unsigned(count));
+                    }
+                }
+            }
+            callback(counts);
+        })
+        .execute();
+}
+
 void TwitchGql::getOwnChatBan(
     const QString &channelId, const QString &userId, const QString &oauthToken,
     std::function<void(bool banned)> successCallback,

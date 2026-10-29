@@ -147,9 +147,11 @@ int fontWeight(FontStyle style)
 
         case FontStyle::Tiny:
         case FontStyle::UiMedium:
-        case FontStyle::UiTabs:
         case FontStyle::EndType:
             return QFont::Normal;
+
+        case FontStyle::UiTabs:
+            return QFont::DemiBold;
 
         case FontStyle::UiMediumBold:
             return QFont::Bold;
@@ -209,6 +211,9 @@ QString fontFamily(FontStyle style)
         case FontStyle::UiMedium:
         case FontStyle::UiMediumBold:
         case FontStyle::UiTabs:
+            // The interface uses the chat font as well: one typeface for the
+            // tabs, headers and the chat instead of the system font next to it.
+            return getSettings()->chatFontFamily.getValue();
         case FontStyle::EndType:
             return QStringLiteral(DEFAULT_FONT_FAMILY);
     }

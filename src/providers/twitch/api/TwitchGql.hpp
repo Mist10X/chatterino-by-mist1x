@@ -330,6 +330,10 @@ void getOwnChatBan(const QString &channelId, const QString &userId,
                    const QString &oauthToken,
                    std::function<void(bool banned)> successCallback,
                    std::function<void(const QString &)> failureCallback);
+/// Current viewer counts of live channels, by login, from the source the
+/// twitch.tv page uses (fresher than Helix). Offline channels are left out.
+void getViewerCounts(const QStringList &logins,
+                     std::function<void(QHash<QString, unsigned>)> callback);
 void followUser(const QString &targetId, const QString &oauthToken,
                 std::function<void()> successCallback,
                 std::function<void(const QString &)> failureCallback);

@@ -164,6 +164,8 @@ protected:
     QColor inputBackground() const;
     /// Slow mode countdown (and queued messages) at the end of the input.
     void updateSlowModeBadge();
+    /// The queued message comes back into the input (badge click).
+    void cancelQueuedMessage();
     /// After a message was sent: back to normal once lifted, or check
     /// whether a restriction is still real.
     void noteOwnRestrictionSend(const QString &message);

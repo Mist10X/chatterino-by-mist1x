@@ -1144,7 +1144,7 @@ void Split::updateInputPlaceholder()
 
     if (user->isAnon())
     {
-        placeholderText = "Log in to send messages...";
+        placeholderText = uiText("Log in to send messages...");
     }
     else
     {

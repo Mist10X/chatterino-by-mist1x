@@ -52,6 +52,14 @@ public:
     std::optional<QString> portableDirectory;
     /// --isolation-report <file>: see writeIsolationReport (main.cpp)
     std::optional<QString> isolationReport;
+    /// --ui-snapshot <png> [--ui-snapshot-delay <ms>]: render the main window
+    /// to a picture and quit (with QT_QPA_PLATFORM=offscreen nothing is shown
+    /// on screen). For checking the interface.
+    std::optional<QString> uiSnapshot;
+    int uiSnapshotDelayMs = 12000;
+    /// --ui-snapshot-settings "<tab>[:<scroll px>]": the picture shows the
+    /// settings window on that tab instead of the main window.
+    std::optional<QString> uiSnapshotSettings;
 
     bool useOldScaling = false;
 

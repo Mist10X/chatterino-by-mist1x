@@ -8,8 +8,10 @@
 #include "widgets/BaseWidget.hpp"
 
 #include <pajlada/signals/signalholder.hpp>
+#include <QColor>
 
 class QFontMetricsF;
+class QPainter;
 
 namespace chatterino {
 
@@ -38,6 +40,12 @@ public:
     void setShouldElide(bool shouldElide);
 
     void setElideSuffix(const QString &suffix);
+
+    /// Muted text after the main text (stream details in a split header).
+    /// It is cut first when there is no room. Empty: nothing.
+    void setDetails(const QString &details);
+    /// A small coloured dot before the text (live / rerun). Invalid: none.
+    void setLeadingDot(const QColor &color);
 
 protected:
     void scaleChangedEvent(float scale_) override;
@@ -69,8 +77,13 @@ protected:
 
     QString elidedText_;
     QString elideSuffix_;
+    QString details_;
+    QColor dotColor_;
 
     pajlada::Signals::SignalHolder connections_;
+
+private:
+    void paintWithDetails(QPainter &painter, const QFontMetricsF &metrics);
 };
 
 }  // namespace chatterino

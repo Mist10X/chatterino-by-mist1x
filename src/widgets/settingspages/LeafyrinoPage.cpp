@@ -46,7 +46,8 @@ void LeafyrinoPage::initLayout(GeneralPageView &layout)
 {
     auto &s = *getSettings();
 
-    layout.addTitle(uiText("Badges"));
+    routeSetting(layout, QStringLiteral("Emotes and badges"),
+                 QStringLiteral("More badges"));
     SettingWidget::checkbox(uiText("Folhinha"), s.showBadgesFolhinha)
         ->addKeywords({"folhinha", "folhinhabot"})
         ->setTooltip(uiText("Developer, admin, and Plus badges."))
@@ -81,13 +82,15 @@ void LeafyrinoPage::initLayout(GeneralPageView &layout)
         ->setTooltip(uiText("Founder and event badges."))
         ->addTo(layout);
 
-    layout.addTitle(uiText("Client"));
+    routeSetting(layout, QStringLiteral("Emotes and badges"),
+                 QStringLiteral("More badges"));
     SettingWidget::checkbox(uiText("Show select badge button"), s.showSelectBadgeButton)
         ->addKeywords({"badge", "select", "button", "client", "picker"})
         ->setTooltip(uiText("Show the badge picker button in the chat input bar."))
         ->addTo(layout);
 
-    layout.addTitle(uiText("YouTube"));
+    routeSetting(layout, QStringLiteral("YouTube and Kick"),
+                 QStringLiteral("YouTube"));
     SettingWidget::checkbox(uiText("Highlight Super Chats"),
                             s.highlightYouTubeSuperChats)
         ->addKeywords(
@@ -142,8 +145,8 @@ void LeafyrinoPage::initLayout(GeneralPageView &layout)
                      "the display name. Hovering always shows the handle."))
         ->addTo(layout);
 
-    layout.addTitle(uiText("Usercard"));
-    layout.addDescription(uiText("Choose which extra details appear on usercards."));
+    routeSetting(layout, QStringLiteral("User cards"),
+                 QStringLiteral("Usercard"));
 
     SettingWidget::checkbox(uiText("Show follower count"), s.showUsercardFollowerCount)
         ->addKeywords({"usercard", "follower", "count"})
@@ -203,7 +206,8 @@ void LeafyrinoPage::initLayout(GeneralPageView &layout)
         ->addKeywords({"usercard", "gift", "gifter", "subscription", "sub"})
         ->addTo(layout);
 
-    layout.addTitle(uiText("Messages per second"));
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Messages per second"));
     SettingWidget::checkbox(uiText("Show messages-per-second (mps) overlay in splits"),
                             s.showSplitMps)
         ->setTooltip(uiText("Shows a faint overlay label (e.g. \"12 mps\") with the "
@@ -225,7 +229,8 @@ void LeafyrinoPage::initLayout(GeneralPageView &layout)
         ->conditionallyEnabledBy(s.showSplitMps)
         ->addTo(layout);
 
-    layout.addTitle(uiText("Events"));
+    routeSetting(layout, QStringLiteral("Chat"),
+                 QStringLiteral("What to show in chat"));
     layout.addDescription(
         uiText("Channel event messages in chat. Requires Moltorino auth "
         "(Settings → Moltorino → Authentication), experimental EventSub "
@@ -240,7 +245,8 @@ void LeafyrinoPage::initLayout(GeneralPageView &layout)
         ->addKeywords({"follow", "events", "eventsub", "chat", "moderator"})
         ->addTo(layout);
 
-    layout.addTitle(uiText("Commands"));
+    routeSetting(layout, QStringLiteral("Chat input"),
+                 QStringLiteral("Commands"));
     SettingWidget::checkbox(uiText("Show command suggestions while typing"),
                             s.showCommandSuggestions)
         ->setTooltip(uiText("Show a compact command suggestion strip above the "
@@ -283,18 +289,23 @@ void LeafyrinoPage::initLayout(GeneralPageView &layout)
         ->conditionallyEnabledBy(s.includePotatCommands)
         ->addTo(layout);
 
-    layout.addTitle(uiText("Miscellaneous"));
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Tabs"));
     SettingWidget::checkbox(uiText("Use message colors for tab alerts"),
                             s.colorTabHighlightsByMessage)
         ->setTooltip(uiText("When a message highlights a tab, use that highlight "
                      "color for the tab alert line."))
         ->addKeywords({"tab", "alert", "highlight", "color"})
         ->addTo(layout);
+    routeSetting(layout, QStringLiteral("Links and search"),
+                 QStringLiteral("Links"));
     SettingWidget::checkbox(uiText("Wrap links at breaks"), s.wrapLinksAtBreaks)
         ->setTooltip(uiText("Let URLs wrap at /, ?, &, #, and = instead of staying "
                      "on one line."))
         ->addKeywords({"url", "link", "wrap", "break"})
         ->addTo(layout);
+    routeSetting(layout, QStringLiteral("Appearance"),
+                 QStringLiteral("Messages"));
     SettingWidget::checkbox(uiText("Show full date when hovering timestamps"),
                             s.showTimestampDateTooltip)
         ->setTooltip(uiText("Show the full message date and time when hovering a "

@@ -451,6 +451,11 @@ SplitInput::SplitInput(QWidget *parent, Split *_chatWidget,
     // NOLINTNEXTLINE(cppcoreguidelines-prefer-member-initializer)
     auto *spellChecker = getApp()->getSpellChecker();
     this->inputHighlighter = new InputHighlighter(*spellChecker, this);
+    // A click on the slow mode countdown takes the queued message back.
+    this->signalHolder_.managedConnect(this->ui_.textEdit->sideBadgeClicked,
+                                       [this] {
+                                           this->cancelQueuedMessage();
+                                       });
     this->ui_.textEdit->paintOverlay = [this](QPainter &painter) {
         this->inputHighlighter->paintEmotes(painter, *this->ui_.textEdit);
     };
@@ -1610,10 +1615,6 @@ QString SplitInput::handleSendMessage(const std::vector<QString> &arguments)
         QString sendMessage =
             getApp()->getCommands()->execCommand(message, c, false);
         c->sendMessage(sendMessage);
-        if (plainChat)
-        {
-            slowChannel->noteOwnMessageSent();
-        }
 
         this->postMessageSend(message, arguments);
         return "";
@@ -1635,10 +1636,6 @@ QString SplitInput::handleSendMessage(const std::vector<QString> &arguments)
     if (tc)
     {
         tc->sendReply(sendMessage, this->replyTarget_->id);
-        if (plainChat)
-        {
-            tc->noteOwnMessageSent();
-        }
     }
     else if (kc)
     {
@@ -2777,6 +2774,33 @@ void SplitInput::updateSlowModeBadge()
         }
     }
     this->ui_.textEdit->setSideBadge(text);
+    const bool queued = channel != nullptr && channel->slowQueueSize() > 0 &&
+                        !text.isEmpty();
+    this->ui_.textEdit->setSideBadgeAction(
+        queued ? uiText("Click to cancel the queued message and get it back")
+               : QString());
+}
+
+void SplitInput::cancelQueuedMessage()
+{
+    auto *channel =
+        dynamic_cast<TwitchChannel *>(this->split_->getSelectedChannel().get());
+    if (channel == nullptr)
+    {
+        return;
+    }
+    const auto text = channel->takeLastQueued();
+    if (text.isEmpty())
+    {
+        return;
+    }
+    // Back into the input; something typed meanwhile stays after it.
+    const auto current = this->ui_.textEdit->toPlainText();
+    this->ui_.textEdit->setPlainText(
+        current.trimmed().isEmpty() ? text : text + QChar(' ') + current);
+    this->ui_.textEdit->moveCursor(QTextCursor::End);
+    this->ui_.textEdit->setFocus();
+    this->updateSlowModeBadge();
 }
 
 QColor SplitInput::inputBackground() const

@@ -491,18 +491,10 @@ void IrcMessageHandler::parsePrivMessageInto(
             channel->setStaff(parsedBadges.contains("staff"));
         }
 
-        // Clear the send wait timer when we are able to send a message
+        // Our message is in the chat: the slow mode wait starts now (only for
+        // messages that really went through; not for mods and VIPs).
         channel->setSendWait(0);
-
-        // Update send wait timer with slow mode timeout if this user is not a mod or vip.
-        if (!channel->hasHighRateLimit())
-        {
-            auto roomModes = *channel->accessRoomModes();
-            if (roomModes.slowMode > 0)
-            {
-                channel->setSendWait(roomModes.slowMode);
-            }
-        }
+        channel->noteOwnMessageSent();
     }
 
     IrcMessageHandler::addMessage(message, sink, channel,
@@ -905,6 +897,12 @@ void IrcMessageHandler::parseUserNoticeMessageInto(Communi::IrcMessage *message,
         (msgType == "submysterygift" || msgType == "anonsubmysterygift" ||
          ((msgType == "subgift" || msgType == "anonsubgift") &&
           !tags.getOrEmpty("msg-param-community-gift-id").isEmpty())))
+    {
+        return;
+    }
+
+    // An incoming raid: no chat line (the corner banner is raised separately).
+    if (getSettings()->hideRaidMessages && msgType == "raid")
     {
         return;
     }

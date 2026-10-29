@@ -19,6 +19,7 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
+#include <functional>
 #include <utility>
 
 class QScrollArea;
@@ -106,6 +107,26 @@ protected:
     }
 };
 
+class GeneralPageView;
+
+/// Settings are grouped by topic (appearance, chat, input...), not by the page
+/// whose code adds them: while the settings window builds its topic pages,
+/// a page sends what it adds next into a topic page and section with this.
+/// Outside of that (tests, previews) it does nothing.
+void routeSetting(GeneralPageView &from, const QString &topic,
+                  const QString &section);
+
+/// The topic pages that routeSetting() sends settings to, by topic name.
+/// Set by the settings window while it builds its pages.
+class SettingsTopics
+{
+public:
+    static GeneralPageView *find(const QString &topic);
+    static bool active();
+    static void setActive(
+        std::function<GeneralPageView *(const QString &)> lookup);
+};
+
 struct DropdownArgs {
     QString value;
     int index;
@@ -138,11 +159,21 @@ public:
                           QString toolTipText = {});
     void addNavigationSpacing();
 
+    /// What is added next goes into @a target, at the end of its @a section
+    /// (created at the end if it has none). nullptr: back into this view.
+    void routeTo(GeneralPageView *target, const QString &section);
+    /// Hides sections nothing was put into and ends the page.
+    void finishTopic();
+
     template <typename OnClick>
     QPushButton *makeButton(const QString &text, OnClick onClick)
     {
+        if (this->route_ != nullptr)
+        {
+            return this->route_->makeButton(text, std::move(onClick));
+        }
         auto *button = new QPushButton(uiText(text));
-        this->groups_.back().widgets.push_back({button, {text}});
+        this->currentGroup().widgets.push_back({button, {text}});
         QObject::connect(button, &QPushButton::clicked, onClick);
         return button;
     }
@@ -150,6 +181,10 @@ public:
     template <typename OnClick>
     QPushButton *addButton(const QString &text, OnClick onClick)
     {
+        if (this->route_ != nullptr)
+        {
+            return this->route_->addButton(text, std::move(onClick));
+        }
         auto button = makeButton(text, onClick);
         auto *layout = new QHBoxLayout();
         layout->addWidget(button);
@@ -166,6 +201,12 @@ public:
         std::function<T(DropdownArgs)> setValue, bool editable = true,
         QString toolTipText = {}, bool listenToActivated = false)
     {
+        if (this->route_ != nullptr)
+        {
+            return this->route_->addDropdown<T>(
+                text, items, setting, std::move(getValue), std::move(setValue),
+                editable, toolTipText, listenToActivated);
+        }
         auto items2 = items;
         auto selected = getValue(setting.getValue());
 
@@ -264,6 +305,17 @@ private:
         Space *space{};
         std::vector<Widget> widgets;
     };
+
+    struct Group;
+    /// The section new things go into: the one routed to, else the last.
+    Group &currentGroup();
+    void placeWidget(QWidget *widget);
+    void placeLayout(QLayout *layout);
+    /// Where the current section ends in the content (-1: at the very end).
+    int insertIndex() const;
+
+    GeneralPageView *route_ = nullptr;
+    int insertGroup_ = -1;
 
     QScrollArea *contentScrollArea_ = nullptr;
     QVBoxLayout *contentLayout_ = nullptr;

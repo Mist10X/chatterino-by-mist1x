@@ -82,6 +82,7 @@
 #include "util/PostToThread.hpp"
 #include "widgets/Notebook.hpp"
 #include "widgets/splits/Split.hpp"
+#include "widgets/dialogs/SettingsDialog.hpp"
 #include "widgets/Window.hpp"
 
 #include <miniaudio.h>
@@ -429,6 +430,23 @@ int Application::run()
     if (!this->args_.isFramelessEmbed)
     {
         this->windows->getMainWindow().show();
+    }
+
+    if (this->args_.uiSnapshot)
+    {
+        QTimer::singleShot(this->args_.uiSnapshotDelayMs, [this] {
+            if (this->args_.uiSnapshotSettings)
+            {
+                SettingsDialog::saveSnapshot(&this->windows->getMainWindow(),
+                                             *this->args_.uiSnapshotSettings,
+                                             *this->args_.uiSnapshot);
+                QApplication::exit(0);
+                return;
+            }
+            this->windows->getMainWindow().grab().save(*this->args_.uiSnapshot,
+                                                       "PNG");
+            QApplication::exit(0);
+        });
     }
 
     MoltorinoAuth::scheduleStartupRefresh();

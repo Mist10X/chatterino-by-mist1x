@@ -610,17 +610,23 @@ public:
      */
     void setSendWait(int seconds);
 
+    /// A fresher viewer count for a live channel (between Helix updates).
+    void updateViewerCount(unsigned count);
+
     /// Seconds (rounded up) until the next message may be sent; 0 if none.
     int sendWaitSeconds() const;
     /// Slow mode: a chat message sent before the wait is over is kept and goes
     /// by itself when it ends. False when there is nothing to wait for.
     bool queueWhileSlow(const QString &message, const QString &replyId = {});
     size_t slowQueueSize() const;
+    /// Cancels the newest queued message and returns its text (empty: none).
+    QString takeLastQueued();
     /// Tests only: receives queued messages instead of Twitch.
     std::function<void(const QString &text, const QString &replyId)>
         slowQueueSenderForTesting;
-    /// Our own chat message just went out: start the slow mode wait now
-    /// (Twitch confirms it with USERSTATE a moment later).
+    /// Our own chat message showed up in the chat (it really went through):
+    /// start the slow mode wait from now. A message that never shows up
+    /// starts no wait, so it can be sent again at once.
     void noteOwnMessageSent();
 
     bool isLoadingRecentMessages() const;

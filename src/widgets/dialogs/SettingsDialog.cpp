@@ -11,6 +11,7 @@
 #include "controllers/commands/CommandController.hpp"
 #include "controllers/hotkeys/HotkeyController.hpp"
 #include "singletons/Settings.hpp"
+#include "singletons/Theme.hpp"
 #include "util/LayoutCreator.hpp"
 #include "widgets/BaseWindow.hpp"
 #include "widgets/helper/SettingsDialogTab.hpp"
@@ -20,6 +21,7 @@
 #include "widgets/settingspages/ExternalToolsPage.hpp"
 #include "widgets/settingspages/FiltersPage.hpp"
 #include "widgets/settingspages/GeneralPage.hpp"
+#include "widgets/settingspages/GeneralPageView.hpp"
 #include "widgets/settingspages/HighlightingPage.hpp"
 #include "widgets/settingspages/IgnoresPage.hpp"
 #include "widgets/settingspages/KeyboardSettingsPage.hpp"
@@ -33,13 +35,204 @@
 
 #include <QDateTime>
 #include <QDebug>
+#include <QApplication>
 #include <QDialogButtonBox>
+#include <QLabel>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QLineEdit>
 #include <QPointer>
 
 using namespace Qt::Literals;
 
 namespace chatterino {
+
+namespace {
+
+/// One topic of the settings: its sections in order. The settings themselves
+/// come from the pages' code (see routeSetting()).
+struct Topic {
+    const char *name;
+    const char *icon;
+    std::vector<const char *> sections;
+    SettingsTabId id = SettingsTabId::None;
+};
+
+const std::vector<Topic> &topics()
+{
+    static const std::vector<Topic> list{
+        {"Appearance",
+         ":/settings/topic-appearance.svg",
+         {"Language and theme", "Window", "Tabs", "Chat header", "Messages",
+          "Usernames", "Client detection", "Messages per second", "Overlay"},
+         SettingsTabId::General},
+        {"Chat",
+         ":/settings/topic-chat.svg",
+         {"Scrolling", "Mouse", "What to show in chat", "Hidden messages",
+          "Unique chat (R9K)", "Mentions and whispers", "Reply threads",
+          "Message history", "If I am banned or timed out", "Pinned Messages",
+          "Poll and Prediction", "Points and Rewards", "Raids and gifted subs",
+          "Chatter list", "Shared chat"},
+         SettingsTabId::Leafyrino},
+        {"Chat input",
+         ":/settings/topic-input.svg",
+         {"Input Box", "Slow mode", "Sending", "Autocompletion", "Commands"}},
+        {"Emotes and badges",
+         ":/settings/topic-emotes.svg",
+         {"Emotes", "Emote providers", "Visible badges", "More badges",
+          "7TV paints"}},
+        {"User cards",
+         ":/settings/topic-usercard.svg",
+         {"Usercard", "Buttons and actions"}},
+        {"Links and search",
+         ":/settings/topic-links.svg",
+         {"Link Previews", "Links", "Search"}},
+        {"Translation", ":/settings/topic-translation.svg", {"Translation"}},
+        {"Streamer Mode", ":/settings/topic-streamer.svg", {"Streamer Mode"}},
+        {"Moderation tools", ":/settings/topic-moderation.svg", {"Moderation"}},
+        {"Sign-in for extra features",
+         ":/settings/topic-login.svg",
+         {"Authentication"},
+         SettingsTabId::Moltorino},
+        {"YouTube and Kick", ":/settings/topic-platforms.svg", {"YouTube", "Kick"}},
+        {"Fun", ":/settings/topic-fun.svg", {"Fun"}},
+        {"System settings",
+         ":/settings/topic-system.svg",
+         {"Startup and tray", "Sound", "Connection", "Updates",
+          "Browser Integration", "AppData & Cache", "Experimental"},
+         SettingsTabId::Technorino},
+    };
+    return list;
+}
+
+class TopicPage : public SettingsPage
+{
+public:
+    explicit TopicPage(const Topic &topic)
+    {
+        auto *layout = new QVBoxLayout(this);
+        layout->setContentsMargins(12, 0, 4, 0);
+        this->view_ = GeneralPageView::withNavigation(this);
+        layout->addWidget(this->view_);
+        for (const auto *section : topic.sections)
+        {
+            this->view_->addTitle(QString::fromUtf8(section));
+        }
+    }
+
+    GeneralPageView *view() const
+    {
+        return this->view_;
+    }
+
+    bool filterElements(const QString &query) override
+    {
+        return this->view_->filterElements(query) || query.isEmpty();
+    }
+
+private:
+    GeneralPageView *view_{};
+};
+
+QString settingsDialogStyle()
+{
+    const auto accent = getTheme()->accent;
+    auto soft = accent;
+    soft.setAlpha(60);
+    return QStringLiteral(R"(
+QLineEdit#settingsSearch {
+    background: #1c1c24;
+    border: 1px solid #2c2c37;
+    border-radius: 9px;
+    padding: 7px 12px;
+    font-size: 14px;
+    color: #ececf3;
+    selection-background-color: %2;
+}
+QLineEdit#settingsSearch:focus {
+    border: 1px solid %1;
+}
+QScrollArea#settingsSidebar, QScrollArea#settingsSidebar > QWidget,
+QScrollArea#settingsSidebar > QWidget > QWidget {
+    background: transparent;
+}
+QLabel#settingsCaption {
+    color: #77768a;
+    font-family: "Segoe UI Semibold";
+    font-size: 11px;
+    padding: 12px 0px 3px 20px;
+}
+chatterino--TitleLabel {
+    font-family: "Segoe UI Semibold";
+    font-size: 20px;
+    color: #f2f1f8;
+}
+chatterino--SubtitleLabel {
+    font-family: "Segoe UI Semibold";
+    font-size: 15px;
+    color: %1;
+}
+chatterino--NavigationLabel {
+    font-family: "Segoe UI";
+    font-size: 13px;
+    color: #a3a1b2;
+}
+chatterino--SettingsPage #generalSettingsScrollContent {
+    background: #19191f;
+}
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    margin: 2px;
+}
+QScrollBar::handle:vertical {
+    background: #34343f;
+    border-radius: 3px;
+    min-height: 32px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #45454f;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: transparent;
+}
+QPushButton {
+    background: #25252e;
+    border: 1px solid #363642;
+    border-radius: 6px;
+    padding: 4px 14px;
+    color: #e6e6ee;
+}
+QPushButton:hover {
+    background: #2f2f3a;
+}
+QPushButton:disabled {
+    color: #74737f;
+}
+QDialogButtonBox QPushButton {
+    background: #23232c;
+    border: 1px solid #33333f;
+    border-radius: 7px;
+    padding: 6px 22px;
+    color: #e6e6ee;
+}
+QDialogButtonBox QPushButton:hover {
+    background: #2c2c37;
+}
+QDialogButtonBox QPushButton#settingsOk {
+    background: %1;
+    border: 1px solid %1;
+    color: #15151b;
+    font-family: "Segoe UI Semibold";
+}
+)")
+        .arg(accent.name(), soft.name(QColor::HexArgb));
+}
+
+}  // namespace
 
 SettingsDialog::SettingsDialog(QWidget *parent)
     : BaseWindow(
@@ -60,7 +253,9 @@ SettingsDialog::SettingsDialog(QWidget *parent)
                          ~Qt::WindowContextHelpButtonHint);
 
     // Russian captions need more room; keep the established font and scale.
-    this->resize(activeUiLanguage() == "ru" ? 1200 : 915, 600);
+    this->resize(activeUiLanguage() == "ru" ? 1180 : 1020, 840);
+    this->overrideBackgroundColor_ = QColor("#131318");
+    this->setStyleSheet(this->styleSheet() + settingsDialogStyle());
 
     this->initUi();
     this->addTabs();
@@ -121,6 +316,8 @@ void SettingsDialog::initUi()
                     .emplace<QLineEdit>()
                     .assign(&this->ui_.search);
     this->setSearchPlaceholderText();
+    edit->setObjectName("settingsSearch");
+    title->layout()->setContentsMargins(14, 12, 14, 0);
     edit->setClearButtonEnabled(true);
     edit->findChild<QAbstractButton *>()->setIcon(
         QPixmap(":/buttons/clearSearch.png"));
@@ -133,14 +330,18 @@ void SettingsDialog::initUi()
     auto centerBox =
         outerBox.emplace<QHBoxLayout>().withoutMargin().withoutSpacing();
 
-    // left side (tabs)
-    centerBox.emplace<QWidget>()
-        .assign(&this->ui_.tabContainerContainer)
-        .setLayoutType<QVBoxLayout>()
-        .withoutMargin()
-        .assign(&this->ui_.tabContainer);
-    this->ui_.tabContainerContainer->setFixedWidth(
-        static_cast<int>(150 * this->dpi_));
+    // left side (tabs), scrolls when the window is low
+    this->ui_.sidebar = new QScrollArea;
+    this->ui_.sidebar->setObjectName("settingsSidebar");
+    this->ui_.sidebar->setWidgetResizable(true);
+    this->ui_.sidebar->setFrameShape(QFrame::NoFrame);
+    this->ui_.sidebar->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    this->ui_.tabContainerContainer = new QWidget;
+    this->ui_.tabContainer = new QVBoxLayout(this->ui_.tabContainerContainer);
+    this->ui_.tabContainer->setContentsMargins(0, 0, 0, 0);
+    this->ui_.sidebar->setWidget(this->ui_.tabContainerContainer);
+    centerBox->addWidget(this->ui_.sidebar);
+    this->updateSidebarWidth();
 
     // right side (pages)
     centerBox.emplace<QStackedLayout>()
@@ -156,9 +357,12 @@ void SettingsDialog::initUi()
     {
         this->ui_.okButton =
             buttons->addButton(uiText("Ok"), QDialogButtonBox::YesRole);
+        this->ui_.okButton->setObjectName("settingsOk");
         this->ui_.cancelButton =
             buttons->addButton(uiText("Cancel"), QDialogButtonBox::NoRole);
     }
+
+    buttons->setContentsMargins(0, 0, 12, 10);
 
     // ---- misc
     this->ui_.tabContainerContainer->setObjectName("tabWidget");
@@ -197,22 +401,34 @@ void SettingsDialog::filterElements(const QString &text)
         }
     }
 
-    // remove duplicate spaces
-    bool shouldShowSpace = false;
-
+    // a caption shows while any tab under it does
+    QWidget *caption = nullptr;
+    bool captionHasTabs = false;
+    const auto finishCaption = [&] {
+        if (caption != nullptr)
+        {
+            caption->setVisible(captionHasTabs);
+        }
+    };
     for (int i = 0; i < this->ui_.tabContainer->count(); i++)
     {
-        auto *item = this->ui_.tabContainer->itemAt(i);
-        if (auto *x = dynamic_cast<QSpacerItem *>(item); x)
+        auto *widget = this->ui_.tabContainer->itemAt(i)->widget();
+        if (widget == nullptr)
         {
-            x->changeSize(10, shouldShowSpace ? 16 : 0);
-            shouldShowSpace = false;
+            continue;
         }
-        else if (item->widget())
+        if (std::ranges::find(this->captions_, widget) != this->captions_.end())
         {
-            shouldShowSpace |= item->widget()->isVisible();
+            finishCaption();
+            caption = widget;
+            captionHasTabs = false;
+        }
+        else
+        {
+            captionHasTabs |= !widget->isHidden();
         }
     }
+    finishCaption();
 }
 
 void SettingsDialog::setElementFilter(const QString &query)
@@ -237,46 +453,118 @@ bool SettingsDialog::eventFilter(QObject *object, QEvent *event)
 
 void SettingsDialog::addTabs()
 {
-    this->ui_.tabContainer->setSpacing(0);
-    this->ui_.tabContainer->setContentsMargins(0, 20, 0, 20);
+    this->ui_.tabContainer->setSpacing(1);
+    this->ui_.tabContainer->setContentsMargins(0, 4, 0, 12);
 
-    QDate today = QDateTime::currentDateTime().date();
-    QString technorinoIconPath = ":/settings/technorino.png";
+    // The topic pages are built first, then the pages that hold the settings
+    // send each of them to its topic and section (see routeSetting()).
+    std::vector<std::pair<const Topic *, TopicPage *>> built;
+    for (const auto &topic : topics())
+    {
+        // owned by the dialog from the start: a topic never opened must go
+        // away with it (its settings point into the pages below)
+        auto *page = new TopicPage(topic);
+        page->setParent(this);
+        page->hide();
+        built.emplace_back(&topic, page);
+    }
+    SettingsTopics::setActive([&built](const QString &name) -> GeneralPageView * {
+        for (const auto &[topic, page] : built)
+        {
+            if (name == QLatin1String(topic->name))
+            {
+                return page->view();
+            }
+        }
+        return nullptr;
+    });
+    for (auto *source : std::initializer_list<SettingsPage *>{
+             new GeneralPage, new LeafyrinoPage, new MoltorinoPage,
+             new TechnorinoPage})
+    {
+        source->setParent(this);
+        source->hide();
+        this->sourcePages_.push_back(source);
+    }
+    SettingsTopics::setActive({});
 
-    if (today.month() == 12 && today.day() == 25)
-    {
-        technorinoIconPath = ":/settings/technorino_christmas.png";
-    }
-    else if (today.month() == 10 && today.day() == 31)
-    {
-        technorinoIconPath = ":/settings/technorino_halloween.png";
-    }
+    const auto addTopic = [&](const char *name) {
+        for (const auto &[topic, page] : built)
+        {
+            if (qstrcmp(topic->name, name) == 0)
+            {
+                page->view()->finishTopic();
+                this->addTab(
+                    [page] {
+                        return page;
+                    },
+                    uiText(QString::fromUtf8(topic->name)),
+                    QString::fromUtf8(topic->icon), topic->id);
+            }
+        }
+    };
+
     // Constructors are wrapped in std::function to remove some strain from first time loading.
+    this->addCaption(uiText("Main settings"));
+    addTopic("Appearance");
+    addTopic("Chat");
+    addTopic("Chat input");
+    addTopic("Emotes and badges");
+    addTopic("User cards");
+    addTopic("Links and search");
+    addTopic("Translation");
+    addTopic("Streamer Mode");
 
+    this->addCaption(uiText("Rules and moderation"));
+    addTopic("Moderation tools");
     // clang-format off
-    this->addTab([]{return new GeneralPage;},          uiText("General"),        ":/settings/about.svg", SettingsTabId::General);
-    this->addTab([]{return new LeafyrinoPage;},        uiText("Leafyrino"),      ":/settings/leafyrino.png", SettingsTabId::Leafyrino);
-    this->addTab([]{return new MoltorinoPage;},        uiText("Moltorino"),      ":/settings/moltorino.svg", SettingsTabId::Moltorino);
-    this->addTab([]{return new TechnorinoPage;},       uiText("Technorino"),     technorinoIconPath, SettingsTabId::Technorino);
-    this->ui_.tabContainer->addSpacing(16);
-    this->addTab([]{return new AccountsPage;},         uiText("Accounts"),       ":/settings/accounts.svg", SettingsTabId::Accounts);
-    this->addTab([]{return new NicknamesPage;},        uiText("Nicknames"),      ":/settings/accounts.svg");
-    this->ui_.tabContainer->addSpacing(16);
-    this->addTab([]{return new CommandPage;},          uiText("Commands"),       ":/settings/commands.svg");
-    this->addTab([]{return new HighlightingPage;},     uiText("Highlights"),     ":/settings/notifications.svg");
-    this->addTab([]{return new IgnoresPage;},          uiText("Ignores"),        ":/settings/ignore.svg");
-    this->addTab([]{return new FiltersPage;},          uiText("Filters"),        ":/settings/filters.svg");
-    this->ui_.tabContainer->addSpacing(16);
-    this->addTab([]{return new KeyboardSettingsPage;}, uiText("Hotkeys"),        ":/settings/keybinds.svg");
-    this->addTab([]{return new ModerationPage;},       uiText("Moderation"),     ":/settings/moderation.svg", SettingsTabId::Moderation);
-    this->addTab([]{return new NotificationPage;},     uiText("Live Notifications"),  ":/settings/notification2.svg");
-    this->addTab([]{return new ExternalToolsPage;},    uiText("External tools"), ":/settings/externaltools.svg");
+    this->addTab([]{return new ModerationPage;},       uiText("Moderation buttons and logs"), ":/settings/topic-modbuttons.svg", SettingsTabId::Moderation);
+    this->addTab([]{return new HighlightingPage;},     uiText("Highlights"),     ":/settings/topic-highlights.svg");
+    this->addTab([]{return new IgnoresPage;},          uiText("Ignores"),        ":/settings/topic-ignores.svg");
+    this->addTab([]{return new FiltersPage;},          uiText("Filters"),        ":/settings/topic-filters.svg");
+    this->addTab([]{return new NicknamesPage;},        uiText("Nicknames"),      ":/settings/topic-nicknames.svg");
+    this->addTab([]{return new CommandPage;},          uiText("Commands"),       ":/settings/topic-commands.svg");
+
+    this->addCaption(uiText("Accounts and alerts"));
+    this->addTab([]{return new AccountsPage;},         uiText("Accounts"),       ":/settings/topic-accounts.svg", SettingsTabId::Accounts);
+    addTopic("Sign-in for extra features");
+    this->addTab([]{return new NotificationPage;},     uiText("Live Notifications"),  ":/settings/topic-notifications.svg");
+
+    this->addCaption(uiText("More settings"));
+    addTopic("YouTube and Kick");
+    addTopic("Fun");
+    this->addTab([]{return new KeyboardSettingsPage;}, uiText("Hotkeys"),        ":/settings/topic-hotkeys.svg");
+    this->addTab([]{return new ExternalToolsPage;},    uiText("External tools"), ":/settings/topic-tools.svg");
 #ifdef CHATTERINO_HAVE_PLUGINS
-    this->addTab([]{return new PluginsPage;},          uiText("Plugins"),        ":/settings/plugins.svg");
+    this->addTab([]{return new PluginsPage;},          uiText("Plugins"),        ":/settings/topic-plugins.svg");
 #endif
+    addTopic("System settings");
     this->ui_.tabContainer->addStretch(1);
-    this->addTab([]{return new AboutPage;},            uiText("About"),          ":/settings/about.svg", SettingsTabId::About, Qt::AlignBottom);
+    this->addTab([]{return new AboutPage;},            uiText("About"),          ":/settings/topic-about.svg", SettingsTabId::About, Qt::AlignBottom);
     // clang-format on
+}
+
+void SettingsDialog::addCaption(const QString &text)
+{
+    auto *label = new QLabel(text.toUpper());
+    label->setObjectName("settingsCaption");
+    this->ui_.tabContainer->addWidget(label);
+    this->captions_.push_back(label);
+}
+
+void SettingsDialog::updateSidebarWidth()
+{
+    QFont font(QStringLiteral("Segoe UI"));
+    font.setPixelSize(14);
+    const QFontMetrics metrics(font);
+    int tabWidth = 190;
+    for (const auto *entry : this->tabs_)
+    {
+        tabWidth = std::max(tabWidth,
+                            metrics.horizontalAdvance(entry->name()) + 64);
+    }
+    this->ui_.tabContainerContainer->setFixedWidth(tabWidth);
+    this->ui_.sidebar->setFixedWidth(tabWidth + 12);
 }
 
 void SettingsDialog::addTab(std::function<SettingsPage *()> page,
@@ -285,18 +573,11 @@ void SettingsDialog::addTab(std::function<SettingsPage *()> page,
 {
     auto *tab =
         new SettingsDialogTab(this, std::move(page), name, iconPath, id);
-    tab->setFixedHeight(static_cast<int>(30 * this->dpi_));
+    tab->setFixedHeight(static_cast<int>(31 * this->dpi_));
 
     this->ui_.tabContainer->addWidget(tab, 0, alignment);
     this->tabs_.push_back(tab);
-
-    int tabWidth = static_cast<int>(150 * this->dpi_);
-    for (const auto *entry : this->tabs_)
-    {
-        tabWidth = std::max(tabWidth,
-                            entry->fontMetrics().horizontalAdvance(entry->name()) + 52);
-    }
-    this->ui_.tabContainerContainer->setFixedWidth(tabWidth);
+    this->updateSidebarWidth();
 
     if (this->tabs_.size() == 1)
     {
@@ -324,14 +605,11 @@ void SettingsDialog::selectTab(SettingsDialogTab *tab, bool byUser)
     if (this->selectedTab_ != nullptr)
     {
         this->selectedTab_->setSelected(false);
-        this->selectedTab_->setStyleSheet("color: #FFF");
     }
 
     tab->setSelected(true);
-    tab->setStyleSheet(
-        "background: #222; color: #4FC3F7;"  // Should this be same as accent color?
-        "/*border: 1px solid #555; border-right: none;*/");
     this->selectedTab_ = tab;
+    this->ui_.sidebar->ensureWidgetVisible(tab);
     if (byUser)
     {
         this->lastSelectedByUser_ = tab;
@@ -418,7 +696,7 @@ void SettingsDialog::showDialog(QWidget *parent,
     }
     if (instance->width() < 200 || instance->height() < 120)
     {
-        instance->resize(915, 600);
+        instance->resize(1020, 840);
     }
     instance->show();
     if (preferredTab == SettingsDialogPreference::StreamerMode)
@@ -429,6 +707,52 @@ void SettingsDialog::showDialog(QWidget *parent,
     instance->activateWindow();
     instance->raise();
     instance->setFocus();
+}
+
+void SettingsDialog::saveSnapshot(QWidget *parent, const QString &spec,
+                                  const QString &file)
+{
+    showDialog(parent);
+    SettingsDialog *dialog = nullptr;
+    for (auto *widget : QApplication::allWidgets())
+    {
+        if (auto *d = dynamic_cast<SettingsDialog *>(widget))
+        {
+            dialog = d;
+        }
+    }
+    if (dialog == nullptr)
+    {
+        return;
+    }
+    const auto name = spec.section(':', 0, 0);
+    const auto scroll = spec.section(':', 1, 1).toInt();
+    for (auto *tab : dialog->tabs_)
+    {
+        if (!name.isEmpty() && tab->name().contains(name, Qt::CaseInsensitive))
+        {
+            dialog->selectTab(tab);
+            break;
+        }
+    }
+    const auto query = spec.section(':', 2);
+    if (!query.isEmpty())
+    {
+        dialog->setElementFilter(query);
+    }
+    QCoreApplication::processEvents();
+    if (scroll > 0)
+    {
+        if (auto *page = dialog->ui_.pageStack->currentWidget())
+        {
+            for (auto *area : page->findChildren<QScrollArea *>())
+            {
+                area->verticalScrollBar()->setValue(scroll);
+            }
+        }
+    }
+    QCoreApplication::processEvents();
+    dialog->grab().save(file, "PNG");
 }
 
 void SettingsDialog::refresh()
@@ -443,6 +767,10 @@ void SettingsDialog::refresh()
             page->onShow();
         }
     }
+    for (auto *page : this->sourcePages_)
+    {
+        page->onShow();
+    }
 }
 
 void SettingsDialog::scaleChangedEvent(float newScale)
@@ -453,18 +781,12 @@ void SettingsDialog::scaleChangedEvent(float newScale)
 
     for (SettingsDialogTab *tab : this->tabs_)
     {
-        tab->setFixedHeight(30);
+        tab->setFixedHeight(31);
     }
 
     if (this->ui_.tabContainerContainer)
     {
-        int tabWidth = 150;
-        for (const auto *entry : this->tabs_)
-        {
-            tabWidth = std::max(tabWidth,
-                                entry->fontMetrics().horizontalAdvance(entry->name()) + 52);
-        }
-        this->ui_.tabContainerContainer->setFixedWidth(tabWidth);
+        this->updateSidebarWidth();
     }
 }
 

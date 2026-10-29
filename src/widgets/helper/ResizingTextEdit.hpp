@@ -30,6 +30,8 @@ public:
 
     pajlada::Signals::Signal<QKeyEvent *> keyPressed;
     pajlada::Signals::NoArgSignal focused;
+    /// The side badge was clicked (only while it is clickable).
+    pajlada::Signals::NoArgSignal sideBadgeClicked;
     pajlada::Signals::NoArgSignal focusLost;
     pajlada::Signals::Signal<const QMimeData *> imagePasted;
     pajlada::Signals::Signal<QMenu *, QPoint> contextMenuRequested;
@@ -43,6 +45,9 @@ public:
     /// A small label at the right end of the input (slow mode countdown); the
     /// text never runs under it. Empty text hides it.
     void setSideBadge(const QString &text);
+    /// A clickable badge shows a hand cursor and this tooltip; clicks emit
+    /// sideBadgeClicked. Empty tooltip: not clickable.
+    void setSideBadgeAction(const QString &tooltip);
 
     /// Painted over the text after each repaint (inline emote preview).
     std::function<void(QPainter &)> paintOverlay;

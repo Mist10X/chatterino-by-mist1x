@@ -1408,6 +1408,9 @@ public:
     /// per-recipient lines; the corner banner for big gifts stays.
     BoolSetting hideCommunityGiftMessages{"/moltorino/chat/hideCommunityGifts",
                                           true};
+    /// No chat line for an incoming raid ("N raiders from X have joined!");
+    /// the corner banner stays.
+    BoolSetting hideRaidMessages{"/moltorino/chat/hideRaids", true};
     /// Red input with a countdown while timed out, green once it is over.
     BoolSetting showOwnTimeoutInInput{"/moltorino/input/showOwnTimeout", true};
     IntSetting incomingRaidBannerSeconds{

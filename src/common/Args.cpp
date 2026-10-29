@@ -195,6 +195,16 @@ Args::Args(const QApplication &app)
         "as JSON to <file>, and exit without opening a window or saving.",
         "file");
 
+    auto uiSnapshotOption = hiddenOption(
+        "ui-snapshot",
+        "Render the main window to <file> (PNG) after a delay and exit.",
+        "file");
+    auto uiSnapshotDelayOption = hiddenOption(
+        "ui-snapshot-delay", "Milliseconds before --ui-snapshot.", "ms");
+    auto uiSnapshotSettingsOption = hiddenOption(
+        "ui-snapshot-settings",
+        "--ui-snapshot shows the settings on <tab>[:<scroll px>].", "tab");
+
 #ifndef NDEBUG
     QCommandLineOption useLocalEventsubOption(
         "use-local-eventsub",
@@ -218,6 +228,9 @@ Args::Args(const QApplication &app)
         portableEnable,
         portableDirectory,
         isolationReportOption,
+        uiSnapshotOption,
+        uiSnapshotDelayOption,
+        uiSnapshotSettingsOption,
 #ifndef NDEBUG
         useLocalEventsubOption,
 #endif
@@ -257,6 +270,22 @@ Args::Args(const QApplication &app)
         this->isolationReport = parser.value(isolationReportOption);
         this->dontSaveSettings = true;
         this->dontLoadMainWindow = true;
+    }
+
+    if (parser.isSet(uiSnapshotOption))
+    {
+        this->uiSnapshot = parser.value(uiSnapshotOption);
+        this->dontSaveSettings = true;
+        bool ok = false;
+        const auto delay = parser.value(uiSnapshotDelayOption).toInt(&ok);
+        if (ok && delay > 0)
+        {
+            this->uiSnapshotDelayMs = delay;
+        }
+        if (parser.isSet(uiSnapshotSettingsOption))
+        {
+            this->uiSnapshotSettings = parser.value(uiSnapshotSettingsOption);
+        }
     }
 
     this->printVersion = parser.isSet("V");

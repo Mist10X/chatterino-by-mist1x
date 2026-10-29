@@ -6,6 +6,7 @@
 
 #include "Application.hpp"
 #include "common/QLogging.hpp"
+#include "singletons/Theme.hpp"
 #include "util/LayoutHelper.hpp"
 #include "util/RapidJsonSerializeQString.hpp"
 #include "widgets/helper/Line.hpp"
@@ -14,6 +15,8 @@
 #include <QRegularExpression>
 #include <QScrollArea>
 #include <QScrollBar>
+
+#include <algorithm>
 
 namespace {
 
@@ -73,12 +76,150 @@ GeneralPageView *GeneralPageView::withNavigation(QWidget *parent)
     return view;
 }
 
+namespace {
+
+std::function<GeneralPageView *(const QString &)> &activeTopics()
+{
+    static std::function<GeneralPageView *(const QString &)> lookup;
+    return lookup;
+}
+
+}  // namespace
+
+GeneralPageView *SettingsTopics::find(const QString &topic)
+{
+    const auto &lookup = activeTopics();
+    return lookup ? lookup(topic) : nullptr;
+}
+
+bool SettingsTopics::active()
+{
+    return static_cast<bool>(activeTopics());
+}
+
+void SettingsTopics::setActive(
+    std::function<GeneralPageView *(const QString &)> lookup)
+{
+    activeTopics() = std::move(lookup);
+}
+
+void routeSetting(GeneralPageView &from, const QString &topic,
+                  const QString &section)
+{
+    // a page shown on its own (tests, previews) keeps the sections itself
+    auto *target = SettingsTopics::find(topic);
+    from.routeTo(target != nullptr ? target : &from, section);
+}
+
+void GeneralPageView::routeTo(GeneralPageView *target, const QString &section)
+{
+    this->route_ = target == this ? nullptr : target;
+    if (target == nullptr)
+    {
+        return;
+    }
+    target->route_ = nullptr;
+    const auto name = uiText(section);
+    for (size_t i = 0; i < target->groups_.size(); ++i)
+    {
+        if (target->groups_[i].name == name)
+        {
+            target->insertGroup_ = static_cast<int>(i);
+            return;
+        }
+    }
+    target->addTitle(section);
+}
+
+void GeneralPageView::finishTopic()
+{
+    for (auto &group : this->groups_)
+    {
+        // a section is its title and the space before the next title
+        const bool empty = std::ranges::none_of(group.widgets, [](auto &w) {
+            return dynamic_cast<TitleLabel *>(w.element) == nullptr &&
+                   dynamic_cast<Space *>(w.element) == nullptr;
+        });
+        if (empty)
+        {
+            group.title->hide();
+            if (group.space)
+            {
+                group.space->hide();
+            }
+            if (group.navigationLink)
+            {
+                group.navigationLink->hide();
+            }
+        }
+    }
+    this->insertGroup_ = -1;
+    this->contentLayout_->addStretch();
+}
+
+GeneralPageView::Group &GeneralPageView::currentGroup()
+{
+    if (this->insertGroup_ >= 0 &&
+        this->insertGroup_ < static_cast<int>(this->groups_.size()))
+    {
+        return this->groups_[this->insertGroup_];
+    }
+    return this->groups_.back();
+}
+
+int GeneralPageView::insertIndex() const
+{
+    const auto next = this->insertGroup_ + 1;
+    if (this->insertGroup_ < 0 ||
+        next >= static_cast<int>(this->groups_.size()))
+    {
+        return -1;
+    }
+    // the space before the next title ends this section
+    const auto &group = this->groups_[this->insertGroup_];
+    QWidget *end = group.space != nullptr
+                       ? static_cast<QWidget *>(group.space)
+                       : this->groups_[next].title;
+    return this->contentLayout_->indexOf(end);
+}
+
+void GeneralPageView::placeWidget(QWidget *widget)
+{
+    const auto at = this->insertIndex();
+    if (at < 0)
+    {
+        this->contentLayout_->addWidget(widget);
+    }
+    else
+    {
+        this->contentLayout_->insertWidget(at, widget);
+    }
+}
+
+void GeneralPageView::placeLayout(QLayout *layout)
+{
+    const auto at = this->insertIndex();
+    if (at < 0)
+    {
+        this->contentLayout_->addLayout(layout);
+    }
+    else
+    {
+        this->contentLayout_->insertLayout(at, layout);
+    }
+}
+
 void GeneralPageView::addWidget(QWidget *widget, const QStringList &keywords)
 {
-    this->contentLayout_->addWidget(widget);
+    if (this->route_ != nullptr)
+    {
+        this->route_->addWidget(widget, keywords);
+        return;
+    }
+    this->placeWidget(widget);
     if (!this->groups_.empty())
     {
-        this->groups_.back().widgets.push_back({
+        this->currentGroup().widgets.push_back({
             .element = widget,
             .keywords = keywords,
         });
@@ -89,9 +230,14 @@ void GeneralPageView::registerWidget(QWidget *widget,
                                      const QStringList &keywords,
                                      QWidget *parentElement)
 {
+    if (this->route_ != nullptr)
+    {
+        this->route_->registerWidget(widget, keywords, parentElement);
+        return;
+    }
     if (!this->groups_.empty())
     {
-        this->groups_.back().widgets.push_back({
+        this->currentGroup().widgets.push_back({
             .element = widget,
             .keywords = keywords,
             .parentElement = parentElement,
@@ -101,27 +247,46 @@ void GeneralPageView::registerWidget(QWidget *widget,
 
 void GeneralPageView::pushWidget(QWidget *widget)
 {
-    this->contentLayout_->addWidget(widget);
+    if (this->route_ != nullptr)
+    {
+        this->route_->pushWidget(widget);
+        return;
+    }
+    this->placeWidget(widget);
 }
 
 void GeneralPageView::addLayout(QLayout *layout)
 {
-    this->contentLayout_->addLayout(layout);
+    if (this->route_ != nullptr)
+    {
+        this->route_->addLayout(layout);
+        return;
+    }
+    this->placeLayout(layout);
 }
 
 void GeneralPageView::addStretch()
 {
+    if (SettingsTopics::active())
+    {
+        return;  // topic pages end with finishTopic()
+    }
     this->contentLayout_->addStretch();
 }
 
 TitleLabel *GeneralPageView::addTitle(const QString &title)
 {
+    if (this->route_ != nullptr)
+    {
+        return this->route_->addTitle(title);
+    }
+    this->insertGroup_ = -1;
     if (!this->groups_.empty())
     {
         this->addWidget(this->groups_.back().space = new Space);
     }
 
-    auto *label = new TitleLabel(uiText(title) + ":");
+    auto *label = new TitleLabel(uiText(title));
     this->addWidget(label);
 
     NavigationLabel *navLabel = nullptr;
@@ -151,10 +316,14 @@ TitleLabel *GeneralPageView::addTitle(const QString &title)
 
 SubtitleLabel *GeneralPageView::addSubtitle(const QString &title)
 {
-    auto *label = new SubtitleLabel(uiText(title) + ":");
+    if (this->route_ != nullptr)
+    {
+        return this->route_->addSubtitle(title);
+    }
+    auto *label = new SubtitleLabel(uiText(title));
     this->addWidget(label);
 
-    this->groups_.back().widgets.push_back({label, {title}});
+    this->currentGroup().widgets.push_back({label, {title}});
 
     return label;
 }
@@ -163,6 +332,10 @@ ComboBox *GeneralPageView::addDropdown(const QString &text,
                                        const QStringList &list,
                                        QString toolTipText)
 {
+    if (this->route_ != nullptr)
+    {
+        return this->route_->addDropdown(text, list, toolTipText);
+    }
     auto *layout = new QHBoxLayout;
     auto *combo = new ComboBox;
     combo->setFocusPolicy(Qt::StrongFocus);
@@ -180,14 +353,18 @@ ComboBox *GeneralPageView::addDropdown(const QString &text,
     this->addToolTip(*label, toolTipText);
     this->addLayout(layout);
 
-    this->groups_.back().widgets.push_back({combo, {text}});
-    this->groups_.back().widgets.push_back({label, {text}});
+    this->currentGroup().widgets.push_back({combo, {text}});
+    this->currentGroup().widgets.push_back({label, {text}});
 
     return combo;
 }
 
 void GeneralPageView::addNavigationSpacing()
 {
+    if (this->route_ != nullptr || SettingsTopics::active())
+    {
+        return;
+    }
     assert(this->navigationLayout_ != nullptr &&
            "addNavigationSpacing used without navigation");
 
@@ -196,6 +373,10 @@ void GeneralPageView::addNavigationSpacing()
 
 DescriptionLabel *GeneralPageView::addDescription(const QString &text)
 {
+    if (this->route_ != nullptr)
+    {
+        return this->route_->addDescription(text);
+    }
     auto *label = new DescriptionLabel(text);
 
     label->setTextInteractionFlags(Qt::TextBrowserInteraction |
@@ -205,13 +386,18 @@ DescriptionLabel *GeneralPageView::addDescription(const QString &text)
 
     this->addWidget(label);
 
-    this->groups_.back().widgets.push_back({label, {text}});
+    this->currentGroup().widgets.push_back({label, {text}});
 
     return label;
 }
 
 void GeneralPageView::addSeparator()
 {
+    if (this->route_ != nullptr)
+    {
+        this->route_->addSeparator();
+        return;
+    }
     this->addWidget(new Line(false));
 }
 
@@ -349,7 +535,8 @@ void GeneralPageView::updateNavigationHighlighting()
                       &group == &this->groups_.back()))
         {
             first = false;
-            group.navigationLink->setStyleSheet("color: #00ABF4");
+            group.navigationLink->setStyleSheet(
+                QStringLiteral("color: %1").arg(getTheme()->accent.name()));
         }
         else
         {

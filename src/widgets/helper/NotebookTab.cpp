@@ -1248,77 +1248,109 @@ void NotebookTab::paintEvent(QPaintEvent *)
                            : colors.backgrounds.unfocused);
     }
 
-    auto selectionOffset = ceil((this->selected_ ? 0.f : 1.f) * scale);
+    // A rounded pill instead of a square box: only the selected tab, a hovered
+    // one and a tab with its own colour get a background; the rest stay on the
+    // window background. State is shown by a small accent bar or dot.
+    painter.setRenderHint(QPainter::Antialiasing);
+    const auto windowBackground = app->getThemes()->window.background;
+    auto mix = [](QColor a, QColor b, qreal amount) {
+        return QColor::fromRgbF(a.redF() * (1 - amount) + b.redF() * amount,
+                                a.greenF() * (1 - amount) + b.greenF() * amount,
+                                a.blueF() * (1 - amount) + b.blueF() * amount);
+    };
+    const auto accent = colors.line.regular;
+    const bool vertical = this->tabLocation_ == NotebookTabLocation::Left ||
+                          this->tabLocation_ == NotebookTabLocation::Right;
+    const QRectF pill = QRectF(this->rect())
+                            .adjusted(vertical ? 3 * scale : 2 * scale,
+                                      vertical ? 1.5 * scale : 4 * scale,
+                                      vertical ? -3 * scale : -2 * scale,
+                                      vertical ? -1.5 * scale : -3 * scale);
+    const qreal radius = 7 * scale;
 
-    // fill the tab background
-    auto bgRect = this->rect();
-    switch (this->tabLocation_)
-    {
-        case NotebookTabLocation::Top:
-            bgRect.setTop(selectionOffset);
-            break;
-        case NotebookTabLocation::Left:
-            bgRect.setLeft(selectionOffset);
-            break;
-        case NotebookTabLocation::Right:
-            bgRect.setRight(bgRect.width() - selectionOffset);
-            break;
-        case NotebookTabLocation::Bottom:
-            bgRect.setBottom(bgRect.height() - selectionOffset);
-            break;
-    }
-
-    painter.fillRect(bgRect, tabBackground);
-
+    QColor fill;
     if (this->hasCustomTabColor())
     {
-        painter.fillRect(bgRect, tabColorFill(this->customTabColor_,
-                                              this->selected_, windowFocused));
+        fill = tabColorFill(this->customTabColor_, this->selected_,
+                            windowFocused);
+        if (!fill.isValid() || fill.alpha() == 0)
+        {
+            fill = this->getCustomTabColor();
+        }
+        if (!windowFocused)
+        {
+            fill = fill.darker(110);
+        }
     }
-
-    // draw color indicator line
-    auto lineThickness = ceil((this->selected_ ? 2.f : 1.f) * scale);
-    auto lineColor = this->mouseOver_ ? colors.line.hover
-                                      : (windowFocused ? colors.line.regular
-                                                       : colors.line.unfocused);
-    if (!getSettings()->tabHighlightsUseThemeColor &&
-        this->highlightState_ == HighlightState::Highlighted &&
-        getSettings()->colorTabHighlightsByMessage && this->highlightColor_)
+    else if (this->selected_)
     {
-        lineColor = tabHighlightLineColor(*this->highlightColor_,
-                                          windowFocused || this->mouseOver_);
+        fill = mix(windowBackground, this->theme->accent,
+                   windowFocused ? 0.17 : 0.11);
     }
-
-    if (!getSettings()->tabHighlightsUseThemeColor &&
-        this->highlightState_ == HighlightState::Highlighted &&
-        this->highlightColor_ != nullptr && this->highlightColor_->isValid())
+    else if (this->mouseOver_)
     {
-        lineColor =
-            makeTabHighlightLineColor(*this->highlightColor_, windowFocused);
+        fill = mix(windowBackground, colors.text, 0.08);
     }
-
-    QRect lineRect;
-    switch (this->tabLocation_)
+    if (fill.isValid())
     {
-        case NotebookTabLocation::Top:
-            lineRect =
-                QRect(bgRect.left(), bgRect.y(), bgRect.width(), lineThickness);
-            break;
-        case NotebookTabLocation::Left:
-            lineRect =
-                QRect(bgRect.x(), bgRect.top(), lineThickness, bgRect.height());
-            break;
-        case NotebookTabLocation::Right:
-            lineRect = QRect(bgRect.right() - lineThickness, bgRect.top(),
-                             lineThickness, bgRect.height());
-            break;
-        case NotebookTabLocation::Bottom:
-            lineRect = QRect(bgRect.left(), bgRect.bottom() - lineThickness,
-                             bgRect.width(), lineThickness);
-            break;
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(fill);
+        painter.drawRoundedRect(pill, radius, radius);
     }
+    (void)tabBackground;
 
-    painter.fillRect(lineRect, lineColor);
+    // the state mark: accent bar for the selected tab, highlight colour for a
+    // mention, a small dot for unread messages
+    QColor markColor;
+    if (this->selected_)
+    {
+        markColor = windowFocused ? accent : colors.line.unfocused;
+    }
+    else if (this->highlightState_ == HighlightState::Highlighted)
+    {
+        markColor = colors.line.regular;
+        if (!getSettings()->tabHighlightsUseThemeColor &&
+            this->highlightColor_ != nullptr && this->highlightColor_->isValid())
+        {
+            markColor =
+                makeTabHighlightLineColor(*this->highlightColor_, windowFocused);
+        }
+    }
+    if (markColor.isValid())
+    {
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(markColor);
+        const qreal thickness = 2.5 * scale;
+        QRectF bar;
+        if (vertical)
+        {
+            const qreal length = std::max<qreal>(10 * scale, pill.height() * 0.5);
+            bar = QRectF(this->tabLocation_ == NotebookTabLocation::Left
+                             ? pill.left() + 1 * scale
+                             : pill.right() - thickness - 1 * scale,
+                         pill.center().y() - length / 2, thickness, length);
+        }
+        else
+        {
+            const qreal length = std::max<qreal>(12 * scale, pill.width() * 0.42);
+            bar = QRectF(pill.center().x() - length / 2,
+                         this->tabLocation_ == NotebookTabLocation::Bottom
+                             ? pill.top() + 1 * scale
+                             : pill.bottom() - thickness + 1 * scale,
+                         length, thickness);
+        }
+        painter.drawRoundedRect(bar, thickness / 2, thickness / 2);
+    }
+    else if (this->highlightState_ == HighlightState::NewMessage)
+    {
+        auto dot = colors.text;
+        dot.setAlphaF(0.55);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(dot);
+        const qreal d = 4 * scale;
+        painter.drawEllipse(QRectF(pill.right() - d - 3 * scale,
+                                   pill.top() + 3 * scale, d, d));
+    }
 
     // draw live indicator
     if ((this->isLive_ || this->isRerun_) && getSettings()->showTabLive &&
@@ -1404,58 +1436,29 @@ void NotebookTab::paintEvent(QPaintEvent *)
     // draw close x
     if (this->shouldDrawXButton())
     {
-        painter.setRenderHint(QPainter::Antialiasing, false);
-
         QRect xRect = this->getXRect();
         if (!xRect.isNull())
         {
-            painter.setBrush(QColor("#fff"));
-
+            painter.setRenderHint(QPainter::Antialiasing);
+            const QRectF box = QRectF(xRect).adjusted(1.5 * scale, 1.5 * scale,
+                                                      -1.5 * scale, -1.5 * scale);
             if (this->mouseOverX_)
             {
-                painter.fillRect(xRect, QColor(0, 0, 0, 64));
-
-                if (this->mouseDownX_)
-                {
-                    painter.fillRect(xRect, QColor(0, 0, 0, 64));
-                }
+                auto hover = colors.text;
+                hover.setAlphaF(this->mouseDownX_ ? 0.28 : 0.16);
+                painter.setPen(Qt::NoPen);
+                painter.setBrush(hover);
+                painter.drawEllipse(box);
             }
-
-            int a = static_cast<int>(scale * 4);
-
-            painter.drawLine(xRect.topLeft() + QPoint(a, a),
-                             xRect.bottomRight() + QPoint(-a, -a));
-            painter.drawLine(xRect.topRight() + QPoint(-a, a),
-                             xRect.bottomLeft() + QPoint(a, -a));
+            auto cross = colors.text;
+            cross.setAlphaF(this->mouseOverX_ ? 1.0 : 0.7);
+            painter.setPen(QPen(cross, 1.4 * scale, Qt::SolidLine, Qt::RoundCap));
+            const qreal a = box.width() * 0.3;
+            painter.drawLine(QPointF(box.left() + a, box.top() + a),
+                             QPointF(box.right() - a, box.bottom() - a));
+            painter.drawLine(QPointF(box.right() - a, box.top() + a),
+                             QPointF(box.left() + a, box.bottom() - a));
         }
-    }
-
-    // draw mouse over effect
-    if (!this->selected_)
-    {
-        this->fancyPaint(painter);
-    }
-
-    // draw line at border
-    if (!this->selected_ && this->isInLastRow_)
-    {
-        QRect borderRect;
-        switch (this->tabLocation_)
-        {
-            case NotebookTabLocation::Top:
-                borderRect = QRect(0, this->height() - 1, this->width(), 1);
-                break;
-            case NotebookTabLocation::Left:
-                borderRect = QRect(this->width() - 1, 0, 1, this->height());
-                break;
-            case NotebookTabLocation::Right:
-                borderRect = QRect(0, 0, 1, this->height());
-                break;
-            case NotebookTabLocation::Bottom:
-                borderRect = QRect(0, 0, this->width(), 1);
-                break;
-        }
-        painter.fillRect(borderRect, app->getThemes()->window.background);
     }
 }
 

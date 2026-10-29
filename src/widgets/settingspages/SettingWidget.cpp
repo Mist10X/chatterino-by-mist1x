@@ -433,6 +433,8 @@ SettingWidget *SettingWidget::colorButton(const QString &label,
     auto *lbl = new QLabel(uiText(label) + ":");
 
     auto *colorButton = new ColorButton(color);
+    // keep the row height: the button only grows sideways
+    colorButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
     widget->hLayout->addWidget(lbl);
     widget->hLayout->addWidget(widget->tooltipIcon);

@@ -16,6 +16,7 @@
 #include <functional>
 
 class QLineEdit;
+class QScrollArea;
 
 namespace chatterino {
 
@@ -47,6 +48,11 @@ public:
                            SettingsDialogPreference preferredTab =
                                SettingsDialogPreference::NoPreference);
 
+    /// For --ui-snapshot-settings: opens the settings on the tab whose name
+    /// contains <tab> (scrolled down by <scroll px>) and saves a picture.
+    static void saveSnapshot(QWidget *parent, const QString &spec,
+                             const QString &file);
+
 protected:
     void scaleChangedEvent(float newDpi) override;
     void showEvent(QShowEvent *) override;
@@ -60,6 +66,9 @@ private:
     void addTab(std::function<SettingsPage *()> page, const QString &name,
                 const QString &iconPath, SettingsTabId id = {},
                 Qt::Alignment alignment = Qt::AlignTop);
+    /// A small heading above a group of tabs in the sidebar.
+    void addCaption(const QString &text);
+    void updateSidebarWidth();
     void selectTab(SettingsDialogTab *tab, const bool byUser = true);
     void selectTab(SettingsTabId id);
     void filterElements(const QString &query);
@@ -72,6 +81,7 @@ private:
     void setSearchPlaceholderText();
 
     struct {
+        QScrollArea *sidebar{};
         QWidget *tabContainerContainer{};
         QVBoxLayout *tabContainer{};
         QStackedLayout *pageStack{};
@@ -80,6 +90,10 @@ private:
         QLineEdit *search{};
     } ui_;
     std::vector<SettingsDialogTab *> tabs_;
+    std::vector<QWidget *> captions_;
+    /// The pages whose settings were spread over the topic pages; they stay
+    /// alive (hidden) because their settings still use them.
+    std::vector<SettingsPage *> sourcePages_;
     SettingsDialogTab *selectedTab_{};
     SettingsDialogTab *lastSelectedByUser_{};
     float dpi_ = 1.0F;

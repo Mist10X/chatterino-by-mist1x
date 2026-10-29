@@ -67,6 +67,12 @@ public:
     void unsubscribePlatformChannel(const QString &userID,
                                     const QString &platform);
 
+    /// Subscribes to the channel's cosmetics and emote sets anew: 7TV then
+    /// sends the current paints, badges and personal emotes of the people in
+    /// the chat again, which fixes ones missed while the connection was down
+    /// (otherwise only a restart does). Open channels get this every 30 min.
+    void resubscribeTwitchChannel(const QString &id);
+
     void stop();
 
     void reconnect();

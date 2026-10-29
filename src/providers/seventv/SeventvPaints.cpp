@@ -40,7 +40,7 @@ constexpr std::chrono::minutes SEVENTV_PAINT_FRAME_CACHE_LIFETIME{4};
 constexpr qint64 SAVED_ASSIGNMENT_LIFETIME_S = 14 * 24 * 3600;
 constexpr int SAVE_DELAY_MS = 30 * 1000;
 /// A paint 7TV confirmed this recently isn't looked up again.
-constexpr qint64 LOOKUP_AFTER_S = 6 * 3600;
+constexpr qint64 LOOKUP_AFTER_S = 15 * 60;
 constexpr int LOOKUP_INTERVAL_MS = 1000;
 /// 7TV refuses a query over its complexity limit (12 chatters pass, 16 not).
 constexpr size_t LOOKUP_BATCH = 10;
@@ -475,10 +475,16 @@ void SeventvPaints::lookUpChatters()
             qCWarning(chatterinoSeventv)
                 << "7TV paint lookup failed:" << result.formatError();
         })
-        .finally([this] {
+        .finally([this, batch] {
             {
                 std::unique_lock lock(this->lookupMutex_);
                 this->lookupArmed_ = false;
+                // looked up: the next message after LOOKUP_AFTER_S asks again
+                // (a new paint or badge shows without a restart)
+                for (const auto &entry : batch)
+                {
+                    this->lookedUp_.erase(entry.first);
+                }
             }
             this->armLookup();
         })

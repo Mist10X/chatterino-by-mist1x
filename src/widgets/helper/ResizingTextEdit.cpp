@@ -13,6 +13,7 @@
 #include <QEvent>
 #include <QFontMetrics>
 #include <QLabel>
+#include <QMouseEvent>
 #include <QLayout>
 #include <QMenu>
 #include <QMimeData>
@@ -141,6 +142,7 @@ void ResizingTextEdit::setSideBadge(const QString &text)
     {
         this->sideBadge_ = new QLabel(this);
         this->sideBadge_->setAttribute(Qt::WA_TransparentForMouseEvents);
+        this->sideBadge_->installEventFilter(this);
         this->sideBadge_->setAlignment(Qt::AlignCenter);
         this->sideBadge_->setStyleSheet(QStringLiteral(
             "QLabel { color: #f2d67e; background: rgba(242, 214, 126, 38);"
@@ -164,6 +166,19 @@ void ResizingTextEdit::setSideBadge(const QString &text)
         // Narrower text may need more lines (and the other way round).
         this->invalidateAncestorLayouts();
     }
+}
+
+void ResizingTextEdit::setSideBadgeAction(const QString &tooltip)
+{
+    if (!this->sideBadge_)
+    {
+        return;
+    }
+    const bool clickable = !tooltip.isEmpty();
+    this->sideBadge_->setAttribute(Qt::WA_TransparentForMouseEvents, !clickable);
+    this->sideBadge_->setCursor(clickable ? Qt::PointingHandCursor
+                                          : Qt::IBeamCursor);
+    this->sideBadge_->setToolTip(tooltip);
 }
 
 void ResizingTextEdit::placeSideBadge()
@@ -319,7 +334,17 @@ QString ResizingTextEdit::textUnderCursor(bool *hadSpace) const
 
 bool ResizingTextEdit::eventFilter(QObject *obj, QEvent *event)
 {
-    (void)obj;  // unused
+    if (obj == this->sideBadge_)
+    {
+        if (event->type() == QEvent::MouseButtonRelease &&
+            static_cast<QMouseEvent *>(event)->button() == Qt::LeftButton &&
+            !this->sideBadge_->testAttribute(Qt::WA_TransparentForMouseEvents))
+        {
+            this->sideBadgeClicked.invoke();
+            return true;
+        }
+        return false;
+    }
 
     // makes QShortcuts work in the ResizingTextEdit
     if (event->type() != QEvent::ShortcutOverride)
