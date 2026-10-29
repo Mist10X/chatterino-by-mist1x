@@ -1,109 +1,54 @@
-just a fork of features i like from other forks + [my own features](https://leafyrino.leafyzito.dev/) :)
+# Chatterino by Mist1X
 
-Features taken from:
+Программа для чата Twitch на Windows: несколько каналов во вкладках, смайлики 7TV, BetterTTV и FrankerFaceZ, карточки пользователей, подсветки и много удобных мелочей. Интерфейс на русском.
 
-- https://github.com/2547techno/technorino/
-- https://github.com/itzAlex/chatterino7
-- https://github.com/EEVA-inc/Moltorino7
+Это неофициальная сборка на основе [Leafyrino](https://github.com/Leafyzito/leafyrino), [Chatterino7](https://github.com/SevenTV/chatterino7) и [Chatterino 2](https://github.com/Chatterino/chatterino2). С авторами этих проектов и с Twitch она не связана.
 
-![chatterinoLogo](https://user-images.githubusercontent.com/41973452/272541622-52457e89-5f16-4c83-93e7-91866c25b606.png)
-Chatterino7 [![GitHub Actions Build (Windows, Ubuntu, MacOS)](https://github.com/seventv/chatterino7/actions/workflows/build.yml/badge.svg?branch=chatterino7)](https://github.com/SevenTV/chatterino7/actions?query=workflow%3ABuild+branch%3Achatterino7) [![Chocolatey Package](https://img.shields.io/chocolatey/v/chatterino7?include_prereleases)](https://chocolatey.org/packages/chatterino7)
-============
+## Скачать и установить
 
-Chatterino7 is a fork of Chatterino 2. This fork mainly contains features that aren't accepted into Chatterino 2, most notably 7TV subscriber features.
+1. Откройте страницу [**Releases**](../../releases) и скачайте последний `ChatterinoByMist1X-Setup-….exe`.
+2. Запустите его. Права администратора не нужны: программа ставится только для вас.
+3. Если Windows покажет «Система Windows защитила ваш компьютер», нажмите **Подробнее** → **Выполнить в любом случае**. Так бывает с любой новой программой без платной подписи. Проверить, что файл не подменён, можно по контрольной сумме из `SHA256SUMS.txt` на той же странице.
 
-### Features of Chatterino7
+Вместо установщика можно скачать `ChatterinoByMist1X-…-portable.zip`, распаковать в любую папку и запустить `Leafyrino.exe`.
 
-- 7TV Name Paints
+Нужна 64-битная Windows 10 или 11. Ничего дополнительно ставить не нужно.
 
-- 7TV Personal Emotes
+## Как начать
 
-- 7TV Animated Profile Avatars
+1. **Войдите в Twitch:** кнопка **анонимно** в правом верхнем углу → **Управление аккаунтами** → **Добавить новый аккаунт** → **Войти (открывается в браузере)**.
+2. **Откройте канал:** щёлкните по пустой вкладке («Нажмите, чтобы выбрать канал») и введите название канала. Новая вкладка — кнопка **+**.
+3. Всё остальное описано в [руководстве](tools/release/Руководство.html). Оно же открывается после установки и есть в меню «Пуск».
 
-- 4x Images (7TV and FFZ)
+## Что есть в этой сборке
 
-### Screenshots
+| Возможность | Коротко |
+|---|---|
+| Аватарки на вкладках | Аватар канала на вкладке и кольцо, если канал в эфире |
+| Смайлики в строке ввода | Слово-смайлик показывается картинкой прямо при наборе |
+| Медленный режим | Отсчёт в строке ввода; сообщение, отправленное раньше, встаёт в очередь и уходит само |
+| Ваш мут или бан | Строка ввода красная с отсчётом, зелёная — когда закончился |
+| Чат при бане | Чат канала, где вы забанены, виден через гостевое подключение (только чтение) |
+| Карточка пользователя | Сведения, значки, сообщения и кнопка «История» со старыми сообщениями из публичных логов |
+| Превью | Превью ссылок при наведении, карточки клипов Twitch под сообщениями |
+| Плашки | Рейды, крупные подарки подписок, подсветки из других каналов |
+| Связь | Одна обновляемая строка о состоянии связи вместо потока сообщений об обрывах |
+| Портативность | Настройки, вход и кэш хранятся в папке программы |
 
-![Example of Personal Emotes](https://user-images.githubusercontent.com/27637025/227032811-837c56eb-7724-431b-b00e-b944c9289dff.png)
-![Example of Paints](https://user-images.githubusercontent.com/27637025/227034147-cb1fcd76-dbae-4878-9551-96ffa64dd1a9.png)
+Каждую возможность можно выключить: **Настройки → Moltorino**.
 
-### Downloads
+## Конфиденциальность
 
-**Stable builds** can be downloaded from the [releases section](https://github.com/SevenTV/chatterino7/releases/latest).
+Программа обращается к Twitch и к сервисам, без которых не работают смайлики, значки и история чата (7TV, BetterTTV, FrankerFaceZ, сервис последних сообщений). К публичным логам чата она обращается, только когда вы нажимаете «История» в карточке пользователя. Автору сборки ничего не отправляется, автообновлений и статистики нет.
 
-To test new features, you can download the **nighly build** [here](https://github.com/SevenTV/chatterino7/releases/tag/nightly-build).
+## Сборка из исходников
 
-Windows users can install Chatterino7 [from Chocolatey](https://chocolatey.org/packages/chatterino7).
+Сборка под Windows описана в [BUILDING_ON_WINDOWS.md](BUILDING_ON_WINDOWS.md). Установщик, переносной архив и контрольные суммы собирает [`tools/release/build-release.ps1`](tools/release/build-release.ps1) (нужен [Inno Setup 6](https://jrsoftware.org/isinfo.php)):
 
-### Issues
-
-If you have issues such as crashes or weird behaviour regarding 7TV features, report them [in the issue-section](https://github.com/SevenTV/chatterino7/issues). If you have issues with other features, please report them [in the upstream issue-section](https://github.com/Chatterino/chatterino2/issues).
-
-### Discord
-
-If you don't have a GitHub account and want to report issues or want to join the community you can join the official 7TV Discord using the link here: <https://discord.com/invite/7tv>.
-
-### AVIF Support
-
-When building Chatterino 7, you might not have access to a static build of `libavif`. In that case, you can define `CHATTERINO_NO_AVIF_PLUGIN` in CMake. If you have `qavif.so` from [kimageformats](https://invent.kde.org/frameworks/kimageformats) installed on your system, Chatterino will pick it up and use AVIF images.
-
-## Original Chatterino 2 Readme
-
-Chatterino 2 is a chat client for [Twitch.tv](https://twitch.tv).
-The Chatterino 2 wiki can be found [here](https://wiki.chatterino.com).
-Contribution guidelines can be found [here](https://wiki.chatterino.com/Contributing%20for%20Developers).
-
-## Download
-
-Current releases are available at [https://chatterino.com](https://chatterino.com).
-Windows users can also install Chatterino [from Chocolatey](https://chocolatey.org/packages/chatterino).
-
-## Nightly build
-
-You can download the latest Chatterino 2 build over [here](https://github.com/Chatterino/chatterino2/releases/tag/nightly-build)
-
-You might also need to install the [VC++ Redistributables](https://aka.ms/vs/17/release/vc_redist.x64.exe) from Microsoft if you do not have it installed already.  
-If you still receive an error about `MSVCR120.dll missing`, then you should install the [VC++ 2013 Restributable](https://download.microsoft.com/download/2/E/6/2E61CFA4-993B-4DD4-91DA-3737CD5CD6E3/vcredist_x64.exe).
-
-## Building
-
-To get source code with required submodules run:
-
-```shell
-git clone --recurse-submodules https://github.com/Chatterino/chatterino2.git
+```powershell
+.\tools\release\build-release.ps1 -Version 1.0.0 -Exe <собранный Leafyrino.exe> -Runtime <папка с Qt/OpenSSL/VC runtime> -Out <папка для результата>
 ```
 
-or
+## Лицензия
 
-```shell
-git clone https://github.com/Chatterino/chatterino2.git
-cd chatterino2
-git submodule update --init --recursive
-```
-
-- [Building on Windows](../master/BUILDING_ON_WINDOWS.md)
-- [Building on Windows with vcpkg](../master/BUILDING_ON_WINDOWS_WITH_VCPKG.md)
-- [Building on Linux](../master/BUILDING_ON_LINUX.md)
-- [Building on macOS](../master/BUILDING_ON_MAC.md)
-- [Building on FreeBSD](../master/BUILDING_ON_FREEBSD.md)
-
-## Git blame
-
-This project has big commits in the history which touch most files while only doing stylistic changes. To improve the output of git-blame, consider setting:
-
-```shell
-git config blame.ignoreRevsFile .git-blame-ignore-revs
-```
-
-This will ignore all revisions mentioned in the [`.git-blame-ignore-revs`
-file](./.git-blame-ignore-revs). GitHub does this by default.
-
-## Code style
-
-The code is formatted using [clang-format](https://clang.llvm.org/docs/ClangFormat.html). Our configuration is found in the [.clang-format](.clang-format) file in the repository root directory.
-
-For more contribution guidelines, take a look at [the wiki](https://wiki.chatterino.com/Contributing%20for%20Developers/).
-
-## Doxygen
-
-Doxygen is used to generate project information daily and is available [here](https://doxygen.chatterino.com).
+MIT, как и у проектов-основ. Тексты лицензий — в [LICENSE](LICENSE) и [LICENSES](LICENSES). Описание проекта-основы — в [README-Leafyrino.md](README-Leafyrino.md).

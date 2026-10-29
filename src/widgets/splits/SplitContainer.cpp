@@ -7,6 +7,7 @@
 #include "Application.hpp"
 #include "common/Common.hpp"
 #include "common/QLogging.hpp"
+#include "common/UiLanguage.hpp"
 #include "common/WindowDescriptors.hpp"
 #include "debug/AssertInGuiThread.hpp"
 #include "providers/kick/KickChannel.hpp"
@@ -664,7 +665,7 @@ void SplitContainer::paintEvent(QPaintEvent * /*event*/)
             getApp()->getFonts()->getFont(FontStyle::ChatMedium, this->scale());
         painter.setFont(font);
 
-        QString text = "Click to add a split";
+        QString text = uiText("Click to add a split");
 
         auto *notebook = dynamic_cast<Notebook *>(this->parentWidget());
 
@@ -672,7 +673,7 @@ void SplitContainer::paintEvent(QPaintEvent * /*event*/)
         {
             if (notebook->getPageCount() > 1)
             {
-                text += "\n\nAfter adding hold <Ctrl+Alt> to move or split it.";
+                text += uiText("\n\nAfter adding hold <Ctrl+Alt> to move or split it.");
             }
         }
 
@@ -1012,7 +1013,7 @@ void SplitContainer::refreshTabTitle()
 
     if (newTitle.isEmpty())
     {
-        newTitle = "empty";
+        newTitle = uiText("empty");
     }
 
     this->tab_->setDefaultTitle(newTitle);

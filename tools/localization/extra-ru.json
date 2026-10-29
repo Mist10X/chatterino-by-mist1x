@@ -168,6 +168,9 @@
   "%1 s": "%1 с",
   "Slow mode · %1": "Медленный режим · %1",
   "Slow mode · %1 · queued: %2": "Медленный режим · %1 · в очереди: %2",
+  "empty": "пусто",
+  "\n\nAfter adding hold <Ctrl+Alt> to move or split it.": "\n\nПанель можно перетащить, удерживая Ctrl+Alt.",
+  "Click to add a split": "Нажмите, чтобы выбрать канал",
   "Show a card for highlights in other channels": "Показывать плашку о подсветках из других каналов",
   "When a highlight that flashes the taskbar comes from a channel that is not on the open tab, a card appears at the top of the window. Click it to go to the message.": "Когда срабатывает подсветка с миганием на панели задач в канале, которого нет в открытой вкладке, сверху окна появляется плашка. Клик по ней — переход к сообщению."
 }
