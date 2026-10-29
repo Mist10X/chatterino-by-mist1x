@@ -350,6 +350,11 @@ if(LEAFYRINO_USERCARD_PREVIEW)
     add_subdirectory(tools/usercard-preview)
 endif()
 
+option(LEAFYRINO_EMOTE_RMB_TESTS "Build offline real-widget emote right-click tests" OFF)
+if(LEAFYRINO_EMOTE_RMB_TESTS)
+    add_subdirectory(tools/emote-rmb-tests)
+endif()
+
 option(LEAFYRINO_IRC_PROXY_TESTS "Build isolated local IRC proxy regression tests" OFF)
 if(LEAFYRINO_IRC_PROXY_TESTS)
     add_executable(Leafyrino-irc-proxy-tests

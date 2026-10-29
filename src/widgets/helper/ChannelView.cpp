@@ -34,6 +34,7 @@
 #include "providers/translation/Translator.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
+#include "providers/twitch/TwitchEmotes.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
 #include "providers/youtube/YouTubeChannel.hpp"
 #include "providers/youtube/YouTubeChatServer.hpp"
@@ -81,6 +82,8 @@
 #include <QScreen>
 #include <QSet>
 #include <QStringBuilder>
+#include <QTextCursor>
+#include <QTextEdit>
 #include <QUrl>
 #include <QVariantAnimation>
 
@@ -99,6 +102,91 @@ using namespace chatterino;
 
 constexpr int SCROLLBAR_PADDING = 8;
 constexpr int MAX_AUTO_TRANSLATIONS_IN_FLIGHT_PER_CHANNEL = 5;
+
+QString clickedEmoteCopyText(const MessageLayoutElement *element)
+{
+    if (element == nullptr || element->getLink().type != Link::None)
+    {
+        return {};
+    }
+
+    const auto &creator = element->getCreator();
+    const auto flags = creator.getFlags();
+    if (!flags.hasAny(
+            {MessageElementFlag::EmoteImage, MessageElementFlag::EmojiImage}) ||
+        flags.hasAny(MessageElementFlag::Badges))
+    {
+        return {};
+    }
+
+    if (const auto *emote = dynamic_cast<const EmoteElement *>(&creator))
+    {
+        if (const auto data = emote->getEmote())
+        {
+            return TwitchEmotes::cleanUpEmoteCode(data->getCopyString());
+        }
+    }
+    else if (const auto *layered =
+                 dynamic_cast<const LayeredEmoteElement *>(&creator))
+    {
+        // Keep every zero-width layer and prefix/suffix modifier, in the same
+        // order as copying the whole composed emote.
+        if (std::ranges::any_of(layered->getEmotes(),
+                               [](const auto &layer) { return !layer.ptr; }) ||
+            std::ranges::any_of(layered->getModifiers(),
+                                [](const auto &modifier) { return !modifier; }))
+        {
+            return {};
+        }
+        return layered->getCleanCopyString();
+    }
+    return {};
+}
+
+bool insertClickedEmote(Split *split, const MessageLayoutElement *element)
+{
+    if (split == nullptr)
+    {
+        return false;
+    }
+    auto text = clickedEmoteCopyText(element);
+    if (text.trimmed().isEmpty())
+    {
+        return false;
+    }
+
+    auto &input = split->getInput();
+    auto *edit = input.findChild<QTextEdit *>();
+    if (edit == nullptr || edit->isReadOnly() || !edit->isEnabled())
+    {
+        return false;
+    }
+
+    auto cursor = edit->textCursor();
+    const auto draft = edit->toPlainText();
+    const auto start = cursor.selectionStart();
+    const auto end = cursor.selectionEnd();
+    if (start > 0 && !draft.at(start - 1).isSpace())
+    {
+        text.prepend(u' ');
+    }
+    const bool reuseSeparator = end < draft.size() && draft.at(end).isSpace();
+    if (!reuseSeparator)
+    {
+        text.append(u' ');
+    }
+
+    cursor.beginEditBlock();
+    cursor.insertText(text);
+    cursor.endEditBlock();
+    if (reuseSeparator)
+    {
+        cursor.movePosition(QTextCursor::NextCharacter);
+    }
+    edit->setTextCursor(cursor);
+    edit->setFocus(Qt::MouseFocusReason);
+    return true;
+}
 
 QString messageTextForTranslation(const MessagePtr &message)
 {
@@ -3687,6 +3775,13 @@ void ChannelView::handleMouseClick(QMouseEvent *event,
                 (hoveredElement != nullptr))
             {
                 auto *split = dynamic_cast<Split *>(this->parentWidget());
+                // Shift keeps the original context menu. Ordinary right-click
+                // inserts only a real chat emote, without touching the clipboard.
+                if (!event->modifiers().testFlag(Qt::ShiftModifier) &&
+                    insertClickedEmote(split, hoveredElement))
+                {
+                    return;
+                }
                 auto insertText = [=](QString text) {
                     if (split)
                     {
