@@ -166,7 +166,8 @@ public:
 
     pajlada::Signals::NoArgSignal updated;
 
-    QStringSetting themeName{"/appearance/theme/name", "Dark"};
+    // Mist-Dark ships next to the program (Themes); without it: the fallback
+    QStringSetting themeName{"/appearance/theme/name", "Mist-Dark.json"};
     QStringSetting lightSystemThemeName{"/appearance/theme/lightSystem",
                                         "Light"};
     QStringSetting darkSystemThemeName{"/appearance/theme/darkSystem", "Dark"};

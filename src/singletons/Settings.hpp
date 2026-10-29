@@ -43,8 +43,10 @@ class Args;
 class Modes;
 
 #ifdef Q_OS_WIN32
-#    define DEFAULT_FONT_FAMILY "Segoe UI"
+// The look of Chatterino by Mist1X: its bundled Montserrat, semi-bold
+#    define DEFAULT_FONT_FAMILY "Mist Montserrat"
 #    define DEFAULT_FONT_SIZE 10
+#    define DEFAULT_FONT_WEIGHT QFont::DemiBold
 #else
 #    ifdef Q_OS_MACOS
 #        define DEFAULT_FONT_FAMILY "Helvetica Neue"
@@ -53,6 +55,7 @@ class Modes;
 #        define DEFAULT_FONT_FAMILY "Arial"
 #        define DEFAULT_FONT_SIZE 11
 #    endif
+#    define DEFAULT_FONT_WEIGHT QFont::Normal
 #endif
 
 void _actuallyRegisterSetting(
@@ -407,7 +410,7 @@ public:
     /// Giphy IDs saved in the GIF picker, newest first, as a JSON array.
     QStringSetting favoriteTwitchGifs{"/twitch/gifs/favorites", "[]"};
     BoolSetting separateMessages = {"/appearance/messages/separateMessages",
-                                    false};
+                                    true};
     BoolSetting fadeMessageHistory = {"/appearance/messages/fadeMessageHistory",
                                       true};
     BoolSetting hideModerated = {"/appearance/messages/hideModerated", false};
@@ -444,7 +447,7 @@ public:
     };
     IntSetting chatFontWeight = {
         "/appearance/currentFontWeight",
-        QFont::Normal,
+        DEFAULT_FONT_WEIGHT,
     };
     BoolSetting hideReplyContext = {"/appearance/hideReplyContext", false};
     BoolSetting showReplyButton = {"/appearance/showReplyButton", false};
@@ -452,7 +455,7 @@ public:
     IntSetting collpseMessagesMinLines = {
         "/appearance/messages/collapseMessagesMinLines", 0};
     BoolSetting alternateMessages = {
-        "/appearance/messages/alternateMessageBackground", false};
+        "/appearance/messages/alternateMessageBackground", true};
     BoolSetting channelLinks = {"/appearance/messages/channelLinks", false};
     BoolSetting wrapLinksAtBreaks = {"/appearance/messages/wrapLinksAtBreaks",
                                      false};
@@ -469,7 +472,7 @@ public:
         "/appearance/tabHighlightsUseThemeColor", false};
     EnumStringSetting<TabStyle> tabStyle = {
         "/appearance/tabStyle",
-        TabStyle::Normal,
+        TabStyle::Compact,
     };
     EnumStringSetting<TabAvatarStyle> tabAvatarStyle = {
         "/appearance/tabAvatarStyle",
