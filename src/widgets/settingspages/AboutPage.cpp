@@ -105,7 +105,7 @@ AboutPage::AboutPage()
         {
             auto form = licenses.emplace<QFormLayout>();
 
-            addLicense(form.getElement(), "Montserrat / Archive Montserrat",
+            addLicense(form.getElement(), "Montserrat",
                        "https://github.com/google/fonts/tree/main/ofl/montserrat",
                        ":/licenses/montserrat-OFL.txt");
             addLicense(form.getElement(), "Qt Framework", "https://www.qt.io",

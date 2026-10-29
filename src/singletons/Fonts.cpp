@@ -19,19 +19,23 @@ namespace {
 
 using namespace chatterino;
 
+const QString BUNDLED_FAMILY = QStringLiteral("Mist Montserrat");
+/// The same font's earlier name; profiles that still use it are moved over.
+const QString OLD_BUNDLED_FAMILY = QStringLiteral("Archive Montserrat");
+
 // A portable profile can name this app-local family even when Windows has
 // never registered it. Keep the selected family/size/weight; make its bundled
 // faces available privately before resolving or caching any chat fonts.
 void ensureSelectedBundledFont(const QString &family)
 {
-    if (family.compare(QStringLiteral("Archive Montserrat"), Qt::CaseInsensitive) != 0 ||
-        QFontDatabase::families().contains(QStringLiteral("Archive Montserrat"), Qt::CaseInsensitive))
+    if (family.compare(BUNDLED_FAMILY, Qt::CaseInsensitive) != 0 ||
+        QFontDatabase::families().contains(BUNDLED_FAMILY, Qt::CaseInsensitive))
     {
         return;
     }
     for (const auto *style : {"Regular", "SemiBold", "Bold"})
     {
-        const auto resource = QStringLiteral(":/fonts/ArchiveMontserrat-") +
+        const auto resource = QStringLiteral(":/fonts/MistMontserrat-") +
                               QLatin1String(style) + QStringLiteral(".ttf");
         if (QFontDatabase::addApplicationFont(resource) < 0)
         {
@@ -228,6 +232,11 @@ namespace chatterino {
 
 Fonts::Fonts(Settings &settings)
 {
+    if (settings.chatFontFamily.getValue().compare(
+            OLD_BUNDLED_FAMILY, Qt::CaseInsensitive) == 0)
+    {
+        settings.chatFontFamily.setValue(BUNDLED_FAMILY);
+    }
     ensureSelectedBundledFont(settings.chatFontFamily.getValue());
     this->fontsByType_.resize(size_t(FontStyle::EndType));
 

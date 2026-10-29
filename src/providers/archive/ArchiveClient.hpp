@@ -18,6 +18,8 @@ struct ArchiveEndpoint {
 /// Reads only the explicitly named, nonsecret sidecar. Missing or invalid
 /// configuration is disabled; no sockets, profiles, discovery or writes occur.
 ArchiveEndpoint readArchiveEndpointFile(const QString &path);
+/// Both parts present and well-formed.
+bool isValidArchiveEndpoint(const ArchiveEndpoint &endpoint);
 
 // A local, read-only bridge. No HTTP, credentials, discovery, process launch or
 // database access belongs here. Each operation verifies the dataset first.

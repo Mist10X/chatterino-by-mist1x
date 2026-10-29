@@ -2565,7 +2565,10 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split,
                 // the public logs do not need it.
                 this->archiveLocalComplete_ = true;
                 this->archiveHistoryStatus_ =
-                    tr("Архив не отвечает; публичные логи — кнопкой «История»");
+                    this->archiveConfigured()
+                        ? tr("Архив не отвечает; публичные логи — кнопкой "
+                             "«История»")
+                        : QString();
                 if (this->archiveHistoryPreserveAnchor_)
                 {
                     QTimer::singleShot(0, this, [this] {
@@ -2588,12 +2591,15 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split,
                           Qt::AlignRight | Qt::AlignBottom);
     }
 
-    auto *archive = new ArchiveUserCard(this);
-    this->setArchivePanel(archive);
-    QObject::connect(this, &UserInfoPopup::archiveIdentityChanged, archive,
-                     &ArchiveUserCard::setTarget);
-    QObject::connect(this, &UserInfoPopup::archiveIdentityUnavailable, archive,
-                     &ArchiveUserCard::setIdentityUnavailable);
+    if (archiveConnected() || this->offlinePreview_)
+    {
+        auto *archive = new ArchiveUserCard(this);
+        this->setArchivePanel(archive);
+        QObject::connect(this, &UserInfoPopup::archiveIdentityChanged, archive,
+                         &ArchiveUserCard::setTarget);
+        QObject::connect(this, &UserInfoPopup::archiveIdentityUnavailable,
+                         archive, &ArchiveUserCard::setIdentityUnavailable);
+    }
 
     if (!this->offlinePreview_)
     {
@@ -4966,8 +4972,10 @@ void UserInfoPopup::updateArchiveHistoryButton()
                   "Прокрутите вверх, чтобы загрузить ещё")
          : available ? tr("Публичные логи чата. Прокрутите вверх, чтобы "
                           "загрузить ещё")
-                     : tr("Включите публичные логи в настройках или "
-                          "запустите Архив")) +
+                     : this->archiveConfigured()
+                         ? tr("Включите публичные логи в настройках или "
+                              "запустите Архив")
+                         : tr("Включите публичные логи в настройках")) +
         (this->archiveHistoryWindowLimited_
              ? tr(" · Буфер карточки ограничен; старые строки доступны "
                   "прокруткой")

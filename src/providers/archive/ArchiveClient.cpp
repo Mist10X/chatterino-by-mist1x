@@ -243,6 +243,11 @@ ArchiveClient::~ArchiveClient()
     this->cancel();
 }
 
+bool isValidArchiveEndpoint(const ArchiveEndpoint &endpoint)
+{
+    return validEndpoint(endpoint);
+}
+
 bool ArchiveClient::configured() const
 {
     return validEndpoint(this->endpoint_);

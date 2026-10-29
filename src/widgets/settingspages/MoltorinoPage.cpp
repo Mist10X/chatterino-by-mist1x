@@ -788,9 +788,8 @@ MoltorinoPage::MoltorinoPage()
                             s.usercardPublicLogs)
         ->setTooltip(uiText("The History button in the usercard reads the person's "
                      "older messages in this channel from the public chat logs "
-                     "(logs.zonian.dev, logs.twitchmetrics.xyz, logs.spanix.team) "
-                     "without the Archive. People and channels that opted out "
-                     "are not shown."))
+                     "(logs.zonian.dev, logs.twitchmetrics.xyz, logs.spanix.team). "
+                     "People and channels that opted out are not shown."))
         ->addTo(*view);
 
     routeSetting(*view, QStringLiteral("Chat input"),

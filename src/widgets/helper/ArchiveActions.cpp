@@ -25,6 +25,11 @@ ArchiveEndpoint configuredArchiveEndpoint()
             .filePath(QStringLiteral("archive-bridge.json")));
 }
 
+bool archiveConnected()
+{
+    return isValidArchiveEndpoint(configuredArchiveEndpoint());
+}
+
 void openArchiveView(QWidget *owner, const ArchiveEndpoint &endpoint,
                      const QString &view, const QString &userId,
                      const QString &login, const QString &channel,
@@ -59,6 +64,10 @@ void addArchiveActions(QMenu *menu, QWidget *owner, const QString &userId,
                        const QString &login, const QString &channel,
                        const QString &messageId)
 {
+    if (!archiveConnected())
+    {
+        return;
+    }
     auto *archive = menu->addMenu(uiText(QStringLiteral("Архив")));
     const auto endpoint = configuredArchiveEndpoint();
     auto add = [&](const QString &label, const QString &view,

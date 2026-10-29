@@ -2825,5 +2825,7 @@
   "Downloading the update…": "Скачиваю обновление…",
   "Your version: %1": "Ваша версия: %1",
   "Check for updates now": "Проверить сейчас",
-  "Also offer test versions": "Предлагать и тестовые версии"
+  "Also offer test versions": "Предлагать и тестовые версии",
+  "The History button in the usercard reads the person's older messages in this channel from the public chat logs (logs.zonian.dev, logs.twitchmetrics.xyz, logs.spanix.team). People and channels that opted out are not shown.": "Кнопка «История» в карточке пользователя подгружает его старые сообщения в этом канале из публичных логов чата (logs.zonian.dev, logs.twitchmetrics.xyz, logs.spanix.team). Люди и каналы, которые отказались от логов, не показываются.",
+  "How many messages a chat keeps; older ones are removed from the chat.": "Сколько сообщений хранит чат; более старые убираются из чата."
 }
