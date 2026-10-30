@@ -23,6 +23,7 @@
 #include "providers/twitch/TwitchChannel.hpp"
 #include "singletons/Settings.hpp"
 #include "widgets/helper/ChannelView.hpp"
+#include "widgets/Scrollbar.hpp"
 #include "widgets/helper/ResizingTextEdit.hpp"
 #include "widgets/Label.hpp"
 #include "widgets/splits/Split.hpp"
@@ -447,6 +448,11 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
         {
             split.getInput().grab().save(screenshotBase + "-raid.png", "PNG");
         }
+        QString wentTo;
+        pajlada::Signals::ScopedConnection went =
+            channel->raidWent.connect([&](const QString &target) {
+                wentTo = target;
+            });
         channel->handleRaidUpdate(QJsonObject{
             {"type", "raid_go_v2"},
             {"topic", QStringLiteral("raid.%1").arg(channel->roomId())},
@@ -456,6 +462,7 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
         check("the raid bar goes when Twitch says the raid went",
               !channel->accessRaid()->has_value() &&
                   (raidLabel == nullptr || !raidLabel->isVisible()));
+        check("the chat follows the raid to its target", wentTo == u"dangerlyoha");
     }
 
     // 14. a 7TV paint with a glow: no box where the glow used to be cut off
@@ -554,6 +561,26 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
         {
             image.save(screenshotBase + "-punishments.png", "PNG");
         }
+
+        // a jump with room kept on top (the "while you were away" card)
+        // leaves the message below that room, not at the very top
+        std::vector<MessagePtr> filler;
+        for (int i = 0; i < 120; ++i)
+        {
+            filler.push_back(makeSystemMessage(QStringLiteral("line %1").arg(i)));
+            punished->addMessage(filler.back(), MessageContext::Repost);
+        }
+        pump(300);
+        auto &view = split.getChannelView();
+        const bool found = view.scrollToMessage(filler[60], 100);
+        pump(400);
+        const auto value =
+            view.getScrollBar().getDesiredValue() - view.getScrollBar().getMinimum();
+        const auto index = qreal(3 + 60);  // three punishments come first
+        std::fprintf(stderr, "jump with room: value=%.2f target=%.0f\n", value,
+                     index);
+        check("a jump can keep room above the message",
+              found && value < index - 1 && value > index - 12);
     }
 
     QFile out(report);

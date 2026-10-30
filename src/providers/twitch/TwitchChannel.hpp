@@ -540,6 +540,8 @@ public:
     pajlada::Signals::NoArgSignal channelPointsChanged;
     pajlada::Signals::NoArgSignal followingStatusChanged;
     pajlada::Signals::NoArgSignal raidChanged;
+    /// This channel's raid went (Twitch's raid_go): the target's login.
+    pajlada::Signals::Signal<const QString &> raidWent;
 
     const QString &lastChannelPointsError() const
     {

@@ -2038,6 +2038,32 @@ void Split::setChannel(IndirectChannel newChannel)
                 });
             });
         this->channelSignalHolder_.managedConnect(
+            tc->raidWent, [this, source = tc->getName()](const QString &target) {
+                if (!getSettings()->followRaids)
+                {
+                    return;
+                }
+                // Not from inside the channel's own signal: switching
+                // channels drops this very connection.
+                QTimer::singleShot(0, this, [this, source, target] {
+                    if (this->getChannel()->getName().compare(
+                            source, Qt::CaseInsensitive) != 0)
+                    {
+                        return;
+                    }
+                    auto channel =
+                        getApp()->getTwitch()->getOrAddChannel(target);
+                    if (!channel)
+                    {
+                        return;
+                    }
+                    this->setChannel(IndirectChannel(channel));
+                    channel->addSystemMessage(
+                        uiText("You came here with the raid from %1")
+                            .arg(source));
+                });
+            });
+        this->channelSignalHolder_.managedConnect(
             tc->massGiftSubs,
             [this](const QString &login, const QString &name, int count) {
                 if (!getSettings()->showMassGiftBanner ||

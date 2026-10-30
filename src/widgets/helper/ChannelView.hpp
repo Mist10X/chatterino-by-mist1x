@@ -133,7 +133,9 @@ public:
      * Attempts to scroll to a message in this channel.
      * @return <code>true</code> if the message was found and highlighted.
      */
-    bool scrollToMessage(const MessagePtr &message);
+    /// @param topSpace Keep this many pixels above the message, e.g. for a
+    ///                 card covering the top of the chat.
+    bool scrollToMessage(const MessagePtr &message, qreal topSpace = 0);
     /**
      * Attempts to scroll to a message id in this channel.
      * @return <code>true</code> if the message was found and highlighted.
@@ -385,7 +387,8 @@ private:
      * @param layout Must be from this channel.
      * @param messageIdx Must be an index into this channel.
      */
-    void scrollToMessageLayout(MessageLayout *layout, size_t messageIdx);
+    void scrollToMessageLayout(MessageLayout *layout, size_t messageIdx,
+                               qreal topSpace = 0);
 
     void setInputReply(const MessagePtr &message);
     void showReplyThreadPopup(const MessagePtr &message);

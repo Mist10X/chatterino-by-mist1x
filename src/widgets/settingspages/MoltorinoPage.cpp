@@ -765,6 +765,12 @@ MoltorinoPage::MoltorinoPage()
                      "the message input."))
         ->addTo(*view);
 
+    SettingWidget::checkbox(uiText("Follow the raid to the raided channel"),
+                            s.followRaids)
+        ->setTooltip(uiText("When the channel's raid goes, the chat switches to "
+                     "the raided channel at the same moment as on Twitch."))
+        ->addTo(*view);
+
     routeSetting(*view, QStringLiteral("Chat"),
                  QStringLiteral("If I am banned or timed out"));
     SettingWidget::checkbox(uiText("Show my timeout in the chat input"),

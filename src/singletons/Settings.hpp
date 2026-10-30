@@ -1392,6 +1392,9 @@ public:
     BoolSetting showRaidStatusAboveInput{
         "/moltorino/moderation/raid/showStatusAboveInput", true};
     BoolSetting showIncomingRaidBanner{"/moltorino/banners/incomingRaid", true};
+    /// When the channel's raid goes, the split moves to the raided channel,
+    /// like the Twitch player does.
+    BoolSetting followRaids{"/moltorino/chat/followRaids", true};
     BoolSetting showEmotesInInput{"/moltorino/input/showEmotes", true};
     /// A card at the top of the window for taskbar-flashing highlights elsewhere.
     BoolSetting showHighlightToasts{"/moltorino/highlights/showToast", true};

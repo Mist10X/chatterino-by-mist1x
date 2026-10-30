@@ -760,6 +760,11 @@ TwitchChannel::TwitchChannel(const QString &name, bool anonymous)
             this->refreshPubSub();
         },
         this->signalHolder_);
+    getSettings()->followRaids.connect(
+        [this](const auto &, auto) {
+            this->refreshPubSub();
+        },
+        this->signalHolder_);
     getSettings()->showFollowEventsInChat.connect(
         [this](const auto &, auto) {
             this->refreshPubSub();
@@ -3490,7 +3495,7 @@ void TwitchChannel::refreshPubSub()
     {
         getApp()->getTwitchPubSub()->listenToPolls(roomId);
     }
-    if (getSettings()->showRaidStatusAboveInput)
+    if (getSettings()->showRaidStatusAboveInput || getSettings()->followRaids)
     {
         getApp()->getTwitchPubSub()->listenToRaids(roomId);
     }
@@ -5416,14 +5421,29 @@ void TwitchChannel::handleRaidUpdate(const QJsonObject &payload)
     {
         const auto id = raid.value("id").toString();
         bool active = false;
+        QString target;
         {
             auto locked = this->activeRaid_.accessConst();
             active = locked->has_value() &&
                      (id.isEmpty() || (**locked).id == id);
+            if (active)
+            {
+                target = (**locked).targetLogin;
+            }
+        }
+        if (target.isEmpty())
+        {
+            target = raid.value("target_login")
+                         .toString(raid.value("targetLogin").toString());
         }
         if (active)
         {
             this->clearActiveRaid();
+        }
+        if (type == u"raid_go_v2" && !target.isEmpty() &&
+            target.compare(this->getName(), Qt::CaseInsensitive) != 0)
+        {
+            this->raidWent.invoke(target.toLower());
         }
         return;
     }

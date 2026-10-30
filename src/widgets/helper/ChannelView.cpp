@@ -2642,7 +2642,7 @@ MessageElementFlags ChannelView::getFlags() const
     return flags;
 }
 
-bool ChannelView::scrollToMessage(const MessagePtr &message)
+bool ChannelView::scrollToMessage(const MessagePtr &message, qreal topSpace)
 {
     if (!this->mayContainMessage(message))
     {
@@ -2675,7 +2675,8 @@ bool ChannelView::scrollToMessage(const MessagePtr &message)
         return false;
     }
 
-    this->scrollToMessageLayout(messagesSnapshot[messageIdx].get(), messageIdx);
+    this->scrollToMessageLayout(messagesSnapshot[messageIdx].get(), messageIdx,
+                                topSpace);
     if (this->split_)
     {
         getApp()->getWindows()->select(this->split_);
@@ -2740,7 +2741,7 @@ void ChannelView::clearNukePreview()
 }
 
 void ChannelView::scrollToMessageLayout(MessageLayout *layout,
-                                        size_t messageIdx)
+                                        size_t messageIdx, qreal topSpace)
 {
     this->highlightedMessage_ = layout;
     this->highlightAnimation_.setCurrentTime(0);
@@ -2748,8 +2749,28 @@ void ChannelView::scrollToMessageLayout(MessageLayout *layout,
 
     if (this->showScrollBar_)
     {
+        // The scroll value is the top message's index plus the scrolled-off
+        // part of it, so step back over whole messages to leave topSpace.
+        qreal value = qreal(messageIdx);
+        auto &snapshot = this->getMessagesSnapshot();
+        for (size_t i = messageIdx;
+             topSpace > 0 && i > 0 && i <= snapshot.size(); --i)
+        {
+            auto height = qreal(snapshot[i - 1]->getHeight());
+            if (height <= 0)
+            {
+                height = 20 * this->scale();
+            }
+            if (height >= topSpace)
+            {
+                value = qreal(i - 1) + (1 - topSpace / height);
+                break;
+            }
+            topSpace -= height;
+            value = qreal(i - 1);
+        }
         this->getScrollBar().setDesiredValue(this->scrollBar_->getMinimum() +
-                                             qreal(messageIdx));
+                                             value);
     }
 }
 

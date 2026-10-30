@@ -29,12 +29,19 @@
 #include <chrono>
 #include <map>
 
+#ifdef Q_OS_WIN
+#    include <Windows.h>
+#endif
+
 namespace chatterino {
 
 namespace {
 
 /// Shorter absences are not worth a summary.
 constexpr auto MIN_AWAY = std::chrono::minutes(5);
+/// While another program has the focus, how often to check whether the chat
+/// is still in sight.
+constexpr int SIGHT_CHECK_MS = 15'000;
 
 enum class Kind {
     Mention,
@@ -76,6 +83,13 @@ public:
         , split_(split)
     {
         split->installEventFilter(this);
+        this->sightTimer_.setInterval(SIGHT_CHECK_MS);
+        QObject::connect(&this->sightTimer_, &QTimer::timeout, this, [this] {
+            if (this->away_ && this->inSight())
+            {
+                this->markSeen();
+            }
+        });
         QObject::connect(qApp, &QApplication::applicationStateChanged, this,
                          [this] {
                              this->update();
@@ -91,6 +105,14 @@ public:
                     this->lastSeen_ = snapshot[snapshot.size() - 40];
                     this->awayAt_ = this->lastSeen_->serverReceivedTime;
                     this->show(std::chrono::minutes(7));
+                    if (qEnvironmentVariable("MIST1X_DIGEST_TEST_JUMP") ==
+                            u"1" &&
+                        !this->found_.empty())
+                    {
+                        QTimer::singleShot(1500, this, [this] {
+                            this->jump(this->found_.begin()->first);
+                        });
+                    }
                 }
             });
         }
@@ -135,6 +157,58 @@ private:
                QApplication::applicationState() == Qt::ApplicationActive;
     }
 
+    /// Whether the chat is on screen and not covered, e.g. next to the
+    /// stream in a browser: that is not being away, even without the focus.
+    bool inSight() const
+    {
+        auto *window = this->split_->window();
+        if (!this->split_->isVisible() || window == nullptr ||
+            window->isMinimized())
+        {
+            return false;
+        }
+#ifdef Q_OS_WIN
+        auto *hwnd = reinterpret_cast<HWND>(window->winId());
+        RECT frame{};
+        if (IsIconic(hwnd) || !GetWindowRect(hwnd, &frame) ||
+            window->width() <= 0 || window->height() <= 0)
+        {
+            return false;
+        }
+        // Sample points of the chat, in the window's physical pixels (this
+        // way the monitor's scaling does not matter).
+        const auto *view = this->view();
+        const QRect area(view->mapTo(window, QPoint(0, 0)), view->size());
+        const double sx = double(frame.right - frame.left) / window->width();
+        const double sy = double(frame.bottom - frame.top) / window->height();
+        const std::pair<double, double> samples[] = {
+            {0.5, 0.5}, {0.2, 0.2}, {0.8, 0.2}, {0.2, 0.8}, {0.8, 0.8}};
+        for (const auto &[fx, fy] : samples)
+        {
+            const POINT point{
+                frame.left + LONG((area.left() + area.width() * fx) * sx),
+                frame.top + LONG((area.top() + area.height() * fy) * sy)};
+            if (auto *hit = WindowFromPoint(point);
+                hit && GetAncestor(hit, GA_ROOT) == hwnd)
+            {
+                return true;
+            }
+        }
+        return false;
+#else
+        return false;
+#endif
+    }
+
+    /// The user has the chat in front of them: the absence starts anew.
+    void markSeen()
+    {
+        this->awaySince_ = std::chrono::steady_clock::now();
+        this->awayAt_ = QDateTime::currentDateTime();
+        const auto last = this->split_->getChannel()->getMessageSnapshot(1);
+        this->lastSeen_ = last.empty() ? nullptr : last.back();
+    }
+
     void update()
     {
         // Show/Hide also come for the window being minimised and restored;
@@ -155,10 +229,12 @@ private:
             const auto last = channel->getMessageSnapshot(1);
             this->lastSeen_ = last.empty() ? nullptr : last.back();
             this->channel_ = channel;
+            this->sightTimer_.start();
         }
         else if (here && this->away_)
         {
             this->away_ = false;
+            this->sightTimer_.stop();
             const auto away = std::chrono::steady_clock::now() - this->awaySince_;
             if (away >= MIN_AWAY && getSettings()->showMissedDigest &&
                 this->split_->getChannel() == this->channel_.lock())
@@ -344,11 +420,19 @@ private:
         auto &index = this->next_[kind];
         const auto &message = it->second[index % it->second.size()];
         ++index;
-        this->view()->scrollToMessage(message);
+        // below the card, with a little of what came before it
+        qreal space = 0;
+        if (this->card_ && this->card_->isVisible())
+        {
+            space = std::max<qreal>(this->card_->geometry().bottom() + 12,
+                                    this->view()->height() / 4.0);
+        }
+        this->view()->scrollToMessage(message, space);
     }
 
     Split *split_;
     QPointer<QFrame> card_;
+    QTimer sightTimer_;
     bool away_ = false;
     bool watchingWindow_ = false;
     std::chrono::steady_clock::time_point awaySince_;
