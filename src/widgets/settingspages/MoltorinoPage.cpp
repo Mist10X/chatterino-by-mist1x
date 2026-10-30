@@ -822,6 +822,14 @@ MoltorinoPage::MoltorinoPage()
 
     routeSetting(*view, QStringLiteral("Chat"),
                  QStringLiteral("Mentions and whispers"));
+    SettingWidget::checkbox(uiText("Show what I missed when I come back"),
+                            s.showMissedDigest)
+        ->setTooltip(uiText("After 5 minutes or more away from a chat (another "
+                     "tab, another window or program), a card at the top sums "
+                     "up the mentions, replies, bans, raids and new chatters "
+                     "since. Click an item to scroll to it."))
+        ->addTo(*view);
+
     SettingWidget::checkbox(uiText("Show a card for highlights in other channels"),
                             s.showHighlightToasts)
         ->setTooltip(uiText("When a highlight that flashes the taskbar comes from a "

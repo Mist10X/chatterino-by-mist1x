@@ -55,6 +55,13 @@ protected:
     void leaveEvent(QEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
 
+public:
+    /// the stand's picture of the split menu
+    std::unique_ptr<QMenu> mainMenuForTesting()
+    {
+        return this->createMainMenu();
+    }
+
 private:
     void initializeLayout();
     std::unique_ptr<QMenu> createMainMenu();
@@ -89,6 +96,7 @@ private:
 
     SvgButton *moderationButton_{};
     SvgButton *chattersButton_{};
+    SvgButton *statsButton_{};
     SvgButton *youtubeRefreshButton_{};
     LabelButton *sendTargetButton_{};
     DrawnButton *addButton_{};

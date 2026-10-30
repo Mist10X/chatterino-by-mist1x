@@ -49,6 +49,9 @@ foreach ($dir in $runtimeDirs) { Copy-Item (Join-Path $Runtime $dir) $staging -R
 Copy-Item (Join-Path $repo 'resources\icon.ico') (Join-Path $staging 'Chatterino-by-Mist1X.ico')
 Copy-Item (Join-Path $repo 'LICENSE') (Join-Path $staging 'LICENSE.txt')
 Copy-Item (Join-Path $repo 'LICENSES') $staging -Recurse
+# licenses of the bundled libraries, fonts and data (the same texts as in About)
+Copy-Item (Join-Path $repo 'resources\licenses') (Join-Path $staging 'LICENSES\third-party') -Recurse
+Copy-Item (Join-Path $repo 'CREDITS.md') (Join-Path $staging 'Авторы и лицензии.txt')
 Copy-Item (Join-Path $here 'Руководство.html') $staging
 Copy-Item (Join-Path $here 'Что нового.txt') $staging
 New-Item -ItemType Directory (Join-Path $staging 'Themes') | Out-Null

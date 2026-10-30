@@ -1395,6 +1395,10 @@ public:
     BoolSetting showEmotesInInput{"/moltorino/input/showEmotes", true};
     /// A card at the top of the window for taskbar-flashing highlights elsewhere.
     BoolSetting showHighlightToasts{"/moltorino/highlights/showToast", true};
+    /// "While you were away" card after coming back to a chat
+    BoolSetting showMissedDigest{"/mist1x/chat/missedDigest", true};
+    /// one anonymous +1 to the public install counter (see InstallCounter)
+    BoolSetting countInstallation{"/mist1x/countInstallation", true};
     /// Read a channel's chat through Twitch's anonymous (guest) connection while
     /// the current account is banned there (Twitch hides it from that account).
     BoolSetting readChatWhileBanned{"/moltorino/chat/readWhileBanned", true};

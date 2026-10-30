@@ -127,6 +127,8 @@ public:
          * @lua@field uptime number Seconds since the stream started.
          */
         int uptimeSeconds = 0;
+        /// When the stream went live (kept from the last live status).
+        QDateTime startedAt;
         QString streamType;
         QString streamId;
     };

@@ -2,6 +2,8 @@
 #include "widgets/Window.hpp"
 
 #include "widgets/buttons/InitUpdateButton.hpp"
+#include "singletons/InstallCounter.hpp"
+#include "widgets/helper/ArchiveActions.hpp"
 #include "widgets/dialogs/WelcomeDialog.hpp"
 #include "widgets/helper/UpdateBanner.hpp"
 
@@ -30,7 +32,10 @@
 #include "widgets/dialogs/SettingsDialog.hpp"
 #include "widgets/dialogs/switcher/QuickSwitcherPopup.hpp"
 #include "widgets/dialogs/UpdateDialog.hpp"
+#include "singletons/InstallCounter.hpp"
+#include "widgets/helper/ArchiveActions.hpp"
 #include "widgets/dialogs/WelcomeDialog.hpp"
+#include "widgets/dialogs/WhatsNewDialog.hpp"
 #include "widgets/helper/NotebookTab.hpp"
 #include "widgets/Notebook.hpp"
 #include "widgets/splits/ClosedSplits.hpp"
@@ -47,6 +52,7 @@
 
 #include <QApplication>
 #include <QTimer>
+#include <QPointer>
 #include <QCloseEvent>
 #include <QDesktopServices>
 #include <QHeaderView>
@@ -243,6 +249,8 @@ void Window::addCustomTitlebarButtons()
     if (!getApp()->getArgs().uiSnapshot && !getApp()->getArgs().dontSaveSettings)
     {
         QTimer::singleShot(1200, this, [this] {
+            // before "Getting started": it tells an update from a new copy
+            showWhatsNewIfUpdated(this);
             showWelcomeDialogIfNew(this);
         });
     }
@@ -254,6 +262,30 @@ void Window::addCustomTitlebarButtons()
     });
     this->userLabel_->setMinimumWidth(20 * this->scale());
 
+    // the owner's copy (the one with the Archive) shows how many people have
+    // installed this build
+    if (archiveConnected())
+    {
+        auto *installs = this->addTitleBarLabel([] {
+            QDesktopServices::openUrl(QUrl(QStringLiteral(
+                "https://github.com/Mist10X/chatterino-by-mist1x/releases")));
+        });
+        installs->setToolTip(uiText("Installations of your build"));
+        QPointer<LabelButton> target = installs;
+        const auto refresh = [target] {
+            fetchInstallCount([target](int count) {
+                if (target && count >= 0)
+                {
+                    target->setText(QStringLiteral("👥 %1").arg(count));
+                }
+            });
+        };
+        installs->setText(QStringLiteral("👥 …"));
+        refresh();
+        auto *timer = new QTimer(this);
+        QObject::connect(timer, &QTimer::timeout, this, refresh);
+        timer->start(std::chrono::minutes(10));
+    }
     this->streamerModeTitlebarIcon_ =
         this->addTitleBarButton<PixmapButton>([this] {
             getApp()->getWindows()->showSettingsDialog(

@@ -519,7 +519,7 @@ int main(int argc, char **argv)
                 auto *brand=widget->findChild<QLabel *>("BrandDisplayName");
                 auto *attribution=widget->findChild<QLabel *>("BrandAttribution");
                 check(brand && brand->text().contains("Chatterino by Mist1X"),language+" about brand heading");
-                check(attribution && attribution->text().contains("Chatterino / Leafyrino"),language+" upstream attribution preserved");
+                check(attribution && attribution->text().contains("Leafyrino") && attribution->text().contains("Chatterino7"),language+" upstream attribution preserved");
             }
             if(name=="settings" || name=="general" || name=="edit-hotkey" || name=="about")
                 check(widget->grab().save(output+"/"+language+"-"+name+".png"),language+" "+name+" rendered");

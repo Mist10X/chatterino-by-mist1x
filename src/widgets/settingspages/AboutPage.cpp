@@ -4,6 +4,8 @@
 
 #include "common/UiLanguage.hpp"
 #include "widgets/settingspages/AboutPage.hpp"
+#include "widgets/helper/ArchiveActions.hpp"
+#include "singletons/InstallCounter.hpp"
 
 #include "Application.hpp"
 #include "common/Common.hpp"
@@ -20,6 +22,7 @@
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QLabel>
+#include <QPointer>
 #include <QStringBuilder>
 #include <QTextEdit>
 #include <QTextStream>
@@ -56,8 +59,24 @@ AboutPage::AboutPage()
 
         auto brand = layout.emplace<QLabel>(QStringLiteral("<h1>Chatterino by Mist1X</h1>"));
         brand->setObjectName("BrandDisplayName");
-        auto attribution = layout.emplace<QLabel>(uiText("Personal modified build based on Chatterino / Leafyrino."));
+        auto attribution = layout.emplace<QLabel>(uiText(QStringLiteral(
+            R"(Unofficial build based on <a href="https://github.com/Chatterino/chatterino2">Chatterino 2</a>, <a href="https://github.com/SevenTV/chatterino7">Chatterino7</a>, <a href="https://github.com/Leafyzito/leafyrino">Leafyrino</a>, <a href="https://github.com/2547techno/technorino">Technorino</a> and <a href="https://github.com/EEVA-inc/Moltorino7">Moltorino7</a> (MIT license). It is not affiliated with their authors or with Twitch. Changes by Mist1X: <a href="https://github.com/Mist10X/chatterino-by-mist1x">github.com/Mist10X/chatterino-by-mist1x</a>. Who made what: the CREDITS.md file there.)")));
         attribution->setWordWrap(true);
+        attribution->setTextFormat(Qt::RichText);
+        attribution->setOpenExternalLinks(true);
+        if (archiveConnected())
+        {
+            auto installs = layout.emplace<QLabel>(uiText("Installations: …"));
+            QPointer<QLabel> target = installs.getElement();
+            fetchInstallCount([target](int count) {
+                if (target)
+                {
+                    target->setText(count < 0
+                                        ? uiText("Installations: unknown")
+                                        : uiText("Installations: %1").arg(count));
+                }
+            });
+        }
         attribution->setObjectName("BrandAttribution");
 
         auto versionInfo = layout.emplace<QGroupBox>(uiText("Version"));
@@ -95,8 +114,9 @@ AboutPage::AboutPage()
             // clang-format off
             l.emplace<QLabel>(uiText("Chatterino Wiki can be found <a href=\"") % LINK_CHATTERINO_WIKI % uiText("\">here</a>"))->setOpenExternalLinks(true);
             l.emplace<QLabel>(uiText("All about Chatterino's <a href=\"") % LINK_CHATTERINO_FEATURES % uiText("\">features</a>"))->setOpenExternalLinks(true);
-            l.emplace<QLabel>(uiText("Join the official Chatterino <a href=\"") % LINK_CHATTERINO_DISCORD % uiText("\">Discord</a>"))->setOpenExternalLinks(true);
-            l.emplace<QLabel>(uiText("Join the official 7TV <a href=\"") % LINK_SEVENTV_DISCORD % uiText("\">Discord</a>"))->setOpenExternalLinks(true);
+            // Problems with this build go to its own page, not to the
+            // communities of the projects it is based on.
+            l.emplace<QLabel>(uiText("Report a problem with this build <a href=\"https://github.com/Mist10X/chatterino-by-mist1x/issues\">on GitHub</a>"))->setOpenExternalLinks(true);
             // clang-format on
         }
 

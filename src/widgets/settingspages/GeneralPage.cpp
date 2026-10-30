@@ -1091,6 +1091,12 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         SettingWidget::checkbox(uiText("Also offer test versions"),
                                 s.betaUpdates)
             ->addTo(layout);
+        SettingWidget::checkbox(uiText("Count this installation"),
+                                s.countInstallation)
+            ->setTooltip(uiText("On its first start the program adds one to a "
+                         "public counter of installations (abacus.jasoncameron.dev), "
+                         "once. Nothing about you is sent: no name, account or ID."))
+            ->addTo(layout);
     }
     else
     {

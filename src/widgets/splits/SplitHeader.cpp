@@ -4,6 +4,8 @@
 
 #include "common/UiLanguage.hpp"
 #include "widgets/splits/SplitHeader.hpp"
+#include "widgets/dialogs/StreamStatsDialog.hpp"
+#include "widgets/helper/MenuStyle.hpp"
 
 #include "Application.hpp"
 #include "common/network/NetworkCommon.hpp"
@@ -897,6 +899,14 @@ void SplitHeader::initializeLayout()
         },
         this, {4, 4});
 
+    this->statsButton_ = new SvgButton(
+        {
+            .dark = ":/buttons/stats-darkMode.svg",
+            .light = ":/buttons/stats-lightMode.svg",
+        },
+        this, {5, 5});
+    this->statsButton_->setToolTip(uiText("Chat statistics"));
+
     this->youtubeRefreshButton_ = new SvgButton(
         {
             .dark = ":/buttons/reloadLight.svg",
@@ -968,6 +978,8 @@ void SplitHeader::initializeLayout()
         this->manageChannelButton_,
         // moderator
         this->moderationButton_,
+        // chat statistics
+        this->statsButton_,
         // chatter list
         this->chattersButton_,
         this->sendTargetButton_,
@@ -1057,6 +1069,15 @@ void SplitHeader::initializeLayout()
                          this->split_->openChatterList();
                      });
 
+    QObject::connect(this->statsButton_, &Button::leftClicked, this, [this]() {
+        const auto channel = this->split_->getSelectedChannel();
+        if (dynamic_cast<TwitchChannel *>(channel.get()) != nullptr &&
+            !channel->isEmpty())
+        {
+            showStreamStatsDialog(this->window(), channel->getName());
+        }
+    });
+
     QObject::connect(
         this->youtubeRefreshButton_, &Button::leftClicked, this, [this]() {
             auto channel = this->split_->getChannel();
@@ -1112,6 +1133,7 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
     const auto &h = getApp()->getHotkeys();
     auto menu = std::make_unique<QMenu>();
     menu->setToolTipsVisible(true);
+    styleMenu(menu.get());
 
     auto selected = this->split_->getSelectedChannel();
     auto *twitchChannel = dynamic_cast<TwitchChannel *>(selected.get());
@@ -1197,18 +1219,18 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
     if (twitchChannel || kickChannel || youtubeChannel)
     {
         menu->addAction(
-            OPEN_IN_BROWSER,
+            uiText(OPEN_IN_BROWSER),
             h->getDisplaySequence(HotkeyCategory::Split, "openInBrowser"),
             this->split_, &Split::openInBrowser);
         if (twitchChannel)
         {
-            menu->addAction(OPEN_PLAYER_IN_BROWSER,
+            menu->addAction(uiText(OPEN_PLAYER_IN_BROWSER),
                             h->getDisplaySequence(HotkeyCategory::Split,
                                                   "openPlayerInBrowser"),
                             this->split_, &Split::openBrowserPlayer);
         }
         menu->addAction(
-            OPEN_IN_STREAMLINK,
+            uiText(OPEN_IN_STREAMLINK),
             h->getDisplaySequence(HotkeyCategory::Split, "openInStreamlink"),
             this->split_, &Split::openInStreamlink);
 
@@ -1224,7 +1246,7 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
             this->split_->getChannel()->hasModRights())
         {
             menu->addAction(
-                OPEN_MOD_VIEW_IN_BROWSER,
+                uiText(OPEN_MOD_VIEW_IN_BROWSER),
                 h->getDisplaySequence(HotkeyCategory::Split, "openModView"),
                 this->split_, &Split::openModViewInBrowser);
         }
@@ -1288,7 +1310,7 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
         Channel::Type::TwitchWhispers)
     {
         menu->addAction(
-            OPEN_WHISPERS_IN_BROWSER,
+            uiText(OPEN_WHISPERS_IN_BROWSER),
             h->getDisplaySequence(HotkeyCategory::Split, "openInBrowser"),
             this->split_, &Split::openWhispersInBrowser);
         menu->addSeparator();
@@ -1320,6 +1342,14 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
                             subSeq.isEmpty() ? bothSeq : subSeq, this,
                             &SplitHeader::reloadSubscriberEmotes);
         }
+    }
+
+    if (twitchChannel)
+    {
+        menu->addAction(uiText("Chat statistics"), this,
+                        [this, name = twitchChannel->getName()] {
+                            showStreamStatsDialog(this->window(), name);
+                        });
     }
 
     if ((twitchChannel || kickChannel) && !selected->isEmpty())
@@ -1357,16 +1387,19 @@ std::unique_ptr<QMenu> SplitHeader::createMainMenu()
 
     {
         // "How to..." sub menu
-        auto *subMenu = new QMenu("How to...", this);
+        auto *subMenu = new QMenu(uiText("How to..."), this);
+        styleMenu(subMenu);
         subMenu->addAction(uiText("move split"), this->split_, &Split::explainMoving);
-        subMenu->addAction("add/split", this->split_, &Split::explainSplitting);
+        subMenu->addAction(uiText("add/split"), this->split_,
+                           &Split::explainSplitting);
         menu->addMenu(subMenu);
     }
 
     menu->addSeparator();
 
     // sub menu
-    auto *moreMenu = new QMenu("Mor&e", this);
+    auto *moreMenu = new QMenu(uiText("Mor&e"), this);
+    styleMenu(moreMenu);
 
     auto modModeSeq = h->getDisplaySequence(HotkeyCategory::Split,
                                             "setModerationMode", {{"toggle"}});
@@ -1860,6 +1893,7 @@ void SplitHeader::scaleChangedEvent(float scale)
     this->manageChannelButton_->setFixedWidth(w);
     this->moderationButton_->setFixedWidth(w);
     this->chattersButton_->setFixedWidth(w);
+    this->statsButton_->setFixedWidth(w);
     this->youtubeRefreshButton_->setFixedWidth(w);
 
     this->addButton_->setFixedWidth(addSplitWidth);
@@ -2224,6 +2258,10 @@ void SplitHeader::updateIcons()
     {
         this->chattersButton_->hide();
     }
+
+    this->statsButton_->setVisible(
+        dynamic_cast<TwitchChannel *>(channel.get()) != nullptr &&
+        !channel->isEmpty());
 }
 
 void SplitHeader::paintEvent(QPaintEvent * /*event*/)

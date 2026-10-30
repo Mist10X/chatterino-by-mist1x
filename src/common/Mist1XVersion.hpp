@@ -8,4 +8,4 @@
 /// by and what the update check compares with. Leafyrino's own version stays
 /// CHATTERINO_VERSION. tools/release/build-release.ps1 refuses to build a
 /// release whose number differs from this one.
-#define MIST1X_VERSION "1.2.4"
+#define MIST1X_VERSION "1.2.5"

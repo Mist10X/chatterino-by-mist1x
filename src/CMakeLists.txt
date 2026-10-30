@@ -1027,8 +1027,20 @@ set(SOURCE_FILES
         widgets/helper/CornerBanners.cpp
         widgets/helper/HighlightToast.cpp
         widgets/helper/HighlightToast.hpp
+        widgets/dialogs/WhatsNewDialog.cpp
+        widgets/dialogs/WhatsNewDialog.hpp
+        widgets/helper/MenuStyle.cpp
+        widgets/helper/MenuStyle.hpp
         widgets/helper/UpdateBanner.cpp
         widgets/helper/UpdateBanner.hpp
+        singletons/InstallCounter.cpp
+        singletons/InstallCounter.hpp
+        widgets/dialogs/StreamStatsDialog.cpp
+        widgets/dialogs/StreamStatsDialog.hpp
+        widgets/helper/MissedDigest.cpp
+        widgets/helper/MissedDigest.hpp
+        providers/twitch/ChannelStats.cpp
+        providers/twitch/ChannelStats.hpp
         widgets/dialogs/WelcomeDialog.cpp
         widgets/dialogs/WelcomeDialog.hpp
         widgets/helper/CornerBanners.hpp

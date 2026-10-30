@@ -4,6 +4,8 @@
 
 #include "common/UiLanguage.hpp"
 #include "widgets/splits/Split.hpp"
+#include "widgets/helper/MissedDigest.hpp"
+#include "providers/twitch/ChannelStats.hpp"
 
 #include "Application.hpp"
 #include "common/Common.hpp"
@@ -368,6 +370,8 @@ Split::Split(QWidget *parent)
                                            this->clearShortcuts();
                                            this->addShortcuts();
                                        });
+
+    attachMissedDigest(this);
 }
 
 void Split::addShortcuts()
@@ -1956,6 +1960,8 @@ void Split::wireTwitchBanners(TwitchChannel *tc)
 
 void Split::setChannel(IndirectChannel newChannel)
 {
+    // chat statistics count from the moment a channel is open anywhere
+    ChannelStats::attach(newChannel.get());
     this->editorAccessProbedChannels_.clear();
     this->channelSignalHolder_.clear();
     this->input_->setSendWaitStatus("");

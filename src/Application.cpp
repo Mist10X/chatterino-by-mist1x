@@ -76,18 +76,24 @@
 #include "singletons/StreamerMode.hpp"
 #include "singletons/Theme.hpp"
 #include "singletons/Toasts.hpp"
+#include "singletons/InstallCounter.hpp"
 #include "singletons/Updates.hpp"
 #include "singletons/WindowManager.hpp"
 #include "util/Helpers.hpp"
 #include "util/PostToThread.hpp"
 #include "widgets/Notebook.hpp"
 #include "widgets/splits/Split.hpp"
+#include "widgets/splits/SplitHeader.hpp"
 #include "widgets/dialogs/SettingsDialog.hpp"
+#include "widgets/dialogs/StreamStatsDialog.hpp"
 #include "widgets/dialogs/WelcomeDialog.hpp"
+#include "widgets/dialogs/WhatsNewDialog.hpp"
 #include "widgets/Window.hpp"
 
 #include <miniaudio.h>
 #include <QApplication>
+#include <QEventLoop>
+#include <QMenu>
 #include <QDialog>
 #include <QDateTime>
 #include <QDesktopServices>
@@ -289,6 +295,7 @@ void Application::initialize(Settings &settings, const Paths &paths)
 
     this->windows->initialize();
     this->updates.startPeriodicChecks();
+    countInstallOnce();
 
     this->ffzBadges->load();
     this->bttvBadges->load();
@@ -439,9 +446,60 @@ int Application::run()
     {
         QTimer::singleShot(this->args_.uiSnapshotDelayMs, [this] {
             if (this->args_.uiSnapshotSettings &&
+                this->args_.uiSnapshotSettings->startsWith(u"stats:"))
+            {
+                showStreamStatsDialog(&this->windows->getMainWindow(),
+                                      this->args_.uiSnapshotSettings->mid(6));
+                // the emote pictures load meanwhile
+                QEventLoop wait;
+                QTimer::singleShot(5000, &wait, &QEventLoop::quit);
+                wait.exec();
+                for (auto *widget : QApplication::topLevelWidgets())
+                {
+                    if (qobject_cast<QDialog *>(widget) && widget->isVisible())
+                    {
+                        widget->grab().save(*this->args_.uiSnapshot, "PNG");
+                    }
+                }
+                QApplication::exit(0);
+                return;
+            }
+            if (this->args_.uiSnapshotSettings &&
                 this->args_.uiSnapshotSettings->startsWith(u"import:"))
             {
                 importSettingsForTesting(this->args_.uiSnapshotSettings->mid(7));
+                QApplication::exit(0);
+                return;
+            }
+            if (this->args_.uiSnapshotSettings == QStringLiteral("splitmenu"))
+            {
+                auto headers =
+                    this->windows->getMainWindow().findChildren<SplitHeader *>();
+                if (!headers.isEmpty())
+                {
+                    auto menu = headers.front()->mainMenuForTesting();
+                    menu->popup(QPoint(200, 200));
+                    QCoreApplication::processEvents();
+                    menu->setActiveAction(menu->actions().value(3));
+                    QCoreApplication::processEvents();
+                    menu->grab().save(*this->args_.uiSnapshot, "PNG");
+                }
+                QApplication::exit(0);
+                return;
+            }
+            if (this->args_.uiSnapshotSettings &&
+                this->args_.uiSnapshotSettings->startsWith(u"whatsnew:"))
+            {
+                showWhatsNewDialog(&this->windows->getMainWindow(),
+                                   this->args_.uiSnapshotSettings->mid(9));
+                QCoreApplication::processEvents();
+                for (auto *widget : QApplication::topLevelWidgets())
+                {
+                    if (qobject_cast<QDialog *>(widget) && widget->isVisible())
+                    {
+                        widget->grab().save(*this->args_.uiSnapshot, "PNG");
+                    }
+                }
                 QApplication::exit(0);
                 return;
             }
