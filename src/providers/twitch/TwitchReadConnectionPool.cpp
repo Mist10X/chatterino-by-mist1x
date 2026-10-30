@@ -162,7 +162,7 @@ bool noteConnected(Channel &chan)
 void appendConnectedMessage(std::span<const ChannelPtr> channels)
 {
     // connected/disconnected message
-    auto connectedMsg = makeSystemMessage(uiText("connected"));
+    auto connectedMsg = makeSystemMessage("connected");
     connectedMsg->flags.set(MessageFlag::ConnectedMessage);
     auto reconnected = makeSystemMessage("reconnected");
     reconnected->flags.set(MessageFlag::ConnectedMessage);

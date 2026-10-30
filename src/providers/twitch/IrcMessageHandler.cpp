@@ -1237,7 +1237,7 @@ void IrcMessageHandler::handleJoinMessage(Communi::IrcMessage *message)
         // After a drop the connection status line already says so.
         if (!connectionTroubleRecent(twitchChannel->getName()))
         {
-            twitchChannel->addSystemMessage(uiText("joined channel"));
+            twitchChannel->addSystemMessage("joined channel");
         }
         twitchChannel->joined.invoke();
     }
