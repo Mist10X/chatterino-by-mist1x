@@ -117,6 +117,7 @@
 #include <QSplitter>
 #include <QStringBuilder>
 #include <QSvgRenderer>
+#include <QTabBar>
 #include <QTabWidget>
 #include <QTimer>
 #include <QToolButton>
