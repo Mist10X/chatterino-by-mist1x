@@ -1,5 +1,7 @@
 #include "providers/seventv/paints/Paint.hpp"
 
+#include <cmath>
+
 #include "Application.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/Theme.hpp"
@@ -28,9 +30,23 @@ qreal textBaseline(const QFont &font, const QRectF &rect)
 
 QPixmap Paint::getPixmap(const QString &text, const QFont &font,
                          QColor userColor, QSizeF size, float scale, float dpr,
-                         bool centerVertically) const
+                         bool centerVertically, qreal *margin) const
 {
     QSizeF drawSize = size;
+    qreal pad = 0;
+    if (margin != nullptr && getSettings()->displaySevenTVPaintShadows)
+    {
+        for (const auto &shadow : this->getDropShadows())
+        {
+            if (shadow.isValid())
+            {
+                pad = std::max<qreal>(
+                    pad, shadow.scaled(scale / dpr).extentAround());
+            }
+        }
+        pad = std::ceil(pad);
+        *margin = pad;
+    }
     if (centerVertically && getSettings()->displaySevenTVPaintShadows)
     {
         float shadowExtent = 0;
@@ -48,13 +64,16 @@ QPixmap Paint::getPixmap(const QString &text, const QFont &font,
         drawSize.setHeight(size.height() + shadowExtent);
     }
 
-    QPixmap pixmap((drawSize * dpr).toSize());
+    const QSizeF canvasSize(drawSize.width() + 2 * pad,
+                            drawSize.height() + 2 * pad);
+    QPixmap pixmap((canvasSize * dpr).toSize());
     pixmap.setDevicePixelRatio(dpr);
     pixmap.fill(Qt::transparent);
 
     QPainter pixmapPainter(&pixmap);
     pixmapPainter.setRenderHint(QPainter::SmoothPixmapTransform);
     pixmapPainter.setFont(font);
+    pixmapPainter.translate(pad, pad);
 
     const QRectF pixmapRect(QPointF{}, drawSize);
     const QRectF textRect(QPointF{}, size);
@@ -97,7 +116,7 @@ QPixmap Paint::getPixmap(const QString &text, const QFont &font,
     if (!this->getDropShadows().empty() &&
         getSettings()->displaySevenTVPaintShadows)
     {
-        QPixmap outMap((drawSize * dpr).toSize());
+        QPixmap outMap((canvasSize * dpr).toSize());
         outMap.setDevicePixelRatio(dpr);
         for (const auto &shadow : this->getDropShadows())
         {
@@ -126,6 +145,7 @@ QPixmap Paint::getPixmap(const QString &text, const QFont &font,
         const auto baseline = textBaseline(font, nametagBoundingRect);
 
         pixmapPainter.begin(&pixmap);
+        pixmapPainter.translate(pad, pad);
 
         pixmapPainter.setPen(QPen(colonColor));
         pixmapPainter.setFont(font);

@@ -691,6 +691,16 @@ qreal MessageLayoutContainer::getLayoutContentWidth() const
     return maxRight + (MARGIN.left() + MARGIN.right()) * this->scale_;
 }
 
+QRectF MessageLayoutContainer::getContentBounds() const
+{
+    QRectF bounds;
+    for (const auto &element : this->elements_)
+    {
+        bounds = bounds.united(element->getRect());
+    }
+    return bounds;
+}
+
 qreal MessageLayoutContainer::getHeight() const
 {
     return this->height_;

@@ -6,6 +6,11 @@
 
 #include <QElapsedTimer>
 #include <QLabel>
+#include <QFontMetricsF>
+#include <QApplication>
+#include <QPainter>
+#include <QPushButton>
+#include <QFrame>
 
 // The own timeout in the input box (like Chatterino+): red with a countdown,
 // green once it is over, normal after the first message. Synthetic channel,
@@ -14,8 +19,10 @@
 
 #include "common/UiLanguage.hpp"
 #include "messages/MessageBuilder.hpp"
+#include "providers/seventv/paints/LinearGradientPaint.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "singletons/Settings.hpp"
+#include "widgets/helper/ChannelView.hpp"
 #include "widgets/helper/ResizingTextEdit.hpp"
 #include "widgets/Label.hpp"
 #include "widgets/splits/Split.hpp"
@@ -400,6 +407,152 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
             live.resize(260, 30);
             pump(30);
             live.grab().save(screenshotBase + "-live-header-narrow.png", "PNG");
+        }
+    }
+
+    // 13. an outgoing raid above the input box, ended by Twitch's own word
+    {
+        TwitchChannel::RaidEvent raid;
+        raid.id = QStringLiteral("raid-1");
+        raid.targetId = QStringLiteral("123");
+        raid.targetLogin = QStringLiteral("dangerlyoha");
+        raid.targetDisplayName = QStringLiteral("dangerlyoha");
+        raid.viewerCount = 13748;
+        raid.forceRaidNowSeconds = 90;
+        raid.receivedAt = QDateTime::currentDateTimeUtc();
+        channel->setActiveRaid(raid);
+        pump(300);
+        QLabel *raidLabel = nullptr;
+        QLabel *raidTime = nullptr;
+        for (auto *label : split.findChildren<QLabel *>())
+        {
+            if (label->objectName() == u"raidStatusLabel")
+            {
+                raidLabel = label;
+            }
+            if (label->objectName() == u"raidStatusTime")
+            {
+                raidTime = label;
+            }
+        }
+        check("the raid bar shows the target and viewers",
+              raidLabel != nullptr && raidLabel->isVisible() &&
+                  raidLabel->text().contains(u"dangerlyoha") &&
+                  raidLabel->text().contains(u"748") &&
+                  raidTime != nullptr && raidTime->text().contains(u':'));
+        std::fprintf(stderr, "raid text: %s | %s\n",
+                     raidLabel ? raidLabel->text().toUtf8().constData() : "",
+                     raidTime ? raidTime->text().toUtf8().constData() : "");
+        if (!screenshotBase.isEmpty())
+        {
+            split.getInput().grab().save(screenshotBase + "-raid.png", "PNG");
+        }
+        channel->handleRaidUpdate(QJsonObject{
+            {"type", "raid_go_v2"},
+            {"topic", QStringLiteral("raid.%1").arg(channel->roomId())},
+            {"raid", QJsonObject{{"id", "raid-1"}}},
+        });
+        pump(300);
+        check("the raid bar goes when Twitch says the raid went",
+              !channel->accessRaid()->has_value() &&
+                  (raidLabel == nullptr || !raidLabel->isVisible()));
+    }
+
+    // 14. a 7TV paint with a glow: no box where the glow used to be cut off
+    {
+        QGradientStops stops{{0.0, QColor("#ffcce0")}, {0.5, QColor("#bfe0ff")},
+                             {1.0, QColor("#ffe6b0")}};
+        LinearGradientPaint paint(QStringLiteral("Pastel"),
+                                  QStringLiteral("test"), std::nullopt, stops,
+                                  false, 90,
+                                  {PaintDropShadow(0, 0, 5, QColor(191, 185,
+                                                                   255, 191))});
+        QFont font = QApplication::font();
+        font.setPixelSize(15);
+        font.setBold(true);
+        const QFontMetricsF metrics(font);
+        const QSizeF size(metrics.horizontalAdvance(QStringLiteral("@dapta4ke")),
+                          metrics.height());
+        qreal margin = 0;
+        const auto pixmap = paint.getPixmap(QStringLiteral("@dapta4ke"), font,
+                                            QColor("#c0c0ff"), size, 1, 1,
+                                            false, &margin);
+        const auto image = pixmap.toImage();
+        // the outermost ring of the picture is clear: nothing is cut off
+        int edge = 0;
+        for (int x = 0; x < image.width(); ++x)
+        {
+            edge = std::max({edge, qAlpha(image.pixel(x, 0)),
+                             qAlpha(image.pixel(x, image.height() - 1))});
+        }
+        for (int y = 0; y < image.height(); ++y)
+        {
+            edge = std::max({edge, qAlpha(image.pixel(0, y)),
+                             qAlpha(image.pixel(image.width() - 1, y))});
+        }
+        check("a glowing 7TV name fades out inside its picture (no box)",
+              margin > 0 && edge < 40);
+        if (!screenshotBase.isEmpty())
+        {
+            QImage shot(image.size() + QSize(20, 20), QImage::Format_ARGB32);
+            shot.fill(QColor("#18181b"));
+            QPainter painter(&shot);
+            painter.drawPixmap(10, 10, pixmap);
+            painter.end();
+            shot.save(screenshotBase + "-paint-glow.png", "PNG");
+        }
+    }
+
+    // 15. punishments: a soft rounded box around the text — red ban, yellow
+    //     timeout, grey deletion
+    {
+        auto punished = std::make_shared<TwitchChannel>(QStringLiteral("box_room"));
+        split.setChannel(
+            IndirectChannel(std::static_pointer_cast<Channel>(punished)));
+        split.resize(560, 220);
+        const auto now = QDateTime::currentDateTime();
+        punished->addMessage(
+            MessageBuilder(timeoutMessage, QStringLiteral("mainkrafter2000"),
+                           QString(), false, now)
+                .release(),
+            MessageContext::Repost);
+        punished->addMessage(
+            MessageBuilder(timeoutMessage, QStringLiteral("furay_hd"),
+                           QStringLiteral("600"), false, now)
+                .release(),
+            MessageContext::Repost);
+        auto original = std::make_shared<Message>();
+        original->loginName = QStringLiteral("vihkiins");
+        original->displayName = QStringLiteral("vihkiins");
+        original->messageText = QStringLiteral("DinoDance DinoDance PogChamp");
+        original->id = QStringLiteral("deleted-id");
+        punished->addMessage(MessageBuilder::makeDeletionMessageFromIRC(original),
+                             MessageContext::Repost);
+        pump(300);
+        const auto image = split.getChannelView().grab().toImage();
+        int red = 0;
+        int yellow = 0;
+        int grey = 0;
+        for (int y = 0; y < image.height(); ++y)
+        {
+            for (int x = 0; x < image.width(); ++x)
+            {
+                const QColor c = image.pixelColor(x, y);
+                red += c.red() > c.green() + 30 && c.red() > c.blue() + 20 &&
+                       c.green() < c.blue() + 25;
+                yellow += c.red() > c.blue() + 30 && c.green() > c.blue() + 25;
+                grey += std::abs(c.red() - c.green()) < 6 &&
+                        c.blue() - c.red() >= 4 && c.blue() - c.red() < 14 &&
+                        c.red() > 55 && c.red() < 90;
+            }
+        }
+        std::fprintf(stderr, "punishment boxes: red=%d yellow=%d grey=%d\n", red,
+                     yellow, grey);
+        check("a ban gets a red box, a timeout a yellow one",
+              red > 40 && yellow > 40);
+        if (!screenshotBase.isEmpty())
+        {
+            image.save(screenshotBase + "-punishments.png", "PNG");
         }
     }
 

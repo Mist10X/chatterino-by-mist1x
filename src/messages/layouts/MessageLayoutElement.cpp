@@ -1263,11 +1263,14 @@ void TextLayoutElement::paint(QPainter &painter,
                 return;
             }
 
+            qreal margin = 0;
             auto paintPixmap = paint->getPixmap(
                 this->getText(), font, this->color_, this->getRect().size(),
-                this->scale_, this->dpr_);
+                this->scale_, this->dpr_, false, &margin);
 
-            painter.drawPixmap(this->getRect().topLeft(), paintPixmap);
+            painter.drawPixmap(
+                this->getRect().topLeft() - QPointF(margin, margin),
+                paintPixmap);
             return;
         }
     }
@@ -1314,11 +1317,12 @@ QRegion TextLayoutElement::paintAnimated(QPainter &painter, const qreal yOffset)
         return {};
     }
 
-    const auto paintPixmap =
-        paint->getPixmap(this->getText(), font, this->color_,
-                         this->getRect().size(), this->scale_, this->dpr_);
+    qreal margin = 0;
+    const auto paintPixmap = paint->getPixmap(
+        this->getText(), font, this->color_, this->getRect().size(),
+        this->scale_, this->dpr_, false, &margin);
 
-    auto rect = this->getRect();
+    auto rect = this->getRect().adjusted(-margin, -margin, margin, margin);
     rect.moveTop(rect.y() + yOffset);
     painter.drawPixmap(rect, paintPixmap, QRectF());
     return QRegion(rect.toAlignedRect());

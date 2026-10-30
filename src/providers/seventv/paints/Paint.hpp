@@ -16,9 +16,13 @@ public:
     virtual const std::vector<PaintDropShadow> &getDropShadows() const = 0;
     virtual bool animated() const = 0;
 
+    /// With `margin`, the picture has room around the text for the shadow
+    /// (a glow cut at the edges shows as a box): it is `*margin` bigger on
+    /// every side and is drawn that much up and to the left.
     QPixmap getPixmap(const QString &text, const QFont &font, QColor userColor,
                       QSizeF size, float scale, float dpr,
-                      bool centerVertically = false) const;
+                      bool centerVertically = false,
+                      qreal *margin = nullptr) const;
 
     Paint(QString id, QString name = {})
         : id(std::move(id))

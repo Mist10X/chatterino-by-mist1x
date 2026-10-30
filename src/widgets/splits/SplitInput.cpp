@@ -4,6 +4,7 @@
 
 #include "common/UiLanguage.hpp"
 #include "widgets/splits/SplitInput.hpp"
+#include "messages/Image.hpp"
 
 #include "Application.hpp"
 #include "common/enums/MessageOverflow.hpp"
@@ -66,6 +67,11 @@
 #include <QDateTime>
 #include <QKeyEvent>
 #include <QMenu>
+#include <QLabel>
+#include <QHBoxLayout>
+#include <QHash>
+#include <QLocale>
+#include <QPainterPath>
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QPainter>
@@ -239,9 +245,72 @@ qint64 remainingRaidMilliseconds(const TwitchChannel::RaidEvent &raid)
 
 QString raidViewerText(int viewerCount)
 {
-    return uiText(QStringLiteral("%1 viewer%2"))
-        .arg(std::max(0, viewerCount))
-        .arg(viewerCount == 1 ? QString() : QStringLiteral("s"));
+    const auto count = std::max(0, viewerCount);
+    const auto number = QLocale().toString(count);
+    if (activeUiLanguage().startsWith(u"ru"))
+    {
+        const auto tens = count % 100;
+        const auto ones = count % 10;
+        const auto *word = (tens >= 11 && tens <= 14) ? "зрителей"
+                           : ones == 1                 ? "зритель"
+                           : (ones >= 2 && ones <= 4)  ? "зрителя"
+                                                       : "зрителей";
+        return number + u' ' + QString::fromUtf8(word);
+    }
+    return number + (count == 1 ? QStringLiteral(" viewer")
+                                : QStringLiteral(" viewers"));
+}
+
+/// The raid target's avatar (round), once it has loaded; the URL comes with
+/// the raid or, without one, from Twitch by the target's ID.
+std::optional<QPixmap> raidAvatar(const TwitchChannel::RaidEvent &raid,
+                                  int size)
+{
+    static QHash<QString, QString> urls;  // target ID -> avatar URL
+    static QHash<QString, ImagePtr> images;
+    auto url = raid.targetProfileImage;
+    if (url.isEmpty())
+    {
+        url = urls.value(raid.targetId);
+    }
+    if (url.isEmpty())
+    {
+        auto *helix = getHelix();
+        if (helix != nullptr && !urls.contains(raid.targetId) &&
+            !raid.targetId.isEmpty())
+        {
+            urls.insert(raid.targetId, {});
+            helix->getUserById(
+                raid.targetId,
+                [id = raid.targetId](const HelixUser &user) {
+                    urls.insert(id, user.profileImageUrl);
+                },
+                [] {});
+        }
+        return std::nullopt;
+    }
+    auto &image = images[url];
+    if (!image)
+    {
+        image = Image::fromUrl(Url{url});
+    }
+    auto pixmap = image->pixmapOrLoad();
+    if (!pixmap)
+    {
+        return std::nullopt;
+    }
+    const auto ratio = qApp->devicePixelRatio();
+    QPixmap round(QSize(size, size) * ratio);
+    round.setDevicePixelRatio(ratio);
+    round.fill(Qt::transparent);
+    QPainter painter(&round);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
+    QPainterPath circle;
+    circle.addEllipse(QRectF(0, 0, size, size));
+    painter.setClipPath(circle);
+    painter.drawPixmap(QRect(0, 0, size, size), *pixmap);
+    return round;
 }
 
 int raidProgressValue(qint64 elapsedMs, qint64 totalMs)
@@ -820,11 +889,27 @@ void SplitInput::initLayout()
         raidStatusWidget.setLayoutType<QVBoxLayout>().withoutMargin().assign(
             &this->ui_.raidStatusLayout);
     raidStatusLayout->setSpacing(0);
-    raidStatusLayout.emplace<QLabel>().assign(&this->ui_.raidStatusLabel);
-    this->ui_.raidStatusLabel->setObjectName("raidStatusLabel");
-    this->ui_.raidStatusLabel->setContentsMargins(6, 1, 6, 3);
-    this->ui_.raidStatusLabel->setTextFormat(Qt::PlainText);
-    this->ui_.raidStatusLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    // avatar · "Raid to <name> · N viewers" · countdown
+    {
+        auto *row = new QWidget;
+        auto *rowLayout = new QHBoxLayout(row);
+        rowLayout->setContentsMargins(8, 3, 8, 3);
+        rowLayout->setSpacing(7);
+        auto *avatar = new QLabel;
+        avatar->setObjectName("raidStatusAvatar");
+        avatar->setFixedSize(20, 20);
+        rowLayout->addWidget(avatar);
+        this->ui_.raidStatusLabel = new QLabel;
+        this->ui_.raidStatusLabel->setObjectName("raidStatusLabel");
+        this->ui_.raidStatusLabel->setTextFormat(Qt::RichText);
+        this->ui_.raidStatusLabel->setAlignment(Qt::AlignLeft |
+                                                Qt::AlignVCenter);
+        rowLayout->addWidget(this->ui_.raidStatusLabel, 1);
+        auto *time = new QLabel;
+        time->setObjectName("raidStatusTime");
+        rowLayout->addWidget(time);
+        raidStatusLayout->addWidget(row);
+    }
     auto raidProgress = raidStatusLayout.emplace<QProgressBar>().assign(
         &this->ui_.raidStatusProgress);
     raidProgress->setObjectName("raidStatusProgress");
@@ -1238,16 +1323,16 @@ void SplitInput::themeChangedEvent()
     {
         this->ui_.replyLabel->setStyleSheet("color: #333");
         this->ui_.raidStatusWidget->setStyleSheet(
-            "QWidget#raidStatusWidget { background-color: rgba(105, 70, "
-            "180, 0.18); border: 0; }");
-        this->ui_.raidStatusLabel->setStyleSheet(
-            "QLabel#raidStatusLabel { color: #4d237d; background: "
-            "transparent; }");
-        this->ui_.raidStatusProgress->setStyleSheet(
-            "QProgressBar#raidStatusProgress { border: 0; background: "
-            "transparent; margin: 0; padding: 0; }"
-            "QProgressBar#raidStatusProgress::chunk { background-color: "
-            "#7c3aed; border: 0; }");
+            QStringLiteral(
+                "QWidget#raidStatusWidget { background: #f1edf8; border: 0; "
+                "border-left: 3px solid %1; }"
+                "QLabel { color: #2b2340; background: transparent; }"
+                "QLabel#raidStatusTime { color: #6b6478; }"
+                "QProgressBar#raidStatusProgress { border: 0; background: "
+                "transparent; margin: 0; padding: 0; }"
+                "QProgressBar#raidStatusProgress::chunk { background-color: "
+                "%1; border: 0; }")
+                .arg(this->theme->accent.name()));
         this->ui_.nukePreviewLabel->setStyleSheet(
             "color: #7a1111; background: rgba(255, 70, 70, 0.20);");
         if (this->ui_.commandCompletionWidget != nullptr)
@@ -1278,17 +1363,18 @@ void SplitInput::themeChangedEvent()
     else
     {
         this->ui_.replyLabel->setStyleSheet("color: #ccc");
+        // the look of the "While you were away" card
         this->ui_.raidStatusWidget->setStyleSheet(
-            "QWidget#raidStatusWidget { background-color: rgba(91, 46, "
-            "153, 0.82); border: 0; }");
-        this->ui_.raidStatusLabel->setStyleSheet(
-            "QLabel#raidStatusLabel { color: #f1eaff; background: "
-            "transparent; }");
-        this->ui_.raidStatusProgress->setStyleSheet(
-            "QProgressBar#raidStatusProgress { border: 0; background: "
-            "transparent; margin: 0; padding: 0; }"
-            "QProgressBar#raidStatusProgress::chunk { background-color: "
-            "#c4b5fd; border: 0; }");
+            QStringLiteral(
+                "QWidget#raidStatusWidget { background: #221f2b; border: 0; "
+                "border-left: 3px solid %1; }"
+                "QLabel { color: #e6e3ee; background: transparent; }"
+                "QLabel#raidStatusTime { color: #9a96a6; }"
+                "QProgressBar#raidStatusProgress { border: 0; background: "
+                "transparent; margin: 0; padding: 0; }"
+                "QProgressBar#raidStatusProgress::chunk { background-color: "
+                "%1; border: 0; }")
+                .arg(this->theme->accent.name()));
         this->ui_.nukePreviewLabel->setStyleSheet(
             "color: #ffb3b3; background: rgba(90, 20, 20, 0.32);");
         if (this->ui_.commandCompletionWidget != nullptr)
@@ -2879,8 +2965,11 @@ void SplitInput::updateRaidStatus()
         return;
     }
 
+    // The bar ends when Twitch says the raid went (or was called off): the
+    // countdown is only an estimate, the streamer may raid earlier. Past it,
+    // the bar waits a little for that word before giving up.
     const auto remainingMs = remainingRaidMilliseconds(*raid);
-    if (remainingMs <= 0)
+    if (remainingMs <= -60'000)
     {
         this->raidStatusTimer_.stop();
         this->raidStatusProgressAnimation_.stop();
@@ -2905,21 +2994,42 @@ void SplitInput::updateRaidStatus()
     {
         target = QStringLiteral("target");
     }
-    const auto phase = totalSeconds >= 90 && elapsedSeconds < 10
-                           ? uiText(QStringLiteral("Preparing raid to %1"))
-                           : uiText(QStringLiteral("Raiding %1 in %2"));
+    std::ignore = elapsedSeconds;
     const auto text =
-        totalSeconds >= 90 && elapsedSeconds < 10
-            ? QStringLiteral("%1 - %2 - %3")
-                  .arg(phase.arg(target), formatRaidCountdown(remainingSeconds),
-                       raidViewerText(raid->viewerCount))
-            : QStringLiteral("%1 - %2").arg(
-                  phase.arg(target, formatRaidCountdown(remainingSeconds)),
-                  raidViewerText(raid->viewerCount));
-
+        uiText("Raid to %1").arg(QStringLiteral("<b>%1</b>")
+                                     .arg(target.toHtmlEscaped())) +
+        QStringLiteral(" · ") + raidViewerText(raid->viewerCount);
     if (this->ui_.raidStatusLabel->text() != text)
     {
         this->ui_.raidStatusLabel->setText(text);
+    }
+    const auto font = getApp()->getFonts()->getFont(
+        FontStyle::ChatMediumSmall, getSettings()->getClampedUiScale());
+    this->ui_.raidStatusLabel->setFont(font);
+    if (auto *time =
+            this->ui_.raidStatusWidget->findChild<QLabel *>("raidStatusTime"))
+    {
+        time->setFont(font);
+        time->setText(remainingMs > 0 ? formatRaidCountdown(remainingSeconds)
+                                      : uiText("any moment"));
+    }
+    if (auto *avatar = this->ui_.raidStatusWidget->findChild<QLabel *>(
+            "raidStatusAvatar"))
+    {
+        const auto key = raid->targetId + raid->targetProfileImage;
+        if (avatar->property("raidAvatar").toString() != key)
+        {
+            if (auto pixmap = raidAvatar(*raid, 20))
+            {
+                avatar->setPixmap(*pixmap);
+                avatar->setProperty("raidAvatar", key);
+            }
+            else
+            {
+                avatar->clear();
+            }
+        }
+        avatar->setVisible(!avatar->pixmap().isNull());
     }
     const auto currentProgress = raidProgressValue(elapsedMs, totalMs);
     const auto nextProgress = raidProgressValue(nextElapsedMs, totalMs);

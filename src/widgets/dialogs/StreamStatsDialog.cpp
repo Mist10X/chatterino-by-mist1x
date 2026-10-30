@@ -4,11 +4,14 @@
 
 #include "widgets/dialogs/StreamStatsDialog.hpp"
 
+#include "Application.hpp"
 #include "common/UiLanguage.hpp"
+#include "controllers/emotes/EmoteController.hpp"
 #include "messages/Emote.hpp"
 #include "messages/Image.hpp"
 #include "providers/twitch/ChannelStats.hpp"
 #include "singletons/Theme.hpp"
+#include "singletons/helper/GifTimer.hpp"
 
 #include <QDialog>
 #include <QGridLayout>
@@ -131,7 +134,7 @@ class RankRow : public QWidget
 {
 public:
     RankRow(int place, QString name, QColor color, int count, double share,
-            QPixmap picture = {})
+            ImagePtr picture = {})
         : place_(place)
         , name_(std::move(name))
         , color_(std::move(color))
@@ -139,6 +142,15 @@ public:
         , share_(share)
         , picture_(std::move(picture))
     {
+        // Animated emotes play like in chat: the frame follows the shared
+        // GIF clock, so rebuilding the list does not restart or jolt them.
+        if (this->picture_ && this->picture_->animated())
+        {
+            this->gifConnection_ =
+                getApp()->getEmotes()->getGIFTimer()->signal.connect([this] {
+                    this->update();
+                });
+        }
         this->setFixedHeight(EMOTE_SIZE + 8);
         this->setToolTip(QStringLiteral("%1 — %2").arg(this->name_,
                                                          number(count)));
@@ -170,9 +182,11 @@ protected:
         x += 22;
         if (this->hasPictureSlot())
         {
-            if (!this->picture_.isNull())
+            const auto frame = this->picture_ ? this->picture_->pixmapOrLoad()
+                                              : std::nullopt;
+            if (frame && !frame->isNull())
             {
-                auto scaled = this->picture_.scaled(
+                auto scaled = frame->scaled(
                     EMOTE_SIZE * 2, EMOTE_SIZE, Qt::KeepAspectRatio,
                     Qt::SmoothTransformation);
                 painter.drawPixmap(
@@ -210,7 +224,7 @@ protected:
 private:
     bool hasPictureSlot() const
     {
-        return !this->picture_.isNull() || !this->color_.isValid();
+        return this->picture_ || !this->color_.isValid();
     }
 
     int place_;
@@ -218,7 +232,8 @@ private:
     QColor color_;
     int count_;
     double share_;
-    QPixmap picture_;
+    ImagePtr picture_;
+    pajlada::Signals::ScopedConnection gifConnection_;
 };
 
 /// Messages over time, in bars of 1–60 minutes; pointing at a bar tells its
@@ -604,14 +619,11 @@ QWidget *build(const QString &channelName, bool &waiting)
         place = 1;
         for (const auto &[name, use] : topEmotes)
         {
-            QPixmap picture;
+            ImagePtr picture;
             if (use.emote)
             {
-                if (auto pixmap = use.emote->images.getImage(2.F)->pixmapOrLoad())
-                {
-                    picture = *pixmap;
-                }
-                else
+                picture = use.emote->images.getImage(2.F);
+                if (!picture->pixmapOrLoad())
                 {
                     waiting = true;
                 }

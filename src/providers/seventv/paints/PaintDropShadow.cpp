@@ -2,6 +2,9 @@
 
 #include "singletons/Settings.hpp"
 
+#include <algorithm>
+#include <cmath>
+
 #include <private/qpixmapfilter_p.h>
 
 namespace chatterino {
@@ -29,6 +32,17 @@ float PaintDropShadow::extentBelow() const
     }
 
     return this->yOffset_ + radius;
+}
+
+float PaintDropShadow::extentAround() const
+{
+    auto radius = this->radius_;
+    if (getSettings()->largeSevenTVPaintShadows)
+    {
+        radius *= 3;
+    }
+    return std::max(std::abs(this->xOffset_), std::abs(this->yOffset_)) +
+           radius;
 }
 
 PaintDropShadow PaintDropShadow::scaled(float scale) const

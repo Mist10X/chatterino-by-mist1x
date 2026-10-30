@@ -1444,6 +1444,11 @@ void TwitchChannel::updateStreamStatus(
 
 void TwitchChannel::onLiveStatusChanged(bool isLive, bool isInitialUpdate)
 {
+    if (!isLive && this->activeRaid_.accessConst()->has_value())
+    {
+        this->clearActiveRaid();
+    }
+
     // Similar code exists in NotificationController::updateFakeChannel.
     // Since we're a TwitchChannel, we also send a message here.
     const HelixMinimalUser channel{
@@ -5403,6 +5408,23 @@ void TwitchChannel::handleRaidUpdate(const QJsonObject &payload)
     }
     if (raid.isEmpty())
     {
+        return;
+    }
+
+    const auto type = payload.value("type").toString();
+    if (type == u"raid_go_v2" || type == u"raid_cancel_v2")
+    {
+        const auto id = raid.value("id").toString();
+        bool active = false;
+        {
+            auto locked = this->activeRaid_.accessConst();
+            active = locked->has_value() &&
+                     (id.isEmpty() || (**locked).id == id);
+        }
+        if (active)
+        {
+            this->clearActiveRaid();
+        }
         return;
     }
 

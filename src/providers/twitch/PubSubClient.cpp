@@ -325,7 +325,10 @@ void PubSubClient::handleMessageResponse(const PubSubMessageMessage &message)
         }
 
         const auto type = message.messageObject.value("type").toString();
-        if (type != "raid_update_v2")
+        // raid_go_v2: the raid happened (when the countdown ended or the
+        // streamer pressed "Raid now"); raid_cancel_v2: it was called off
+        if (type != "raid_update_v2" && type != "raid_go_v2" &&
+            type != "raid_cancel_v2")
         {
             qCDebug(chatterinoPubSub) << "Invalid raid event type:" << type;
             return;

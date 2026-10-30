@@ -17,6 +17,8 @@ public:
 
     /// Approximate space needed below the painted text for the shadow.
     float extentBelow() const;
+    /// how far the shadow reaches past the text in any direction
+    float extentAround() const;
 
 private:
     const float xOffset_;

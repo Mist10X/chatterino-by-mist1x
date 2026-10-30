@@ -32,13 +32,49 @@ namespace {
 
 constexpr int SCROLLBAR_PADDING = 20;
 
-bool hasPunishmentIndicator(MessageFlags flags)
+enum class PunishmentKind { None, Ban, Timeout, Deletion };
+
+PunishmentKind punishmentKind(const Message &message)
 {
+    const auto &flags = message.flags;
     // ModerationAction also includes unbans, chat modes and term-list changes.
     // Disabled marks the original chat text, not a punishment notice.
-    return flags.hasNone(MessageFlag::Untimeout, MessageFlag::ClearChat) &&
-           flags.hasAny(MessageFlag::Timeout, MessageFlag::Deletion,
-                        MessageFlag::AutoModOffendingMessage);
+    if (flags.hasAny(MessageFlag::Untimeout, MessageFlag::ClearChat))
+    {
+        return PunishmentKind::None;
+    }
+    if (flags.hasAny(MessageFlag::Deletion,
+                     MessageFlag::AutoModOffendingMessage))
+    {
+        return PunishmentKind::Deletion;
+    }
+    if (flags.has(MessageFlag::Timeout))
+    {
+        // Bans and timeouts share the flag; only the text tells them apart.
+        const auto &text = message.messageText;
+        if (!text.contains(u"timed out") && text.contains(u"banned"))
+        {
+            return PunishmentKind::Ban;
+        }
+        return PunishmentKind::Timeout;
+    }
+    return PunishmentKind::None;
+}
+
+QColor punishmentColor(PunishmentKind kind)
+{
+    switch (kind)
+    {
+        case PunishmentKind::Ban:
+            return {239, 68, 84};
+        case PunishmentKind::Timeout:
+            return {234, 179, 8};
+        case PunishmentKind::Deletion:
+            return {150, 150, 160};
+        case PunishmentKind::None:
+            break;
+    }
+    return {};
 }
 
 std::optional<QColor> clientDetectionHighlightColor(
@@ -397,26 +433,6 @@ MessagePaintResult MessageLayout::paint(const MessagePaintContext &ctx)
             brush);
     }
 
-    if (hasPunishmentIndicator(this->message_->flags) &&
-        this->container_.getLineCount() != 0)
-    {
-        // Stay inside the existing left text margin. All dimensions are
-        // logical pixels; the painter handles device DPI without changing
-        // message layout, wrapping, selection or the scroll height.
-        const qreal inset = 3.0 * this->scale_;
-        const QRectF stripe{this->scale_, ctx.y + inset, 2.0 * this->scale_,
-                            this->container_.getHeight() - 2.0 * inset};
-        if (stripe.height() > 0)
-        {
-            ctx.painter.save();
-            ctx.painter.setRenderHint(QPainter::Antialiasing);
-            ctx.painter.setPen(Qt::NoPen);
-            ctx.painter.setBrush(QColor(239, 68, 84));
-            ctx.painter.drawRoundedRect(stripe, this->scale_, this->scale_);
-            ctx.painter.restore();
-        }
-    }
-
     this->bufferValid_ = true;
 
     return result;
@@ -611,6 +627,34 @@ void MessageLayout::updateBuffer(QPixmap *buffer,
 
         painter.drawPixmap(QRect(left, top, int(size), int(size)),
                            clientDetectionIcon.value());
+    }
+
+    if (const auto kind = punishmentKind(*this->message_);
+        kind != PunishmentKind::None && this->container_.getLineCount() != 0)
+    {
+        // A soft rounded box around just the visible text, drawn under it.
+        const qreal padX = 3.0 * this->scale_;
+        const qreal padY = 1.0 * this->scale_;
+        auto box = this->container_.getContentBounds().adjusted(-padX, -padY,
+                                                                padX, padY);
+        box.setLeft(std::max(box.left(), qreal(this->scale_)));
+        box.setTop(std::max(box.top(), qreal(0.5)));
+        box.setBottom(
+            std::min(box.bottom(), this->container_.getHeight() - 0.5));
+        if (box.width() > 0 && box.height() > 0)
+        {
+            auto fill = punishmentColor(kind);
+            auto edge = fill;
+            fill.setAlpha(26);
+            edge.setAlpha(90);
+            const qreal radius = 4.0 * this->scale_;
+            painter.save();
+            painter.setRenderHint(QPainter::Antialiasing);
+            painter.setPen(QPen(edge, 1.0));
+            painter.setBrush(fill);
+            painter.drawRoundedRect(box, radius, radius);
+            painter.restore();
+        }
     }
 
     this->container_.paintElements(painter, ctx);
