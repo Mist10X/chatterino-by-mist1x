@@ -4,6 +4,7 @@
 
 #include "common/UiLanguage.hpp"
 #include "widgets/settingspages/GeneralPage.hpp"
+#include "RunGui.hpp"
 #include "widgets/dialogs/WelcomeDialog.hpp"
 #include "widgets/helper/ArchiveActions.hpp"
 #include "widgets/helper/UpdateBanner.hpp"
@@ -169,6 +170,31 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                      "Chat messages, usernames, channels, emotes and fonts are unchanged."))
         ->addKeywords({"language", uiText("язык"), uiText("русский"), "English"})
         ->addTo(layout);
+    // the new language needs a restart: offer it right away (in both
+    // languages, the new one is not active yet)
+    s.uiLanguage.connect(
+        [this](const auto &value, auto) {
+            // not in tests and previews (windows never put on the screen),
+            // not when going back to the language in use (Cancel)
+            if (value == activeUiLanguage() ||
+                this->window()->testAttribute(Qt::WA_DontShowOnScreen) ||
+                this->testAttribute(Qt::WA_DontShowOnScreen))
+            {
+                return;
+            }
+            const auto answer = QMessageBox::question(
+                this->window(),
+                QStringLiteral("Язык / Language"),
+                QStringLiteral("Язык сменится после перезапуска. Перезапустить "
+                               "сейчас?\n\nThe language changes after a "
+                               "restart. Restart now?"));
+            if (answer == QMessageBox::Yes)
+            {
+                getSettings()->requestSave();
+                restartApp();
+            }
+        },
+        this->managedConnections_, false);
 
     {
         auto *themes = getApp()->getThemes();

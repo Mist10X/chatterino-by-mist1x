@@ -29,6 +29,7 @@
 #endif
 
 #include <QApplication>
+#include <QProcess>
 #include <QCommandLineParser>
 #include <QFile>
 #include <QDir>
@@ -323,6 +324,11 @@ int main(int argc, char **argv)
         Helix::initialize();
 
         runGui(a, modes, *paths, settings, args, updates);
+        if (restartRequested())
+        {
+            QProcess::startDetached(QCoreApplication::applicationFilePath(),
+                                    {});
+        }
     }
     return 0;
 }

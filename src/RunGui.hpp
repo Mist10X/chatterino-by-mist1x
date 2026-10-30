@@ -24,4 +24,9 @@ QString guiActivationServerName(const Paths &paths);
 void runGui(QApplication &a, const Modes &modes, const Paths &paths,
             Settings &settings, const Args &args, Updates &updates);
 
+/// Quits and starts the program again once this copy has fully closed (a
+/// second start while it still runs would only bring this window forward).
+void restartApp();
+bool restartRequested();
+
 }  // namespace chatterino

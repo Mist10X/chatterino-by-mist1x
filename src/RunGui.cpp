@@ -310,6 +310,21 @@ void clearCrashes(QDir dir)
 }
 }  // namespace
 
+namespace {
+bool restartFlag = false;
+}  // namespace
+
+void restartApp()
+{
+    restartFlag = true;
+    QApplication::exit(0);
+}
+
+bool restartRequested()
+{
+    return restartFlag;
+}
+
 bool activateExistingGuiInstance(const Paths &paths)
 {
     QLocalSocket socket;
