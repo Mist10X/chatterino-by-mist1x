@@ -2,6 +2,7 @@
 #include "widgets/Window.hpp"
 
 #include "widgets/buttons/InitUpdateButton.hpp"
+#include "widgets/dialogs/WelcomeDialog.hpp"
 #include "widgets/helper/UpdateBanner.hpp"
 
 #include "Application.hpp"
@@ -45,6 +46,7 @@
 #endif
 
 #include <QApplication>
+#include <QTimer>
 #include <QCloseEvent>
 #include <QDesktopServices>
 #include <QHeaderView>
@@ -238,6 +240,12 @@ void Window::addCustomTitlebarButtons()
     auto *update = this->addTitleBarButton<PixmapButton>([] {});
     initUpdateButton(*update, [] {}, this->signalHolder_);
     initUpdateBanner(this, this->signalHolder_);
+    if (!getApp()->getArgs().uiSnapshot && !getApp()->getArgs().dontSaveSettings)
+    {
+        QTimer::singleShot(1200, this, [this] {
+            showWelcomeDialogIfNew(this);
+        });
+    }
 
     this->userLabel_ = this->addTitleBarLabel([this] {
         getApp()->getWindows()->showAccountSelectPopup(

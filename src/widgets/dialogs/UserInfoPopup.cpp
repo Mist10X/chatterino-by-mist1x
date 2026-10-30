@@ -3013,10 +3013,13 @@ void UserInfoPopup::showActionsMenu()
     }
     menu->addSeparator();
     this->appendCommonProfileActions(menu);
-    auto *archive = menu->addAction(tr("Сохранённые данные в карточке"));
-    QObject::connect(archive, &QAction::triggered, this, [this] {
-        this->ui_.contentTabs->setCurrentWidget(this->ui_.archivePanel);
-    });
+    if (this->ui_.archivePanel)
+    {
+        auto *archive = menu->addAction(tr("Сохранённые данные в карточке"));
+        QObject::connect(archive, &QAction::triggered, this, [this] {
+            this->ui_.contentTabs->setCurrentWidget(this->ui_.archivePanel);
+        });
+    }
     menu->popup(
         this->ui_.actions->mapToGlobal(QPoint(0, this->ui_.actions->height())));
 }

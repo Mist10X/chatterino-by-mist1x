@@ -578,6 +578,8 @@ void requestPage(const QString &userId, const QString &login,
             asked.push_back(i);
         }
     }
+    // a mirror left out may hold rows here: the page is not the end
+    page->failures += count - asked.size();
     page->waitingOn.assign(count, false);
     page->pending = asked.size();
     for (auto i : asked)

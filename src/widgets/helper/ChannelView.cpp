@@ -1192,7 +1192,7 @@ ChannelView::ChannelView(InternalCtor /*tag*/, QWidget *parent, Split *split,
 
 void ChannelView::initializeLayout()
 {
-    this->goToBottom_ = new LabelButton("More messages below", this);
+    this->goToBottom_ = new LabelButton(uiText("More messages below"), this);
     this->goToBottom_->setStyleSheet(
         "background-color: rgba(0,0,0,0.66); color: #FFF;");
     this->goToBottom_->setVisible(false);

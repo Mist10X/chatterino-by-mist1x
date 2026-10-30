@@ -41,9 +41,8 @@ QString Paths::cacheDirectory() const
     static const auto pathSetting = [this] {
         QStringSetting cachePathSetting("/cache/path");
 
-        cachePathSetting.connect([root = this->rootAppDataDirectory](
-                                     const auto &newPath) {
-            if (!newPath.isEmpty() && isolation::isInside(newPath, root))
+        cachePathSetting.connect([](const auto &newPath) {
+            if (!newPath.isEmpty())
             {
                 QDir().mkpath(newPath);
             }
@@ -59,25 +58,12 @@ QString Paths::cacheDirectory() const
         return this->cacheDirectory_;
     }
 
-    // A custom cache folder is honoured only inside this profile; one copied
-    // from another client (e.g. %LOCALAPPDATA%\ChatterinoPlus\Cache) is ignored.
-    static std::mutex mutex;
-    static QString checkedPath;
-    static QString checkedResult;
-    std::lock_guard lock(mutex);
-    if (path != checkedPath)
-    {
-        checkedPath = path;
-        checkedResult = isolation::confine(path, this->rootAppDataDirectory,
-                                           this->cacheDirectory_);
-    }
-    return checkedResult;
+    return path;
 }
 
 QString Paths::messageLogsIn(const QString &configured) const
 {
-    return isolation::confine(configured, this->rootAppDataDirectory,
-                              this->messageLogDirectory);
+    return configured.isEmpty() ? this->messageLogDirectory : configured;
 }
 
 QString Paths::cacheFilePath(const QString &fileName) const

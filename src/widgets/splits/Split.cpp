@@ -2264,7 +2264,7 @@ void Split::showChangeChannelPopup(const char *dialogTitle, bool empty,
         dialog->setSelectedChannel({});
     }
     dialog->setAttribute(Qt::WA_DeleteOnClose);
-    dialog->setWindowTitle(dialogTitle);
+    dialog->setWindowTitle(uiText(QString::fromUtf8(dialogTitle)));
     dialog->show();
     // We can safely ignore this signal connection since the dialog will be closed before
     // this Split is closed

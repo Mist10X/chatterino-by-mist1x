@@ -43,7 +43,7 @@ Version::Version()
 
 #ifdef Q_OS_WIN
     // keep in sync with .CI/chatterino-installer.iss
-    this->appUserModelID_ = L"leafyzito.Leafyrino";
+    this->appUserModelID_ = L"Mist1X.ChatterinoByMist1X";
 #endif
 }
 

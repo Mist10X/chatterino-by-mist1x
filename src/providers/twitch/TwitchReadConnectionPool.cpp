@@ -1,3 +1,4 @@
+#include "common/UiLanguage.hpp"
 #include "providers/twitch/TwitchReadConnectionPool.hpp"
 
 #include "Application.hpp"
@@ -161,7 +162,7 @@ bool noteConnected(Channel &chan)
 void appendConnectedMessage(std::span<const ChannelPtr> channels)
 {
     // connected/disconnected message
-    auto connectedMsg = makeSystemMessage("connected");
+    auto connectedMsg = makeSystemMessage(uiText("connected"));
     connectedMsg->flags.set(MessageFlag::ConnectedMessage);
     auto reconnected = makeSystemMessage("reconnected");
     reconnected->flags.set(MessageFlag::ConnectedMessage);

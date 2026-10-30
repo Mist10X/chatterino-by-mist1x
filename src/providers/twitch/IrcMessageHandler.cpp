@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+#include "common/UiLanguage.hpp"
 #include "providers/twitch/IrcMessageHandler.hpp"
 
 #include "Application.hpp"
@@ -1236,7 +1237,7 @@ void IrcMessageHandler::handleJoinMessage(Communi::IrcMessage *message)
         // After a drop the connection status line already says so.
         if (!connectionTroubleRecent(twitchChannel->getName()))
         {
-            twitchChannel->addSystemMessage("joined channel");
+            twitchChannel->addSystemMessage(uiText("joined channel"));
         }
         twitchChannel->joined.invoke();
     }

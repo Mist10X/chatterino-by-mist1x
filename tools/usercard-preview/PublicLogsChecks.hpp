@@ -348,9 +348,11 @@ inline int runPublicLogChecks(QJsonArray &checks)
         const auto silentBefore = server.arrivals[2].size();
         timer.restart();
         const auto second = page("4004", {});
-        check("the silent mirror is then left out",
+        // ...but its page is not taken for the end of the history
+        check("the silent mirror is then left out, the page stays partial",
               second && second->value("rows").toArray().size() == 5 &&
-                  !second->contains("error") && timer.elapsed() < 2500 &&
+                  second->value("error") == "partial_source" &&
+                  timer.elapsed() < 2500 &&
                   server.arrivals[2].size() == silentBefore);
     }
     check("bad input is rejected without a request",

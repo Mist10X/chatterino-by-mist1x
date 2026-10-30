@@ -99,7 +99,7 @@ const std::vector<Topic> &topics()
         {"System settings",
          ":/settings/topic-system.svg",
          {"Startup and tray", "Sound", "Connection", "Updates",
-          "Browser Integration", "AppData & Cache", "Experimental"},
+          "AppData & Cache", "Experimental"},
          SettingsTabId::Technorino},
     };
     return list;
@@ -682,6 +682,11 @@ void SettingsDialog::showDialog(QWidget *parent,
 
         case SettingsDialogPreference::About: {
             instance->selectTab(SettingsTabId::About);
+        }
+        break;
+
+        case SettingsDialogPreference::Moltorino: {
+            instance->selectTab(SettingsTabId::Moltorino);
         }
         break;
 

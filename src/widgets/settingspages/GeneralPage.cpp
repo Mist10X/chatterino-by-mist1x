@@ -4,6 +4,7 @@
 
 #include "common/UiLanguage.hpp"
 #include "widgets/settingspages/GeneralPage.hpp"
+#include "widgets/dialogs/WelcomeDialog.hpp"
 #include "widgets/helper/ArchiveActions.hpp"
 #include "widgets/helper/UpdateBanner.hpp"
 #include "singletons/Updates.hpp"
@@ -44,10 +45,6 @@ namespace {
 using namespace chatterino;
 using namespace chatterino::literals;
 
-const QString CHROME_EXTENSION_LINK =
-    u"https://chrome.google.com/webstore/detail/chatterino-native-host/glknmaideaikkmemifbfkhnomoknepka"_s;
-const QString FIREFOX_EXTENSION_LINK =
-    u"https://addons.mozilla.org/en-US/firefox/addon/chatterino-native-host/"_s;
 
 #ifdef Q_OS_WIN
 const QString META_KEY = u"Windows"_s;
@@ -100,6 +97,34 @@ void addKeyboardModifierSetting(GeneralPageView &layout, const QString &title,
 }  // namespace
 
 namespace chatterino {
+
+namespace {
+
+/// The program's own Cache folder, or a folder this program made for its
+/// cache: never the program folder, its settings or logs, or a parent of them.
+bool isSafeCacheFolder(const QString &path)
+{
+    const auto &paths = getApp()->getPaths();
+    const auto clean = QDir::cleanPath(QDir(path).absolutePath());
+    const auto root = QDir::cleanPath(paths.rootAppDataDirectory);
+    const auto inside = [](const QString &a, const QString &b) {
+        return a.compare(b, Qt::CaseInsensitive) == 0 ||
+               a.startsWith(b + u'/', Qt::CaseInsensitive);
+    };
+    if (inside(root, clean))
+    {
+        return false;  // the program folder itself or above it
+    }
+    if (inside(clean, root))
+    {
+        return inside(clean, QDir::cleanPath(QDir(root).filePath("Cache")));
+    }
+    return QFileInfo(clean).fileName().compare(
+               QStringLiteral("Chatterino by Mist1X cache"),
+               Qt::CaseInsensitive) == 0;
+}
+
+}  // namespace
 
 GeneralPage::GeneralPage()
 {
@@ -997,6 +1022,12 @@ void GeneralPage::initLayout(GeneralPageView &layout)
 
     layout.addNavigationSpacing();
     routeSetting(layout, QStringLiteral("System settings"),
+                 QStringLiteral("Startup and tray"));
+    layout.addButton(uiText("Getting started"), [this] {
+        showWelcomeDialog(this->window());
+    });
+
+    routeSetting(layout, QStringLiteral("System settings"),
                  QStringLiteral("Updates"));
     if (Version::instance().isSupportedOS())
     {
@@ -1068,70 +1099,6 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     }
 
     routeSetting(layout, QStringLiteral("System settings"),
-                 QStringLiteral("Browser Integration"));
-#ifdef Q_OS_WIN
-    layout.addDescription(
-        uiText("The browser extension replaces the default "
-        "Twitch.tv chat with Chatterino, and updates the /watching split on "
-        "Chatterino when Twitch.tv is open."));
-#else
-    layout.addDescription(uiText("The browser extension updates the /watching "
-                          "split on Chatterino when Twitch.tv is open."));
-#endif
-
-    {
-        if (auto err = nmIpcError().get())
-        {
-            layout.addDescription(
-                uiText("An error happened during initialization of the "
-                "browser extension: ") +
-                *err);
-        }
-    }
-
-    layout.addDescription(formatRichNamedLink(
-        CHROME_EXTENSION_LINK,
-        uiText("Download for Google Chrome and similar browsers.")));
-    layout.addDescription(
-        formatRichNamedLink(FIREFOX_EXTENSION_LINK, uiText("Download for Firefox")));
-
-#ifdef Q_OS_WIN
-    layout.addDescription(
-        uiText("This Leafyrino build never registers browser integration: the "
-        "registry entry it would write is shared with other Chatterino "
-        "clients and would take their browser extension over."));
-
-    layout.addDescription(uiText("Chatterino only attaches to known browsers to avoid "
-                          "attaching to other windows by accident."));
-    SettingWidget::checkbox(uiText("Attach to any browser (may cause issues)"),
-                            s.attachExtensionToAnyProcess)
-        ->setTooltip(
-            uiText("Attempt to force the Chatterino Browser Extension to work in "
-            "certain browsers that do not work automatically.\ne.g. Librewolf"))
-        ->addTo(layout);
-#endif
-
-    {
-        auto *note = layout.addDescription(
-            uiText("A semicolon-separated list of Chrome or Firefox extension IDs "
-            "allowed to interact with Chatterino's browser integration "
-            "(requires restart).\n"
-            "Using multiple extension IDs from different browsers may cause "
-            "issues."));
-        note->setWordWrap(true);
-        note->setStyleSheet("color: #bbb");
-
-        layout.addWidget(note);
-
-        auto *form = new QFormLayout();
-        layout.addLayout(form);
-
-        SettingWidget::lineEdit(uiText("Extra extension IDs"), s.additionalExtensionIDs,
-                                "Extension;IDs;separated;by;semicolons")
-            ->addTo(layout, form);
-    }
-
-    routeSetting(layout, QStringLiteral("System settings"),
                  QStringLiteral("AppData & Cache"));
 
     layout.addSubtitle(uiText("Application Data"));
@@ -1167,7 +1134,15 @@ void GeneralPage::initLayout(GeneralPageView &layout)
         auto *box = new QHBoxLayout;
 
         box->addWidget(layout.makeButton("Choose cache path", [this]() {
-            getSettings()->cachePath = QFileDialog::getExistingDirectory(this);
+            const auto chosen = QFileDialog::getExistingDirectory(this);
+            if (chosen.isEmpty())
+            {
+                return;
+            }
+            // Its own folder inside the chosen one: clearing the cache must
+            // never touch what else is there.
+            getSettings()->cachePath = QDir(chosen).filePath(
+                QStringLiteral("Chatterino by Mist1X cache"));
         }));
         box->addWidget(layout.makeButton("Reset", []() {
             getSettings()->cachePath = "";
@@ -1181,9 +1156,19 @@ void GeneralPage::initLayout(GeneralPageView &layout)
 
             if (reply == QMessageBox::Yes)
             {
-                auto cacheDir = QDir(getApp()->getPaths().cacheDirectory());
+                const auto path = getApp()->getPaths().cacheDirectory();
+                if (!isSafeCacheFolder(path))
+                {
+                    QMessageBox::warning(
+                        layout.window(), uiText("Clear cache"),
+                        uiText("This folder is not only a cache, so it is not "
+                               "cleared. Choose a cache folder again or reset "
+                               "it."));
+                    return;
+                }
+                auto cacheDir = QDir(path);
                 cacheDir.removeRecursively();
-                cacheDir.mkdir(getApp()->getPaths().cacheDirectory());
+                QDir().mkpath(path);
             }
         }));
         box->addStretch(1);

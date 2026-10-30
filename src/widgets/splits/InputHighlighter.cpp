@@ -333,6 +333,14 @@ void InputHighlighter::highlightEmotes(const QString &text)
             continue;
         }
         const auto &image = emote->images.getImage1();
+        if (!image->loaded())
+        {
+            // The text stays readable until the picture is there (and when it
+            // never loads); a loaded image lays the line out again.
+            std::ignore = image->pixmapOrLoad();
+            this->pendingSizes_ = true;
+            continue;
+        }
         qreal width = height;
         if (image->width() > 0 && image->height() > 0)
         {

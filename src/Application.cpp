@@ -83,10 +83,12 @@
 #include "widgets/Notebook.hpp"
 #include "widgets/splits/Split.hpp"
 #include "widgets/dialogs/SettingsDialog.hpp"
+#include "widgets/dialogs/WelcomeDialog.hpp"
 #include "widgets/Window.hpp"
 
 #include <miniaudio.h>
 #include <QApplication>
+#include <QDialog>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QFontDatabase>
@@ -436,6 +438,20 @@ int Application::run()
     if (this->args_.uiSnapshot)
     {
         QTimer::singleShot(this->args_.uiSnapshotDelayMs, [this] {
+            if (this->args_.uiSnapshotSettings == QStringLiteral("welcome"))
+            {
+                showWelcomeDialog(&this->windows->getMainWindow());
+                QCoreApplication::processEvents();
+                for (auto *widget : QApplication::topLevelWidgets())
+                {
+                    if (qobject_cast<QDialog *>(widget) && widget->isVisible())
+                    {
+                        widget->grab().save(*this->args_.uiSnapshot, "PNG");
+                    }
+                }
+                QApplication::exit(0);
+                return;
+            }
             if (this->args_.uiSnapshotSettings)
             {
                 SettingsDialog::saveSnapshot(&this->windows->getMainWindow(),
@@ -927,7 +943,11 @@ void Application::initNm(const Modes &modes, const Paths &paths)
     (void)paths;
 
 #if defined QT_NO_DEBUG || defined CHATTERINO_DEBUG_NM
-    registerNmHost(modes, paths);
+    // not from test stands and previews
+    if (!this->args_.dontSaveSettings && !this->args_.uiSnapshot)
+    {
+        registerNmHost(modes, paths);
+    }
     this->nmServer->start();
 #endif
 }

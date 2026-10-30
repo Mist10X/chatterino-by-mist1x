@@ -3871,6 +3871,11 @@ void TwitchChannel::refreshBadges()
                 return;
             }
 
+            // Without a login Twitch gives no channel badges: not an error
+            if (getApp()->getAccounts()->twitch.getCurrent()->isAnon())
+            {
+                return;
+            }
             QString errorMessage("Failed to load channel badges - ");
 
             switch (error)

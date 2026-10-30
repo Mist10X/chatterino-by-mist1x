@@ -30,17 +30,6 @@ constexpr Qt::CaseSensitivity PATH_CASE =
     Qt::CaseSensitive;
 #endif
 
-/// Folder names other clients use for their profiles and installs.
-const QStringList &foreignFolderNames()
-{
-    static const QStringList names{
-        QStringLiteral("Chatterino by Rish"), QStringLiteral("Chatterino+"),
-        QStringLiteral("ChatterinoPlus"),     QStringLiteral("Chatterino2"),
-        QStringLiteral("Chatterino7"),        QStringLiteral("Chatterino"),
-    };
-    return names;
-}
-
 QString clean(const QString &path)
 {
     return QDir::cleanPath(QFileInfo(path).absoluteFilePath());
@@ -134,21 +123,6 @@ bool startsWithDir(const QString &path, const QString &root)
     return path.startsWith(prefix, PATH_CASE);
 }
 
-QString foreignComponent(const QString &path)
-{
-    for (const auto &part : path.split(u'/', Qt::SkipEmptyParts))
-    {
-        for (const auto &name : foreignFolderNames())
-        {
-            if (part.compare(name, Qt::CaseInsensitive) == 0)
-            {
-                return part;
-            }
-        }
-    }
-    return {};
-}
-
 }  // namespace
 
 QStringList foreignProfileRoots()
@@ -208,45 +182,15 @@ QString rejectProfileRoot(const QString &root, const QStringList &foreignRoots)
         return QStringLiteral("The profile directory is empty.");
     }
 
-    for (const auto &form : forms(root))
-    {
-        const auto part = foreignComponent(form);
-        if (!part.isEmpty())
-        {
-            return QStringLiteral("\"%1\" is inside a folder named \"%2\", which "
-                                  "belongs to another Chatterino client.")
-                .arg(QDir::toNativeSeparators(form), part);
-        }
-    }
-
-    for (const auto &foreign : foreignRoots)
-    {
-        if (isInside(root, foreign))
-        {
-            return QStringLiteral("\"%1\" lies inside another client's "
-                                  "profile \"%2\".")
-                .arg(QDir::toNativeSeparators(root),
-                     QDir::toNativeSeparators(foreign));
-        }
-        if (isInside(foreign, root))
-        {
-            return QStringLiteral("\"%1\" contains another client's "
-                                  "profile \"%2\".")
-                .arg(QDir::toNativeSeparators(root),
-                     QDir::toNativeSeparators(foreign));
-        }
-    }
-
+    // Only another client's own program folder is refused: its profile files
+    // would be mixed with this one. A folder name alone means nothing.
+    (void)foreignRoots;
     const QDir dir(resolved(root));
-    for (const auto *marker : {"chatterino.exe", "Settings/plus_mirror.json"})
+    if (QFileInfo::exists(dir.filePath(QStringLiteral("chatterino.exe"))))
     {
-        if (QFileInfo::exists(dir.filePath(QString::fromUtf8(marker))))
-        {
-            return QStringLiteral("\"%1\" holds \"%2\", so it belongs to "
-                                  "another Chatterino client.")
-                .arg(QDir::toNativeSeparators(root),
-                     QString::fromUtf8(marker));
-        }
+        return QStringLiteral("\"%1\" holds chatterino.exe: another "
+                              "Chatterino is installed there.")
+            .arg(QDir::toNativeSeparators(root));
     }
 
     return {};

@@ -19,7 +19,7 @@
 #define AppExe "Leafyrino.exe"
 ; Must match the AppUserModelID the program sets (src/common/Version.cpp),
 ; so the shortcut and the running window share one taskbar button.
-#define AppUserModel "leafyzito.Leafyrino"
+#define AppUserModel "Mist1X.ChatterinoByMist1X"
 
 [Setup]
 AppId={{0599F313-9171-4ABA-9366-C234F95C7018}

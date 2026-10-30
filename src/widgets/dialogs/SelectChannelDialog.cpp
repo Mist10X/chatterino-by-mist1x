@@ -183,7 +183,7 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
     auto *layout = new QVBoxLayout(ui.twitchPage);
 
     // Channel
-    ui.channel = new AutoCheckedRadioButton("Channel");
+    ui.channel = new AutoCheckedRadioButton(uiText("Channel"));
     layout->addWidget(ui.channel);
 
     ui.channelLabel = new QLabel(uiText("Join a Twitch channel by its channel name"));
@@ -219,7 +219,7 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
     ui.channelName->installEventFilter(&this->tabFilter_);
 
     // Whispers
-    ui.whispers = new AutoCheckedRadioButton("Whispers");
+    ui.whispers = new AutoCheckedRadioButton(uiText("Whispers"));
     layout->addWidget(ui.whispers);
 
     ui.whispersLabel = new QLabel(
@@ -237,7 +237,7 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
     ui.whispers->installEventFilter(&this->tabFilter_);
 
     // Mentions
-    ui.mentions = new AutoCheckedRadioButton("Mentions");
+    ui.mentions = new AutoCheckedRadioButton(uiText("Mentions"));
     layout->addWidget(ui.mentions);
 
     ui.mentionsLabel = new QLabel(
@@ -255,7 +255,7 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
     ui.mentions->installEventFilter(&this->tabFilter_);
 
     // Watching
-    ui.watching = new AutoCheckedRadioButton("Watching");
+    ui.watching = new AutoCheckedRadioButton(uiText("Watching"));
     layout->addWidget(ui.watching);
 
     ui.watchingLabel = new QLabel(uiText("Requires the Chatterino browser extension"));
@@ -269,9 +269,11 @@ SelectChannelDialog::SelectChannelDialog(QWidget *parent)
                      });
 
     ui.watching->installEventFilter(&this->tabFilter_);
+    // it needs the browser extension, which this build does not offer
+    ui.watching->hide();
 
     // Live
-    ui.live = new AutoCheckedRadioButton("Live");
+    ui.live = new AutoCheckedRadioButton(uiText("Live"));
     layout->addWidget(ui.live);
 
     ui.liveLabel = new QLabel(uiText("Shows when channels go live"));

@@ -1,17 +1,20 @@
-// SPDX-FileCopyrightText: 2017 Contributors to Chatterino <https://chatterino.com>
+// SPDX-FileCopyrightText: 2026 Contributors to Chatterino <https://chatterino.com>
 //
 // SPDX-License-Identifier: MIT
 
 #pragma once
 
-#include "widgets/BaseWindow.hpp"
+class QWidget;
 
 namespace chatterino {
 
-class WelcomeDialog : public BaseWindow
-{
-public:
-    WelcomeDialog();
-};
+/// "Getting started": log in to Twitch, open a channel, the second login for
+/// channel points and moving settings over from another Chatterino. Shown
+/// once on the first start of a fresh copy.
+void showWelcomeDialog(QWidget *parent);
+
+/// Shows the dialog if this copy has never shown it and nobody is logged in
+/// yet (people updating from an older version are not asked).
+void showWelcomeDialogIfNew(QWidget *parent);
 
 }  // namespace chatterino

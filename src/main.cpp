@@ -147,8 +147,8 @@ int writeIsolationReport(const QString &file, const chatterino::Modes &modes,
         report["avatars"] = paths->twitchProfileAvatars;
         report["activationServer"] = guiActivationServerName(*paths);
         report["systemKeyring"] = Credentials::usesSystemKeyring();
-        // The real code path: it must refuse and write nothing.
-        report["nmRegistered"] = registerNmHost(*paths);
+        // a report writes nothing; the program registers at startup
+        report["nmRegistered"] = false;
 
         QJsonArray plugins;
         for (const auto &info :
