@@ -90,10 +90,12 @@ LoggingChannel::LoggingChannel(QString _channelName, QString _platform)
                          this->platform.mid(1).toLower() + QDir::separator() +
                          this->subDirectory;
 
-    getSettings()->logPath.connect([this](const QString &logPath, auto) {
-        this->baseDirectory = getApp()->getPaths().messageLogsIn(logPath);
-        this->openLogFile();
-    });
+    getSettings()->logPath.connect(
+        [this](const QString &logPath, auto) {
+            this->baseDirectory = getApp()->getPaths().messageLogsIn(logPath);
+            this->openLogFile();
+        },
+        this->settingConnections_);
 }
 
 LoggingChannel::~LoggingChannel()

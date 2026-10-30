@@ -17,4 +17,8 @@ void showWelcomeDialog(QWidget *parent);
 /// yet (people updating from an older version are not asked).
 void showWelcomeDialogIfNew(QWidget *parent);
 
+/// Stand only (--ui-snapshot-settings import:<Settings folder>): the same
+/// import without the question; it restarts the program.
+void importSettingsForTesting(const QString &from);
+
 }  // namespace chatterino

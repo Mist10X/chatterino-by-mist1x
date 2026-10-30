@@ -327,7 +327,7 @@ int main(int argc, char **argv)
         if (restartRequested())
         {
             QProcess::startDetached(QCoreApplication::applicationFilePath(),
-                                    {});
+                                    QCoreApplication::arguments().mid(1));
         }
     }
     return 0;

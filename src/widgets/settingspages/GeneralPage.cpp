@@ -101,30 +101,6 @@ namespace chatterino {
 
 namespace {
 
-/// The program's own Cache folder, or a folder this program made for its
-/// cache: never the program folder, its settings or logs, or a parent of them.
-bool isSafeCacheFolder(const QString &path)
-{
-    const auto &paths = getApp()->getPaths();
-    const auto clean = QDir::cleanPath(QDir(path).absolutePath());
-    const auto root = QDir::cleanPath(paths.rootAppDataDirectory);
-    const auto inside = [](const QString &a, const QString &b) {
-        return a.compare(b, Qt::CaseInsensitive) == 0 ||
-               a.startsWith(b + u'/', Qt::CaseInsensitive);
-    };
-    if (inside(root, clean))
-    {
-        return false;  // the program folder itself or above it
-    }
-    if (inside(clean, root))
-    {
-        return inside(clean, QDir::cleanPath(QDir(root).filePath("Cache")));
-    }
-    return QFileInfo(clean).fileName().compare(
-               QStringLiteral("Chatterino by Mist1X cache"),
-               Qt::CaseInsensitive) == 0;
-}
-
 }  // namespace
 
 GeneralPage::GeneralPage()
@@ -1183,7 +1159,7 @@ void GeneralPage::initLayout(GeneralPageView &layout)
             if (reply == QMessageBox::Yes)
             {
                 const auto path = getApp()->getPaths().cacheDirectory();
-                if (!isSafeCacheFolder(path))
+                if (!getApp()->getPaths().isOwnCacheFolder(path))
                 {
                     QMessageBox::warning(
                         layout.window(), uiText("Clear cache"),

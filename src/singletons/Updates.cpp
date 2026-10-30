@@ -59,6 +59,7 @@ bool testInstall()
     return qEnvironmentVariable("MIST1X_UPDATE_TEST_INSTALL") == u"1";
 }
 constexpr auto CHECK_INTERVAL = std::chrono::hours(6);
+constexpr auto RETRY_AFTER_FAILURE = std::chrono::minutes(10);
 
 /// "v1.2.0" -> "1.2.0"
 QString versionOfTag(QString tag)
@@ -421,6 +422,16 @@ void Updates::checkForUpdates()
             if (this->status_ != UpdateAvailable)
             {
                 this->setStatus_(SearchFailed);
+            }
+            // no internet at startup: try again soon, not in 6 hours
+            static bool retryPending = false;
+            if (!retryPending)
+            {
+                retryPending = true;
+                QTimer::singleShot(RETRY_AFTER_FAILURE, [this] {
+                    retryPending = false;
+                    this->checkForUpdates();
+                });
             }
         })
         .execute();

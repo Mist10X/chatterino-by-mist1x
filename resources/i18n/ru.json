@@ -2856,5 +2856,11 @@
   "Settings from another Chatterino": "Настройки из другого Chatterino",
   "Tabs with channels, highlights, ignores, commands and filters from Chatterino, Chatterino7, Leafyrino or Chatterino+. Logging in to Twitch is done again.": "Вкладки с каналами, подсветки, игнор, команды и фильтры из Chatterino, Chatterino7, Leafyrino или Chatterino+. Вход в Twitch нужно будет сделать заново.",
   "The settings are sorted by topic; the search at the top finds any of them.": "Настройки разложены по темам, поиск сверху находит любую из них.",
-  "Guide": "Руководство"
+  "Guide": "Руководство",
+  "This file could not be read: %1": "Не удалось прочитать файл: %1",
+  "The backup folder could not be created, nothing was changed.": "Не удалось создать папку для резервной копии, ничего не изменено.",
+  "The backup could not be made, nothing was changed.": "Не удалось сделать резервную копию, ничего не изменено.",
+  "The settings could not be saved; the previous ones were put back.": "Не удалось сохранить настройки; прежние возвращены.",
+  "If you used Chatterino, Chatterino7, Leafyrino or Chatterino+: tabs with channels, highlights, ignores, commands and filters. Do this first, then log in.": "Если вы пользовались Chatterino, Chatterino7, Leafyrino или Chatterino+: вкладки с каналами, подсветки, игнор, команды и фильтры. Сделайте это первым, потом войдите.",
+  "Counting the size of the logs…": "Считаю размер логов…"
 }

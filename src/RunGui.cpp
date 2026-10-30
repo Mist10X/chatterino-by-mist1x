@@ -361,9 +361,13 @@ void runGui(QApplication &a, const Modes &modes, const Paths &paths,
     QTimer::singleShot(60 * 1000, [cachePath = paths.cacheDirectory(),
                                    crashDirectory = paths.crashdumpDirectory,
                                    avatarPath = paths.twitchProfileAvatars] {
-        std::ignore = QtConcurrent::run([cachePath] {
-            clearCache(cachePath);
-        });
+        // only a folder that holds nothing but this program's cache
+        if (getApp()->getPaths().isOwnCacheFolder(cachePath))
+        {
+            std::ignore = QtConcurrent::run([cachePath] {
+                clearCache(cachePath);
+            });
+        }
         std::ignore = QtConcurrent::run([avatarPath] {
             clearCache(avatarPath);
         });

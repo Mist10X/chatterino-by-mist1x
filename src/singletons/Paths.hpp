@@ -41,6 +41,10 @@ public:
     bool createFolder(const QString &folderPath);
 
     QString cacheDirectory() const;
+    /// A folder that only holds this program's cache: the profile's Cache
+    /// folder or a "Chatterino by Mist1X cache" folder, never the program
+    /// folder, its settings or a parent of them. Only these are cleaned.
+    bool isOwnCacheFolder(const QString &path) const;
 
     QString cacheFilePath(const QString &fileName) const;
 

@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <pajlada/signals/signalholder.hpp>
 #include <QFile>
 #include <QString>
 
@@ -44,6 +45,9 @@ private:
     QString currentStreamID;
 
     QString dateString;
+
+    /// ends with this logger (the setting outlives every channel)
+    pajlada::Signals::SignalHolder settingConnections_;
 
     friend class Logging;
 };

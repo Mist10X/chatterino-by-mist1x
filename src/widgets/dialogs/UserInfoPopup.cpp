@@ -4601,7 +4601,24 @@ void UserInfoPopup::applyArchiveHistory(const QJsonObject &data)
         }
         auto &cursor = this->archiveHistoryPublic_ ? this->archivePublicCursor_
                                                    : this->archiveLocalCursor_;
-        cursor = data.value("next_cursor").toObject();
+        const bool partial =
+            data.value("error").toString() == u"partial_source";
+        if (this->archiveHistoryPublic_ && partial &&
+            !this->archivePublicPartialRetried_)
+        {
+            // keep the cursor: the next request covers this range again and
+            // picks up what the late mirror holds (rows already shown are
+            // skipped)
+            this->archivePublicPartialRetried_ = true;
+        }
+        else
+        {
+            cursor = data.value("next_cursor").toObject();
+            if (this->archiveHistoryPublic_)
+            {
+                this->archivePublicPartialRetried_ = false;
+            }
+        }
         // A duplicate-only page still advances its own cursor. It is never
         // mistaken for the end of the other source's history.
         const bool complete =

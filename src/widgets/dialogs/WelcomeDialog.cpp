@@ -21,6 +21,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QHash>
 #include <QHBoxLayout>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -74,30 +75,112 @@ QList<std::pair<QString, QString>> otherProfiles()
     return out;
 }
 
-bool importProfile(QWidget *parent, const QString &from)
+/// Parts of settings.json that belong to this copy and are never taken from
+/// another client: logins (main, the second one, the bot badge), the Archive
+/// connection and the cache folder.
+const QList<QStringList> OWN_SETTINGS{
+    {QStringLiteral("accounts")},
+    {QStringLiteral("archive")},
+    {QStringLiteral("cache")},
+    {QStringLiteral("moltorino"), QStringLiteral("auth")},
+    {QStringLiteral("moltorino"), QStringLiteral("botBadge")},
+    {QStringLiteral("moltorino"), QStringLiteral("pinnedMessages"),
+     QStringLiteral("customAuthToken")},
+};
+
+/// Puts @a value (or nothing, when it is undefined) at @a path in @a object.
+void setAtPath(QJsonObject &object, const QStringList &path,
+               const QJsonValue &value)
 {
+    if (path.size() == 1)
+    {
+        if (value.isUndefined())
+        {
+            object.remove(path.first());
+        }
+        else
+        {
+            object.insert(path.first(), value);
+        }
+        return;
+    }
+    auto child = object.value(path.first()).toObject();
+    setAtPath(child, path.mid(1), value);
+    object.insert(path.first(), child);
+}
+
+QJsonValue valueAtPath(const QJsonObject &object, const QStringList &path)
+{
+    const auto value = object.value(path.first());
+    if (path.size() == 1 || !value.isObject())
+    {
+        return path.size() == 1 ? value : QJsonValue(QJsonValue::Undefined);
+    }
+    return valueAtPath(value.toObject(), path.mid(1));
+}
+
+bool readFile(const QString &path, QByteArray &out)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        return false;
+    }
+    out = file.readAll();
+    return file.error() == QFileDevice::NoError;
+}
+
+bool writeFile(const QString &path, const QByteArray &data)
+{
+    QSaveFile file(path);
+    return file.open(QIODevice::WriteOnly) && file.write(data) == data.size() &&
+           file.commit();
+}
+
+bool importProfile(QWidget *parent, const QString &from, bool ask = true,
+                   bool restart = true)
+{
+    const auto fail = [parent](const QString &text) {
+        QMessageBox::warning(parent, uiText("Move settings"), text);
+        return false;
+    };
     const auto own = getApp()->getPaths().settingsDirectory;
     if (QDir(from).absolutePath() == QDir(own).absolutePath())
     {
         return false;
     }
-    QFile theirsFile(QDir(from).filePath("settings.json"));
-    if (!theirsFile.open(QIODevice::ReadOnly))
+
+    // 1. everything is read first: nothing changes if a file cannot be read
+    QByteArray theirsData;
+    if (!readFile(QDir(from).filePath("settings.json"), theirsData))
     {
-        QMessageBox::warning(parent, uiText("Move settings"),
-                             uiText("There is no settings.json in this folder."));
-        return false;
+        return fail(uiText("There is no settings.json in this folder."));
     }
-    auto theirs = QJsonDocument::fromJson(theirsFile.readAll()).object();
+    auto theirs = QJsonDocument::fromJson(theirsData).object();
     if (theirs.isEmpty())
     {
-        QMessageBox::warning(parent, uiText("Move settings"),
-                             uiText("The settings in this folder could not be "
-                                    "read."));
-        return false;
+        return fail(uiText("The settings in this folder could not be read."));
+    }
+    QHash<QString, QByteArray> files;
+    for (const auto &name : IMPORTED_FILES)
+    {
+        const auto source = QDir(from).filePath(name);
+        if (QFileInfo::exists(source) && !readFile(source, files[name]))
+        {
+            return fail(uiText("This file could not be read: %1")
+                            .arg(QDir::toNativeSeparators(source)));
+        }
+    }
+    // its own themes (in the profile next to Settings) come along
+    QHash<QString, QByteArray> themes;
+    const QDir theirThemes(QDir(from).filePath("../Themes"));
+    for (const auto &info : theirThemes.entryInfoList({"*.json"}, QDir::Files))
+    {
+        readFile(info.absoluteFilePath(), themes[info.fileName()]);
     }
 
-    if (QMessageBox::question(
+    if (ask &&
+        QMessageBox::question(
             parent, uiText("Move settings"),
             uiText("Tabs with channels, highlights, ignores, commands, filters "
                    "and the rest of the settings are copied from:\n%1\n\nThe "
@@ -108,61 +191,72 @@ bool importProfile(QWidget *parent, const QString &from)
         return false;
     }
 
-    // the current settings stay in a backup folder
+    // 2. a backup of the current settings, checked
     const auto backup = QDir(own).filePath(
         "before-import-" +
         QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss"));
-    QDir().mkpath(backup);
-    for (const auto &name : IMPORTED_FILES + QStringList{"settings.json"})
+    if (!QDir().mkpath(backup))
+    {
+        return fail(uiText("The backup folder could not be created, nothing "
+                           "was changed."));
+    }
+    QStringList replaced{QStringLiteral("settings.json")};
+    replaced += IMPORTED_FILES;
+    for (const auto &name : replaced)
     {
         const auto path = QDir(own).filePath(name);
-        if (QFileInfo::exists(path))
+        if (QFileInfo::exists(path) &&
+            !QFile::copy(path, QDir(backup).filePath(name)))
         {
-            QFile::copy(path, QDir(backup).filePath(name));
+            return fail(uiText("The backup could not be made, nothing was "
+                               "changed."));
         }
     }
 
-    // Their settings, but this copy's logins and Archive connection stay:
-    // the logins of the other client are not in its settings file anyway.
-    QFile ownFile(QDir(own).filePath("settings.json"));
-    QJsonObject mine;
-    if (ownFile.open(QIODevice::ReadOnly))
+    // 3. their settings with this copy's own parts
+    QByteArray mineData;
+    readFile(QDir(own).filePath("settings.json"), mineData);
+    const auto mine = QJsonDocument::fromJson(mineData).object();
+    for (const auto &path : OWN_SETTINGS)
     {
-        mine = QJsonDocument::fromJson(ownFile.readAll()).object();
-        ownFile.close();
+        setAtPath(theirs, path, valueAtPath(mine, path));
     }
-    for (const auto *key : {"accounts", "archive"})
+    files.insert(QStringLiteral("settings.json"), QJsonDocument(theirs).toJson());
+
+    // 4. replace; on any failure put the backup back
+    for (auto it = files.cbegin(); it != files.cend(); ++it)
     {
-        if (mine.contains(QLatin1String(key)))
+        if (!writeFile(QDir(own).filePath(it.key()), it.value()))
         {
-            theirs.insert(QLatin1String(key), mine.value(QLatin1String(key)));
+            for (const auto &name : replaced)
+            {
+                const auto saved = QDir(backup).filePath(name);
+                QByteArray data;
+                if (QFileInfo::exists(saved) && readFile(saved, data))
+                {
+                    writeFile(QDir(own).filePath(name), data);
+                }
+            }
+            return fail(uiText("The settings could not be saved; the previous "
+                               "ones were put back."));
         }
-        else
-        {
-            theirs.remove(QLatin1String(key));
-        }
     }
-    QSaveFile out(QDir(own).filePath("settings.json"));
-    if (!out.open(QIODevice::WriteOnly) ||
-        out.write(QJsonDocument(theirs).toJson()) < 0 || !out.commit())
+    const QDir ownThemes(getApp()->getPaths().themesDirectory);
+    for (auto it = themes.cbegin(); it != themes.cend(); ++it)
     {
-        QMessageBox::warning(parent, uiText("Move settings"),
-                             uiText("The settings could not be saved."));
-        return false;
-    }
-    for (const auto &name : IMPORTED_FILES)
-    {
-        const auto source = QDir(from).filePath(name);
-        if (QFileInfo::exists(source))
+        if (!it.value().isEmpty() && !ownThemes.exists(it.key()))
         {
-            const auto target = QDir(own).filePath(name);
-            QFile::remove(target);
-            QFile::copy(source, target);
+            writeFile(ownThemes.filePath(it.key()), it.value());
         }
     }
 
-    // Start again without saving the settings in memory over the new ones.
-    QProcess::startDetached(QCoreApplication::applicationFilePath(), {});
+    // Start again (same arguments, e.g. --portable-dir) without saving the
+    // settings in memory over the new ones.
+    if (restart)
+    {
+        QProcess::startDetached(QCoreApplication::applicationFilePath(),
+                                QCoreApplication::arguments().mid(1));
+    }
     std::_Exit(0);
 }
 
@@ -286,34 +380,34 @@ QPushButton#welcomeDone { background: %1; border-color: %1; color: #16161c;
         return button;
     };
 
-    layout->addWidget(step(
-        1, uiText("Log in to Twitch"),
-        uiText("Without it the chat can only be read. Settings → Accounts → "
-               "Add new account."),
-        {settingsButton(uiText("Log in"), SettingsDialogPreference::Accounts)}));
-    layout->addWidget(step(
-        2, uiText("Open a channel"),
-        uiText("Click the empty panel or «+» next to the tabs and type the "
-               "channel name. Several channels fit in one tab."),
-        {}));
-    layout->addWidget(step(
-        3, uiText("Channel points, pins, polls and predictions"),
-        uiText("They need a second login: Settings → Sign-in for extra "
-               "features. The code is confirmed on twitch.tv/activate."),
-        {settingsButton(uiText("Set up"),
-                        SettingsDialogPreference::Moltorino)}));
     auto *importButton = new QPushButton(uiText("Move…"));
     QObject::connect(importButton, &QPushButton::clicked, dialog,
                      [dialog, importButton] {
                          chooseImport(dialog, importButton);
                      });
     layout->addWidget(step(
-        4, uiText("Settings from another Chatterino"),
-        uiText("Tabs with channels, highlights, ignores, commands and filters "
-               "from Chatterino, Chatterino7, Leafyrino or Chatterino+. "
-               "Logging in to Twitch is done again."),
+        1, uiText("Settings from another Chatterino"),
+        uiText("If you used Chatterino, Chatterino7, Leafyrino or Chatterino+: "
+               "tabs with channels, highlights, ignores, commands and filters. "
+               "Do this first, then log in."),
         {importButton}));
 
+    layout->addWidget(step(
+        2, uiText("Log in to Twitch"),
+        uiText("Without it the chat can only be read. Settings → Accounts → "
+               "Add new account."),
+        {settingsButton(uiText("Log in"), SettingsDialogPreference::Accounts)}));
+    layout->addWidget(step(
+        3, uiText("Open a channel"),
+        uiText("Click the empty panel or «+» next to the tabs and type the "
+               "channel name. Several channels fit in one tab."),
+        {}));
+    layout->addWidget(step(
+        4, uiText("Channel points, pins, polls and predictions"),
+        uiText("They need a second login: Settings → Sign-in for extra "
+               "features. The code is confirmed on twitch.tv/activate."),
+        {settingsButton(uiText("Set up"),
+                        SettingsDialogPreference::Moltorino)}));
     layout->addSpacing(8);
     auto *footer = new QHBoxLayout;
     auto *hint = new QLabel(uiText("The settings are sorted by topic; the "
@@ -337,6 +431,11 @@ QPushButton#welcomeDone { background: %1; border-color: %1; color: #16161c;
     dialog->show();
     dialog->raise();
     dialog->activateWindow();
+}
+
+void importSettingsForTesting(const QString &from)
+{
+    importProfile(nullptr, from, false, false);
 }
 
 void showWelcomeDialogIfNew(QWidget *parent)

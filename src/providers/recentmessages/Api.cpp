@@ -21,14 +21,21 @@ namespace chatterino::recentmessages {
 
 using namespace recentmessages::detail;
 
-void load(
+namespace {
+
+/// A failed load is tried once more after a short pause: right after the
+/// start every channel asks at once, and one of them may time out (408).
+constexpr int RETRIES = 1;
+constexpr int RETRY_DELAY_MS = 4000;
+
+void loadAttempt(
     const QString &channelName, std::weak_ptr<Channel> channelPtr,
     ResultCallback onLoaded, ErrorCallback onError, const int limit,
     const std::optional<std::chrono::time_point<std::chrono::system_clock>>
         after,
     const std::optional<std::chrono::time_point<std::chrono::system_clock>>
         before,
-    const bool jitter)
+    const bool jitter, const int attempt)
 {
     qCDebug(LOG) << "Loading recent messages for" << channelName;
 
@@ -87,13 +94,26 @@ void load(
                         onLoaded(messages);
                     });
             })
-            .onError([channelPtr, onError](const NetworkResult &result) {
+            .onError([=](const NetworkResult &result) {
                 auto shared = channelPtr.lock();
                 if (!shared)
                 {
                     return;
                 }
                 assert(!isAppAboutToQuit());
+
+                if (attempt < RETRIES)
+                {
+                    QTimer::singleShot(RETRY_DELAY_MS, [=] {
+                        if (!isAppAboutToQuit() && !channelPtr.expired())
+                        {
+                            loadAttempt(channelName, channelPtr, onLoaded,
+                                        onError, limit, after, before, false,
+                                        attempt + 1);
+                        }
+                    });
+                    return;
+                }
 
                 qCDebug(LOG) << "Failed to load recent messages for"
                              << shared->getName();
@@ -108,5 +128,21 @@ void load(
             .execute();
     });
 }
+
+}  // namespace
+
+void load(
+    const QString &channelName, std::weak_ptr<Channel> channelPtr,
+    ResultCallback onLoaded, ErrorCallback onError, const int limit,
+    const std::optional<std::chrono::time_point<std::chrono::system_clock>>
+        after,
+    const std::optional<std::chrono::time_point<std::chrono::system_clock>>
+        before,
+    const bool jitter)
+{
+    loadAttempt(channelName, std::move(channelPtr), std::move(onLoaded),
+                std::move(onError), limit, after, before, jitter, 0);
+}
+
 
 }  // namespace chatterino::recentmessages

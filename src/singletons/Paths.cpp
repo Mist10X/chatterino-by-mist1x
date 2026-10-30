@@ -58,7 +58,47 @@ QString Paths::cacheDirectory() const
         return this->cacheDirectory_;
     }
 
-    return path;
+    // An older version or an imported profile may name any folder (even
+    // Documents): the cache then lives in its own folder inside it, so the
+    // clean-up never touches anything else.
+    static std::mutex mutex;
+    static QString checkedPath;
+    static QString checkedResult;
+    std::lock_guard lock(mutex);
+    if (path != checkedPath)
+    {
+        checkedPath = path;
+        checkedResult = path;
+        if (!this->isOwnCacheFolder(path))
+        {
+            checkedResult =
+                QDir(path).filePath(QStringLiteral("Chatterino by Mist1X cache"));
+            QDir().mkpath(checkedResult);
+        }
+    }
+    return checkedResult;
+}
+
+bool Paths::isOwnCacheFolder(const QString &path) const
+{
+    const auto clean = QDir::cleanPath(QDir(path).absolutePath());
+    const auto root = QDir::cleanPath(this->rootAppDataDirectory);
+    const auto inside = [](const QString &a, const QString &b) {
+        return a.compare(b, Qt::CaseInsensitive) == 0 ||
+               a.startsWith(b + u'/', Qt::CaseInsensitive);
+    };
+    if (clean.isEmpty() || inside(root, clean))
+    {
+        return false;  // the program folder itself or a parent of it
+    }
+    if (clean.compare(QDir::cleanPath(this->cacheDirectory_),
+                      Qt::CaseInsensitive) == 0)
+    {
+        return true;
+    }
+    return QFileInfo(clean).fileName().compare(
+               QStringLiteral("Chatterino by Mist1X cache"),
+               Qt::CaseInsensitive) == 0;
 }
 
 QString Paths::messageLogsIn(const QString &configured) const

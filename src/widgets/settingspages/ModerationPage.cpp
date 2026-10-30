@@ -31,15 +31,16 @@
 #include <QPushButton>
 #include <QTableView>
 #include <QtConcurrent/QtConcurrent>
+#include <QPointer>
 
 namespace chatterino {
 
-qint64 dirSize(QString &dirPath)
+qint64 dirSize(const QString &dirPath)
 {
     QDirIterator it(dirPath, QDirIterator::Subdirectories);
     qint64 size = 0;
 
-    while (it.hasNext())
+    while (it.hasNext() && !isAppAboutToQuit())
     {
         size += it.fileInfo().size();
         it.next();
@@ -64,15 +65,27 @@ QString formatSize(qint64 size)
     return QString("%0 %1").arg(outputSize, 0, 'f', 2).arg(units[i]);
 }
 
-QString fetchLogDirectorySize()
+/// Counts the logs' size in the background (a big or network folder must not
+/// hold the settings window) and shows it when done.
+void showLogDirectorySize(QLabel *label)
 {
-    QString logsDirectoryPath =
+    static int generation = 0;
+    const auto current = ++generation;
+    const auto path =
         getApp()->getPaths().messageLogsIn(getSettings()->logPath.getValue());
-
-    auto logsSize = dirSize(logsDirectoryPath);
-
-    return uiText(QString("Your logs currently take up %1 of space"))
-        .arg(formatSize(logsSize));
+    label->setText(uiText("Counting the size of the logs…"));
+    QPointer<QLabel> target(label);
+    std::ignore = QtConcurrent::run([target, path, current] {
+        const auto size = dirSize(path);
+        postToThread([target, size, current] {
+            if (target && current == generation)
+            {
+                target->setText(
+                    uiText(QString("Your logs currently take up %1 of space"))
+                        .arg(formatSize(size)));
+            }
+        });
+    });
 }
 
 ModerationPage::ModerationPage()
@@ -129,20 +142,19 @@ ModerationPage::ModerationPage()
         buttons->addStretch();
 
         auto logsPathSizeLabel = logs.emplace<QLabel>();
-        logsPathSizeLabel->setText(QtConcurrent::run([] {
-                                       return fetchLogDirectorySize();
-                                   }).result());
+        showLogDirectorySize(logsPathSizeLabel.getElement());
 
         QObject::connect(
             selectDir.getElement(), &QPushButton::clicked, this,
             [this, logsPathSizeLabel]() mutable {
                 auto dirName = QFileDialog::getExistingDirectory(this);
+                if (dirName.isEmpty())
+                {
+                    return;  // cancelled: the folder stays
+                }
 
                 getSettings()->logPath = dirName;
-
-                logsPathSizeLabel->setText(QtConcurrent::run([] {
-                                               return fetchLogDirectorySize();
-                                           }).result());
+                showLogDirectorySize(logsPathSizeLabel.getElement());
             });
 
         buttons->addSpacing(16);
@@ -151,10 +163,7 @@ ModerationPage::ModerationPage()
             resetDir.getElement(), &QPushButton::clicked, this,
             [logsPathSizeLabel]() mutable {
                 getSettings()->logPath = "";
-
-                logsPathSizeLabel->setText(QtConcurrent::run([] {
-                                               return fetchLogDirectorySize();
-                                           }).result());
+                showLogDirectorySize(logsPathSizeLabel.getElement());
             });
 
         auto logsTimestampFormatLayout =

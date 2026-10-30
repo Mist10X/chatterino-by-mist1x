@@ -438,6 +438,13 @@ int Application::run()
     if (this->args_.uiSnapshot)
     {
         QTimer::singleShot(this->args_.uiSnapshotDelayMs, [this] {
+            if (this->args_.uiSnapshotSettings &&
+                this->args_.uiSnapshotSettings->startsWith(u"import:"))
+            {
+                importSettingsForTesting(this->args_.uiSnapshotSettings->mid(7));
+                QApplication::exit(0);
+                return;
+            }
             if (this->args_.uiSnapshotSettings == QStringLiteral("welcome"))
             {
                 showWelcomeDialog(&this->windows->getMainWindow());

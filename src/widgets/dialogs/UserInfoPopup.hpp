@@ -306,6 +306,9 @@ private:
     bool archiveHistoryPublic_ = false;
     bool archiveLocalComplete_ = false;
     bool archivePublicComplete_ = false;
+    /// A partial public page (a mirror answered late or not at all) is asked
+    /// once more before going further back, so its range is not skipped.
+    bool archivePublicPartialRetried_ = false;
     bool archiveHistoryPreserveAnchor_ = false;
     bool archiveHistorySyntheticEndpoint_ = false;
     bool offlinePublicHistoryAllowed_ = false;
