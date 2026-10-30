@@ -11,6 +11,7 @@
 #include "singletons/Paths.hpp"
 #include "singletons/Theme.hpp"
 #include "singletons/WindowManager.hpp"
+#include "util/BundledFile.hpp"
 #include "widgets/dialogs/SettingsDialog.hpp"
 
 #include <QApplication>
@@ -415,8 +416,7 @@ QPushButton#welcomeDone { background: %1; border-color: %1; color: #16161c;
     hint->setObjectName("welcomeText");
     hint->setWordWrap(true);
     footer->addWidget(hint, 1);
-    const auto guide =
-        QDir(QCoreApplication::applicationDirPath()).filePath("Руководство.html");
+    const auto guide = bundledFilePath(QStringLiteral("Руководство.html"));
     if (QFileInfo::exists(guide))
     {
         footer->addWidget(linkButton(uiText("Guide"),
