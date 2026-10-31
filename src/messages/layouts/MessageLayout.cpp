@@ -32,10 +32,37 @@ namespace {
 
 constexpr int SCROLLBAR_PADDING = 20;
 
-enum class PunishmentKind { None, Ban, Timeout, Deletion };
+// Same order as NoticeIconLayoutElement::Icon, after None.
+enum class PunishmentKind {
+    None,
+    Ban,
+    Timeout,
+    Deletion,
+    Subscribers,
+    Slow,
+    Followers,
+    EmoteOnly,
+    UniqueChat,
+};
 
+/// Punishments and chat mode changes: a soft box and an icon.
 PunishmentKind punishmentKind(const Message &message)
 {
+    switch (message.roomMode)
+    {
+        case Message::RoomMode::Subscribers:
+            return PunishmentKind::Subscribers;
+        case Message::RoomMode::Slow:
+            return PunishmentKind::Slow;
+        case Message::RoomMode::Followers:
+            return PunishmentKind::Followers;
+        case Message::RoomMode::EmoteOnly:
+            return PunishmentKind::EmoteOnly;
+        case Message::RoomMode::UniqueChat:
+            return PunishmentKind::UniqueChat;
+        case Message::RoomMode::None:
+            break;
+    }
     const auto &flags = message.flags;
     // ModerationAction also includes unbans, chat modes and term-list changes.
     // Disabled marks the original chat text, not a punishment notice.
@@ -71,10 +98,30 @@ QColor punishmentColor(PunishmentKind kind)
             return {234, 179, 8};
         case PunishmentKind::Deletion:
             return {150, 150, 160};
+        case PunishmentKind::Subscribers:
+        case PunishmentKind::Slow:
+        case PunishmentKind::Followers:
+        case PunishmentKind::EmoteOnly:
+        case PunishmentKind::UniqueChat:
+            // chat modes: a muted purple
+            return {157, 118, 230};
         case PunishmentKind::None:
             break;
     }
     return {};
+}
+
+/// The icon in front of a notice; none in front of the deleted chat
+/// message itself (AutoMod), only in front of notices.
+std::optional<NoticeIconLayoutElement::Icon> noticeIcon(
+    const Message &message, PunishmentKind kind)
+{
+    if (kind == PunishmentKind::None ||
+        message.flags.has(MessageFlag::AutoModOffendingMessage))
+    {
+        return std::nullopt;
+    }
+    return NoticeIconLayoutElement::Icon(int(kind) - 1);
 }
 
 std::optional<QColor> clientDetectionHighlightColor(
@@ -262,6 +309,9 @@ void MessageLayout::actuallyLayout(const MessageLayoutContext &ctx)
                                  this->emoteScale_, this->badgeScale_,
                                  this->centerBadges_, messageFlags);
 
+    // the notice's icon goes right after the time
+    auto icon = noticeIcon(*this->message_, punishmentKind(*this->message_));
+
     for (const auto &element : this->message_->elements)
     {
         if (hideModerated && this->message_->flags.has(MessageFlag::Disabled))
@@ -307,6 +357,16 @@ void MessageLayout::actuallyLayout(const MessageLayoutContext &ctx)
             element->getFlags().has(MessageElementFlag::ChannelPointReward))
         {
             continue;
+        }
+
+        if (icon && element->getFlags().hasAny(ctx.flags) &&
+            dynamic_cast<TimestampElement *>(element.get()) == nullptr)
+        {
+            auto color = punishmentColor(punishmentKind(*this->message_));
+            const qreal side = 14.0 * this->scale_;
+            this->container_.addElement(new NoticeIconLayoutElement(
+                *element, *icon, color, QSizeF(side, side), this->scale_));
+            icon.reset();
         }
 
         element->addToContainer(this->container_, ctx);

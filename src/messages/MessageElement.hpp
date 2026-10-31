@@ -865,6 +865,32 @@ private:
     QString url_;
 };
 
+/// The picture under a message with a link to an image (a screenshot on
+/// kappa.lol, a direct .png link, ...). Shows nothing until it is loaded.
+class ImagePreviewElement : public MessageElement
+{
+public:
+    static constexpr std::string_view TYPE = "image-preview";
+
+    explicit ImagePreviewElement(QString url);
+
+    void addToContainer(MessageLayoutContainer &container,
+                        const MessageLayoutContext &ctx) override;
+
+    std::unique_ptr<MessageElement> clone() const override;
+
+    QJsonObject toJson() const override;
+    std::string_view type() const override;
+
+    const QString &url() const
+    {
+        return this->url_;
+    }
+
+private:
+    QString url_;
+};
+
 class ReplyCurveElement : public MessageElement
 {
 public:

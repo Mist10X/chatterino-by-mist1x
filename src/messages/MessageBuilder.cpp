@@ -50,6 +50,7 @@
 #include "providers/seventv/SeventvPersonalEmotes.hpp"
 #include "providers/twitch/api/Helix.hpp"
 #include "providers/twitch/ChannelPointReward.hpp"
+#include "providers/links/ImagePreview.hpp"
 #include "providers/twitch/ClipPreview.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchBadge.hpp"
@@ -1458,8 +1459,13 @@ MessagePtrMut MessageBuilder::release()
         {
             this->emplace<ClipCardElement>(std::move(slug), std::move(url));
         }
+        for (auto &url : this->imagePreviews_)
+        {
+            this->emplace<ImagePreviewElement>(std::move(url));
+        }
     }
     this->clipCards_.clear();
+    this->imagePreviews_.clear();
     std::shared_ptr<Message> ptr;
     this->message_.swap(ptr);
     return ptr;
@@ -1537,6 +1543,20 @@ void MessageBuilder::addLink(const linkparser::Parsed &parsedLink,
             }))
         {
             this->clipCards_.emplace_back(std::move(slug), fullUrl);
+            return;
+        }
+    }
+
+    // A link to a picture shows the picture under the message (two at most).
+    if (this->imagePreviews_.size() < 2 && getSettings()->showImagePreviews &&
+        imagepreview::isImageLink(fullUrl))
+    {
+        const auto key = imagepreview::key(fullUrl);
+        if (std::ranges::none_of(this->imagePreviews_, [&](const auto &url) {
+                return imagepreview::key(url) == key;
+            }))
+        {
+            this->imagePreviews_.push_back(fullUrl);
         }
     }
 }

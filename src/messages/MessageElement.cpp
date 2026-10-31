@@ -17,6 +17,7 @@
 #include "messages/layouts/MessageLayoutElement.hpp"
 #include "messages/Message.hpp"
 #include "providers/emoji/Emojis.hpp"
+#include "providers/links/ImagePreview.hpp"
 #include "providers/twitch/ClipPreview.hpp"
 #include "providers/twitch/TwitchEmotes.hpp"
 #include "singletons/Settings.hpp"
@@ -2552,6 +2553,77 @@ QJsonObject ClipCardElement::toJson() const
 }
 
 std::string_view ClipCardElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
+ImagePreviewElement::ImagePreviewElement(QString url)
+    : MessageElement(MessageElementFlag::Text)
+    , url_(std::move(url))
+{
+    this->setLink({Link::Url, this->url_});
+    if (getSettings()->showImagePreviews)
+    {
+        imagepreview::request(this->url_);
+    }
+}
+
+void ImagePreviewElement::addToContainer(MessageLayoutContainer &container,
+                                         const MessageLayoutContext &ctx)
+{
+    if (!this->matchesFlags(ctx.flags) || !getSettings()->showImagePreviews)
+    {
+        return;
+    }
+    auto image = imagepreview::get(this->url_);
+    if (!image)
+    {
+        return;
+    }
+    const auto pixmap = image->pixmapOrLoad();
+    if (!pixmap || pixmap->isNull())
+    {
+        return;  // the chat is laid out again once it has loaded
+    }
+    const float scale = container.getScale();
+    // on a line of its own: the room is the whole width, not what the text
+    // left over
+    container.breakLine();
+    // the thumbnail is at most 300 px wide; small pictures stay small
+    QSizeF size = QSizeF(pixmap->size()) * scale;
+    const QSizeF most(std::min<qreal>(container.remainingWidth(), 280 * scale),
+                      160 * scale);
+    if (size.width() > most.width() || size.height() > most.height())
+    {
+        size.scale(most, Qt::KeepAspectRatio);
+    }
+    if (size.width() < 12 * scale || size.height() < 12 * scale)
+    {
+        return;
+    }
+    container.addElement(
+        (new ImagePreviewLayoutElement(
+             *this, std::move(image),
+             QSizeF(size.width(), size.height() + 5 * scale), scale))
+            ->setLink(this->getLink()));
+}
+
+std::unique_ptr<MessageElement> ImagePreviewElement::clone() const
+{
+    auto el = std::make_unique<ImagePreviewElement>(this->url_);
+    el->cloneFrom(*this);
+    return el;
+}
+
+QJsonObject ImagePreviewElement::toJson() const
+{
+    auto base = MessageElement::toJson();
+    base["type"_L1] = u"ImagePreviewElement"_s;
+    base["url"_L1] = this->url_;
+    return base;
+}
+
+std::string_view ImagePreviewElement::type() const
 {
     return std::remove_pointer_t<decltype(this)>::TYPE;
 }

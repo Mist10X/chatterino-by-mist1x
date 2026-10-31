@@ -29,6 +29,7 @@
 #include "providers/kick/KickApi.hpp"
 #include "providers/kick/KickChannel.hpp"
 #include "providers/kick/KickChatServer.hpp"
+#include "providers/links/ImagePreview.hpp"
 #include "providers/links/LinkInfo.hpp"
 #include "providers/links/LinkResolver.hpp"
 #include "providers/translation/Translator.hpp"
@@ -39,6 +40,7 @@
 #include "providers/youtube/YouTubeChannel.hpp"
 #include "providers/youtube/YouTubeChatServer.hpp"
 #include "singletons/Resources.hpp"
+#include "singletons/ImageUploader.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/StreamerMode.hpp"
 #include "singletons/Theme.hpp"
@@ -3937,6 +3939,51 @@ void ChannelView::addContextMenuItems(
 
     // Add link options if the element clicked contains a link
     addLinkContextMenuItems(menu, hoveredElement);
+
+    // A picture uploaded from here (its link or the picture under it): it
+    // can be deleted from the site, also after it was sent.
+    if (hoveredElement != nullptr &&
+        hoveredElement->getLink().type == Link::Url &&
+        getSettings()->imageUploaderEnabled)
+    {
+        const auto url = hoveredElement->getLink().value;
+        auto *uploader = getApp()->getImageUploader();
+        if (uploader != nullptr && !uploader->deletionLinkFor(url).isEmpty())
+        {
+            std::weak_ptr<Channel> weakChannel = this->underlyingChannel();
+            menu->addAction(
+                uiText("&Delete the picture from %1")
+                    .arg(QUrl(url).host()),
+                [uploader, url, weakChannel] {
+                    uploader->deleteImage(
+                        url, [url, weakChannel](
+                                 ImageUploader::DeleteResult result,
+                                 const QString &error) {
+                            auto channel = weakChannel.lock();
+                            if (!channel)
+                            {
+                                return;
+                            }
+                            using Result = ImageUploader::DeleteResult;
+                            if (result == Result::Deleted)
+                            {
+                                channel->addSystemMessage(
+                                    uiText("The picture %1 was deleted from "
+                                           "%2")
+                                        .arg(url, QUrl(url).host()));
+                            }
+                            else if (result == Result::Failed)
+                            {
+                                channel->addSystemMessage(
+                                    uiText("Could not delete the picture %1: "
+                                           "%2")
+                                        .arg(url, error));
+                            }
+                        });
+                });
+            menu->addSeparator();
+        }
+    }
 
     // Add message options
     this->addMessageContextMenuItems(menu, layout);

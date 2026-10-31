@@ -6,6 +6,7 @@
 
 #include "Application.hpp"
 #include "common/Literals.hpp"
+#include "common/UiLanguage.hpp"
 #include "messages/Emote.hpp"
 #include "messages/Image.hpp"
 #include "messages/Message.hpp"
@@ -31,12 +32,19 @@ void makeModeMessage(EventSubMessageBuilder &builder,
 {
     QString text;
 
+    using Mode = Message::RoomMode;
+    builder->roomMode = mode == u"slow" ? Mode::Slow
+                        : mode == u"followers-only" ? Mode::Followers
+                        : mode == u"subscribers-only" ? Mode::Subscribers
+                        : mode == u"emote-only" ? Mode::EmoteOnly
+                        : mode == u"unique-chat" ? Mode::UniqueChat
+                                                 : Mode::None;
+
     builder.appendUser(event.moderatorUserName, event.moderatorUserLogin, text);
-    builder.emplaceSystemTextAndUpdate(u"turned"_s, text);
-    QString op = on ? u"on"_s : u"off"_s;
-    builder.emplaceSystemTextAndUpdate(op, text);
-    builder.emplaceSystemTextAndUpdate(mode, text);
-    builder.emplaceSystemTextAndUpdate(u"mode."_s, text);
+    // "turned on" / "slow mode." as whole phrases, so they can be translated
+    builder.emplaceSystemTextAndUpdate(
+        on ? uiText("turned on") : uiText("turned off"), text);
+    builder.emplaceSystemTextAndUpdate(uiText(mode + u" mode."_s), text);
 
     if (!duration.isEmpty())
     {
@@ -375,7 +383,7 @@ void makeModerateMessage(
     QString duration;
     if (action.followDurationMinutes > 0)
     {
-        duration = u"(%1 minutes)"_s.arg(action.followDurationMinutes);
+        duration = uiText("(%1 minutes)").arg(action.followDurationMinutes);
     }
     makeModeMessage(builder, event, u"followers-only"_s, true, duration);
 }
@@ -407,7 +415,7 @@ void makeModerateMessage(EventSubMessageBuilder &builder,
                          const lib::payload::channel_moderate::v2::Slow &action)
 {
     makeModeMessage(builder, event, u"slow"_s, true,
-                    u"(%1 seconds)"_s.arg(action.waitTimeSeconds));
+                    uiText("(%1 seconds)").arg(action.waitTimeSeconds));
 }
 void makeModerateMessage(
     EventSubMessageBuilder &builder,

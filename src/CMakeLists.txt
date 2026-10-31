@@ -620,6 +620,8 @@ set(SOURCE_FILES
         providers/twitch/ChannelPointReward.hpp
         providers/twitch/ClipPreview.cpp
         providers/twitch/ClipPreview.hpp
+        providers/links/ImagePreview.cpp
+        providers/links/ImagePreview.hpp
         providers/twitch/IrcMessageHandler.cpp
         providers/twitch/IrcMessageHandler.hpp
         providers/twitch/PublicChatLogs.cpp
@@ -1039,6 +1041,8 @@ set(SOURCE_FILES
         widgets/dialogs/StreamStatsDialog.hpp
         widgets/helper/MissedDigest.cpp
         widgets/helper/MissedDigest.hpp
+        widgets/helper/UploadPreview.cpp
+        widgets/helper/UploadPreview.hpp
         providers/twitch/ChannelStats.cpp
         providers/twitch/ChannelStats.hpp
         widgets/dialogs/WelcomeDialog.cpp

@@ -10,14 +10,17 @@
 #include "common/network/NetworkRequest.hpp"
 #include "common/network/NetworkResult.hpp"
 #include "common/QLogging.hpp"
+#include "common/UiLanguage.hpp"
 #include "debug/Benchmark.hpp"
 #include "messages/MessageBuilder.hpp"
+#include "providers/links/ImagePreview.hpp"
 #include "singletons/Paths.hpp"
 #include "singletons/Settings.hpp"
 #include "util/CombinePath.hpp"
 #include "widgets/helper/ResizingTextEdit.hpp"
 
 #include <QBuffer>
+#include <QDesktopServices>
 #include <QHttpMultiPart>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -97,14 +100,133 @@ namespace chatterino {
 
 using namespace imageuploader::detail;
 
+QString ImageUploader::logFilePath() const
+{
+    return combinePath(
+        getApp()->getPaths().messageLogsIn(getSettings()->logPath.getValue()),
+        "ImageUploader.json");
+}
+
+void ImageUploader::loadDeletionLinks()
+{
+    if (this->deletionLinksLoaded_)
+    {
+        return;
+    }
+    this->deletionLinksLoaded_ = true;
+    QFile file(this->logFilePath());
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        return;
+    }
+    const auto entries = QJsonDocument::fromJson(file.readAll()).array();
+    for (const auto &value : entries)
+    {
+        const auto entry = value.toObject();
+        const auto link = entry.value("imageLink").toString();
+        const auto deletionLink = entry.value("deletionLink").toString();
+        if (!link.isEmpty() && !deletionLink.isEmpty() &&
+            !entry.value("deleted").toBool())
+        {
+            this->deletionLinks_.insert(imagepreview::key(link), deletionLink);
+        }
+    }
+}
+
+QString ImageUploader::deletionLinkFor(const QString &imageLink)
+{
+    this->loadDeletionLinks();
+    return this->deletionLinks_.value(imagepreview::key(imageLink));
+}
+
+void ImageUploader::markDeleted(const QString &imageLink)
+{
+    const auto key = imagepreview::key(imageLink);
+    this->deletionLinks_.remove(key);
+
+    const auto path = this->logFilePath();
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        return;
+    }
+    auto entries = QJsonDocument::fromJson(file.readAll()).array();
+    file.close();
+    for (qsizetype i = 0; i < entries.size(); ++i)
+    {
+        auto entry = entries[i].toObject();
+        if (imagepreview::key(entry.value("imageLink").toString()) == key)
+        {
+            entry["deleted"] = true;
+            entries[i] = entry;
+        }
+    }
+    QSaveFile save(path);
+    if (save.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        save.write(QJsonDocument(entries).toJson());
+        save.commit();
+    }
+}
+
+void ImageUploader::deleteImage(const QString &imageLink,
+                                std::function<void(DeleteResult, QString)> done)
+{
+    const auto deletionLink = this->deletionLinkFor(imageLink);
+    if (deletionLink.isEmpty())
+    {
+        done(DeleteResult::Failed,
+             uiText("No deletion link was saved for this picture"));
+        return;
+    }
+    const QUrl url(deletionLink);
+    // kappa.lol, segs.lol, ...: the page /delete?KEY asks /api/delete?key=KEY
+    const auto key = url.query(QUrl::FullyEncoded);
+    if (url.scheme() != QStringLiteral("https") ||
+        url.path() != QStringLiteral("/delete") || key.isEmpty() ||
+        key.contains('=') || key.contains('&'))
+    {
+        QDesktopServices::openUrl(url);
+        done(DeleteResult::OpenedInBrowser, {});
+        return;
+    }
+    QUrl api(url);
+    api.setPath(QStringLiteral("/api/delete"));
+    api.setQuery(QStringLiteral("key=") + key);
+    auto finish = [this, imageLink, done](const NetworkResult &result) {
+        if (result.parseJson().value("success").toBool())
+        {
+            this->markDeleted(imageLink);
+            imagepreview::forget(imageLink);
+            done(DeleteResult::Deleted, {});
+            return;
+        }
+        if (result.status() == 400 || result.status() == 404)
+        {
+            done(DeleteResult::Failed,
+                 uiText("The site does not have this picture any more"));
+            return;
+        }
+        done(DeleteResult::Failed, result.formatError());
+    };
+    NetworkRequest(api)
+        .timeout(10000)
+        .onSuccess(finish)
+        .onError(finish)
+        .execute();
+}
+
 void ImageUploader::logToFile(const QString &originalFilePath,
                               const QString &imageLink,
                               const QString &deletionLink, ChannelPtr channel)
 {
-    const QString logFileName =
-        combinePath(getApp()->getPaths().messageLogsIn(
-                        getSettings()->logPath.getValue()),
-                    "ImageUploader.json");
+    const QString logFileName = this->logFilePath();
+    if (!deletionLink.isEmpty())
+    {
+        this->loadDeletionLinks();
+        this->deletionLinks_.insert(imagepreview::key(imageLink),
+                                    deletionLink);
+    }
 
     QFile logReadFile(logFileName);
     bool isLogFileOkay =
@@ -159,6 +281,13 @@ void ImageUploader::sendImageUploadRequest(RawImageData imageData,
     auto extraHeaders =
         parseHeaderList(getSettings()->imageUploaderHeaders.getValue());
     QString originalFilePath = imageData.filePath;
+    this->updated.invoke({
+        .kind = ImageUploadUpdate::Kind::Started,
+        .textEdit = textEdit.data(),
+        .imageData = imageData.data,
+        .queued = this->uploadQueue_.size() > 0 ? this->uploadQueue_.size() - 1
+                                                : 0,
+    });
 
     QHttpMultiPart *payload = new QHttpMultiPart(QHttpMultiPart::FormDataType);
     QHttpPart part = QHttpPart();
@@ -180,16 +309,22 @@ void ImageUploader::sendImageUploadRequest(RawImageData imageData,
                 this->handleSuccessfulUpload(result, originalFilePath, channel,
                                              textEdit);
             })
-        .onError([channel, this](NetworkResult result) -> bool {
-            this->handleFailedUpload(result, channel);
+        .onError([channel, textEdit, this](NetworkResult result) -> bool {
+            this->handleFailedUpload(result, channel, textEdit);
             return true;
         })
         .execute();
 }
 
 void ImageUploader::handleFailedUpload(const NetworkResult &result,
-                                       ChannelPtr channel)
+                                       ChannelPtr channel,
+                                       QPointer<ResizingTextEdit> textEdit)
 {
+    this->updated.invoke({
+        .kind = ImageUploadUpdate::Kind::Failed,
+        .textEdit = textEdit.data(),
+    });
+
     auto errorMessage =
         QString("An error happened while uploading your image: %1")
             .arg(result.formatError());
@@ -247,11 +382,14 @@ void ImageUploader::handleSuccessfulUpload(const NetworkResult &result,
                                   getSettings()->imageUploaderDeletionLink);
     qCDebug(chatterinoImageuploader) << link << deletionLink;
     textEdit->insertPlainText(link + " ");
-
-    auto timeToUpload = this->uploadQueue_.size() * (UPLOAD_DELAY / 1000 + 1);
-    MessageBuilder builder(imageUploaderResultMessage, link, deletionLink,
-                           this->uploadQueue_.size(), timeToUpload);
-    channel->addMessage(builder.release(), MessageContext::Original);
+    // The preview above the input shows the picture, the link and a delete
+    // button; the chat gets no "uploaded" message any more.
+    this->updated.invoke({
+        .kind = ImageUploadUpdate::Kind::Finished,
+        .textEdit = textEdit.data(),
+        .link = link,
+        .deletionLink = deletionLink,
+    });
     if (this->uploadQueue_.empty())
     {
         this->uploadMutex_.unlock();
@@ -405,8 +543,6 @@ void ImageUploader::upload(std::queue<RawImageData> images, ChannelPtr channel,
     assert(this->uploadQueue_.empty());
 
     std::swap(this->uploadQueue_, images);
-
-    channel->addSystemMessage("Started upload...");
 
     this->sendImageUploadRequest(this->uploadQueue_.front(), std::move(channel),
                                  std::move(outputTextEdit));

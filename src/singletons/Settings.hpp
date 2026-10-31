@@ -767,6 +767,12 @@ public:
     BoolSetting showLinkTitles = {"/links/showTitleInsteadOfUrl", true};
     /// Card with thumbnail, channel, game and views under Twitch clip links.
     BoolSetting showClipCards = {"/links/showClipCards", true};
+    /// The picture itself under links to images (screenshots and the like).
+    BoolSetting showImagePreviews = {"/links/showImagePreviews", true};
+    /// Image sites whose page links get a picture too (direct image files
+    /// get one on any site). Separated by spaces or commas.
+    QStringSetting imagePreviewSites = {"/links/imagePreviewSites",
+                                        "kappa.lol segs.lol eblo.id kappalol.fun"};
     IntSetting thumbnailSize = {"/appearance/thumbnailSize", 0};
     IntSetting thumbnailSizeStream = {"/appearance/thumbnailSizeStream", 2};
     BoolSetting unshortLinks = {"/links/unshortLinks", false};
@@ -1032,14 +1038,17 @@ public:
     // Image Uploader
     BoolSetting imageUploaderEnabled = {"/external/imageUploader/enabled",
                                         false};
-    QStringSetting imageUploaderUrl = {"/external/imageUploader/url", ""};
+    // kappa.lol unless set otherwise: only the switch is needed for Ctrl+V
+    QStringSetting imageUploaderUrl = {"/external/imageUploader/url",
+                                       "https://kappa.lol/api/upload"};
     QStringSetting imageUploaderFormField = {
-        "/external/imageUploader/formField", ""};
+        "/external/imageUploader/formField", "file"};
     QStringSetting imageUploaderHeaders = {"/external/imageUploader/headers",
                                            ""};
-    QStringSetting imageUploaderLink = {"/external/imageUploader/link", ""};
+    QStringSetting imageUploaderLink = {"/external/imageUploader/link",
+                                        "{link}"};
     QStringSetting imageUploaderDeletionLink = {
-        "/external/imageUploader/deletionLink", ""};
+        "/external/imageUploader/deletionLink", "{delete}"};
 
     /// Misc
     BoolSetting markdownParsing = {"/misc/markdownParsing", false};

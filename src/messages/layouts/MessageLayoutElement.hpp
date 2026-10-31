@@ -231,6 +231,60 @@ private:
     float scale_;
 };
 
+/// Small line icon in front of a punishment or chat mode notice.
+class NoticeIconLayoutElement : public MessageLayoutElement
+{
+public:
+    enum class Icon : uint8_t {
+        Ban,
+        Timeout,
+        Deletion,
+        Subscribers,
+        Slow,
+        Followers,
+        EmoteOnly,
+        UniqueChat,
+    };
+
+    NoticeIconLayoutElement(MessageElement &creator, Icon icon, QColor color,
+                            QSizeF size, float scale);
+
+protected:
+    void paint(QPainter &painter, const MessageColors &messageColors) override;
+    QRegion paintAnimated(QPainter &painter, qreal yOffset) override;
+    int getMouseOverIndex(QPointF abs) const override;
+    qreal getXFromIndex(size_t index) override;
+    void addCopyTextToString(QString &str, uint32_t from = 0,
+                             uint32_t to = UINT32_MAX) const override;
+    size_t getSelectionIndexCount() const override;
+
+private:
+    Icon icon_;
+    QColor color_;
+    float scale_;
+};
+
+/// The picture of ImagePreviewElement, with rounded corners.
+class ImagePreviewLayoutElement : public MessageLayoutElement
+{
+public:
+    ImagePreviewLayoutElement(MessageElement &creator, ImagePtr image,
+                              QSizeF size, float scale);
+
+protected:
+    void paint(QPainter &painter, const MessageColors &messageColors) override;
+    QRegion paintAnimated(QPainter &painter, qreal yOffset) override;
+    int getMouseOverIndex(QPointF abs) const override;
+    qreal getXFromIndex(size_t index) override;
+    void addCopyTextToString(QString &str, uint32_t from = 0,
+                             uint32_t to = UINT32_MAX) const override;
+    size_t getSelectionIndexCount() const override;
+
+private:
+    ImagePtr image_;
+    float scale_;
+};
+
 class ReplyCurveLayoutElement : public MessageLayoutElement
 {
 public:

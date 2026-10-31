@@ -39,6 +39,7 @@
 #include <atomic>
 #include <cmath>
 #include <limits>
+#include <numbers>
 #include <ranges>
 
 namespace {
@@ -1634,6 +1635,204 @@ void ClipCardLayoutElement::addCopyTextToString(QString & /*str*/,
 }
 
 size_t ClipCardLayoutElement::getSelectionIndexCount() const
+{
+    return 1;
+}
+
+NoticeIconLayoutElement::NoticeIconLayoutElement(MessageElement &creator,
+                                                 Icon icon, QColor color,
+                                                 QSizeF size, float scale)
+    : MessageLayoutElement(creator, size)
+    , icon_(icon)
+    , color_(color)
+    , scale_(scale)
+{
+}
+
+void NoticeIconLayoutElement::paint(QPainter &painter,
+                                    const MessageColors & /*messageColors*/)
+{
+    const QRectF rect(this->getRect());
+    // drawn on a 16 x 16 grid, centered in the element
+    const qreal unit = std::min(rect.width(), rect.height()) / 16.0;
+    painter.save();
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.translate(rect.center().x() - 8 * unit,
+                      rect.center().y() - 8 * unit);
+    painter.scale(unit, unit);
+    auto color = this->color_;
+    color.setAlpha(215);
+    QPen pen(color, 1.5);
+    pen.setCapStyle(Qt::RoundCap);
+    pen.setJoinStyle(Qt::RoundJoin);
+    painter.setPen(pen);
+    painter.setBrush(Qt::NoBrush);
+
+    switch (this->icon_)
+    {
+        case Icon::Ban:
+            painter.drawEllipse(QPointF(8, 8), 6, 6);
+            painter.drawLine(QPointF(3.8, 3.8), QPointF(12.2, 12.2));
+            break;
+        case Icon::Timeout:
+            painter.drawEllipse(QPointF(8, 8), 6.2, 6.2);
+            painter.drawLine(QPointF(8, 8), QPointF(8, 4.4));
+            painter.drawLine(QPointF(8, 8), QPointF(10.6, 9.4));
+            break;
+        case Icon::Deletion: {
+            painter.drawLine(QPointF(2.8, 4.4), QPointF(13.2, 4.4));
+            painter.drawPolyline(QPolygonF{{6.3, 4.4},
+                                           {6.3, 2.6},
+                                           {9.7, 2.6},
+                                           {9.7, 4.4}});
+            painter.drawPolyline(QPolygonF{{4.3, 4.4},
+                                           {5.1, 13.6},
+                                           {10.9, 13.6},
+                                           {11.7, 4.4}});
+            painter.drawLine(QPointF(7, 7), QPointF(7, 11.2));
+            painter.drawLine(QPointF(9, 7), QPointF(9, 11.2));
+            break;
+        }
+        case Icon::Subscribers: {
+            QPolygonF star;
+            for (int i = 0; i < 10; ++i)
+            {
+                const qreal radius = i % 2 == 0 ? 6.6 : 2.8;
+                const qreal angle = std::numbers::pi / 5 * i - std::numbers::pi / 2;
+                star << QPointF(8 + radius * std::cos(angle),
+                                8.6 + radius * std::sin(angle));
+            }
+            painter.drawPolygon(star);
+            break;
+        }
+        case Icon::Slow:
+            painter.drawLine(QPointF(4, 2.4), QPointF(12, 2.4));
+            painter.drawLine(QPointF(4, 13.6), QPointF(12, 13.6));
+            painter.drawPolyline(
+                QPolygonF{{5.2, 2.4}, {8, 8}, {5.2, 13.6}});
+            painter.drawPolyline(
+                QPolygonF{{10.8, 2.4}, {8, 8}, {10.8, 13.6}});
+            break;
+        case Icon::Followers: {
+            QPainterPath heart;
+            heart.moveTo(8, 13.2);
+            heart.cubicTo(0.8, 8.6, 2.6, 2.2, 8, 5.4);
+            heart.cubicTo(13.4, 2.2, 15.2, 8.6, 8, 13.2);
+            painter.drawPath(heart);
+            break;
+        }
+        case Icon::EmoteOnly: {
+            painter.drawEllipse(QPointF(8, 8), 6.2, 6.2);
+            QPainterPath smile;
+            smile.arcMoveTo(QRectF(5, 5.4, 6, 5.4), 200);
+            smile.arcTo(QRectF(5, 5.4, 6, 5.4), 200, 140);
+            painter.drawPath(smile);
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(color);
+            painter.drawEllipse(QPointF(6, 6.6), 0.9, 0.9);
+            painter.drawEllipse(QPointF(10, 6.6), 0.9, 0.9);
+            break;
+        }
+        case Icon::UniqueChat:
+            painter.drawEllipse(QPointF(8, 8), 6.2, 6.2);
+            painter.drawPolyline(
+                QPolygonF{{6.4, 6.2}, {8.2, 4.6}, {8.2, 11.4}});
+            painter.drawLine(QPointF(6.6, 11.4), QPointF(9.8, 11.4));
+            break;
+    }
+    painter.restore();
+}
+
+QRegion NoticeIconLayoutElement::paintAnimated(QPainter & /*painter*/,
+                                               qreal /*yOffset*/)
+{
+    return {};
+}
+
+int NoticeIconLayoutElement::getMouseOverIndex(QPointF /*abs*/) const
+{
+    return 0;
+}
+
+qreal NoticeIconLayoutElement::getXFromIndex(size_t index)
+{
+    return index == 0 ? this->getRect().left() : this->getRect().right();
+}
+
+void NoticeIconLayoutElement::addCopyTextToString(QString & /*str*/,
+                                                  uint32_t /*from*/,
+                                                  uint32_t /*to*/) const
+{
+    // only a picture: copied text stays the notice's text
+}
+
+size_t NoticeIconLayoutElement::getSelectionIndexCount() const
+{
+    return 1;
+}
+
+ImagePreviewLayoutElement::ImagePreviewLayoutElement(MessageElement &creator,
+                                                     ImagePtr image,
+                                                     QSizeF size, float scale)
+    : MessageLayoutElement(creator, size)
+    , image_(std::move(image))
+    , scale_(scale)
+{
+    this->trailingSpace = false;
+}
+
+void ImagePreviewLayoutElement::paint(QPainter &painter,
+                                      const MessageColors &messageColors)
+{
+    const auto pixmap = this->image_->pixmapOrLoad();
+    if (!pixmap || pixmap->isNull())
+    {
+        return;
+    }
+    const auto s = this->scale_;
+    // a little room above the picture, almost none below
+    const QRectF rect = QRectF(this->getRect()).adjusted(0, 4 * s, 0, -1 * s);
+
+    painter.save();
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
+    QPainterPath rounded;
+    rounded.addRoundedRect(rect, 5 * s, 5 * s);
+    painter.setClipPath(rounded);
+    painter.drawPixmap(rect, *pixmap, QRectF(pixmap->rect()));
+    painter.setClipping(false);
+    const bool light = messageColors.regularBg.lightnessF() > 0.5;
+    painter.setPen(
+        QPen(light ? QColor(0, 0, 0, 40) : QColor(255, 255, 255, 30), 1));
+    painter.setBrush(Qt::NoBrush);
+    painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), 5 * s, 5 * s);
+    painter.restore();
+}
+
+QRegion ImagePreviewLayoutElement::paintAnimated(QPainter & /*painter*/,
+                                                 qreal /*yOffset*/)
+{
+    return {};
+}
+
+int ImagePreviewLayoutElement::getMouseOverIndex(QPointF abs) const
+{
+    return abs.x() >= this->getRect().center().x() ? 1 : 0;
+}
+
+qreal ImagePreviewLayoutElement::getXFromIndex(size_t index)
+{
+    return index == 0 ? this->getRect().left() : this->getRect().right();
+}
+
+void ImagePreviewLayoutElement::addCopyTextToString(QString & /*str*/,
+                                                    uint32_t /*from*/,
+                                                    uint32_t /*to*/) const
+{
+    // the link itself is already part of the message text
+}
+
+size_t ImagePreviewLayoutElement::getSelectionIndexCount() const
 {
     return 1;
 }

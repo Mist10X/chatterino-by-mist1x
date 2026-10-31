@@ -938,6 +938,18 @@ void GeneralPage::initLayout(GeneralPageView &layout)
     SettingWidget::checkbox(uiText("Show a card under Twitch clip links"),
                             s.showClipCards)
         ->addTo(layout);
+    SettingWidget::checkbox(uiText("Show pictures under links to images"),
+                            s.showImagePreviews)
+        ->setTooltip(uiText(
+            "Links to image files on any site, and links to pages of the "
+            "image sites below. The picture comes through the Chatterino "
+            "link preview server, so whoever posted the link does not see "
+            "your IP address."))
+        ->addTo(layout);
+    SettingWidget::lineEdit(uiText("Image sites"), s.imagePreviewSites,
+                            "kappa.lol segs.lol eblo.id kappalol.fun")
+        ->conditionallyEnabledBy(s.showImagePreviews)
+        ->addTo(layout);
 
     layout.addDropdown<int>(
         uiText("Also show thumbnails if available"),

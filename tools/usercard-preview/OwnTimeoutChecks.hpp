@@ -17,8 +17,15 @@
 // no IRC / PubSub connection; the state is driven through the same
 // TwitchChannel entry points that IRC and PubSub use.
 
+#include "Application.hpp"
+#include "common/LinkParser.hpp"
 #include "common/UiLanguage.hpp"
+#include "messages/Image.hpp"
 #include "messages/MessageBuilder.hpp"
+#include "messages/MessageElement.hpp"
+#include "providers/links/ImagePreview.hpp"
+#include "singletons/ImageUploader.hpp"
+#include "widgets/helper/UploadPreview.hpp"
 #include "providers/seventv/paints/LinearGradientPaint.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "singletons/Settings.hpp"
@@ -29,6 +36,7 @@
 #include "widgets/splits/Split.hpp"
 #include "widgets/splits/SplitInput.hpp"
 
+#include <QBuffer>
 #include <QCoreApplication>
 #include <cstdio>
 #include <QElapsedTimer>
@@ -581,6 +589,191 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
                      index);
         check("a jump can keep room above the message",
               found && value < index - 1 && value > index - 12);
+    }
+
+    // 16. pictures: under image links in the chat, and the card above the
+    //     input after a paste, with its delete button
+    {
+        namespace ip = imagepreview;
+        const auto sites =
+            ip::sites(QStringLiteral("https://www.kappa.lol/, segs.lol"));
+        check("image sites are read from the setting",
+              sites == QStringList{QStringLiteral("kappa.lol"),
+                                   QStringLiteral("segs.lol")});
+        check("a kappa.lol screenshot link is an image link",
+              ip::isImageLink(QStringLiteral("https://kappa.lol/vCECFg"),
+                              sites) &&
+                  ip::isImageLink(QStringLiteral("kappa.lol/vCECFg"), sites) &&
+                  ip::isImageLink(QStringLiteral("https://segs.lol/AbC12"),
+                                  sites));
+        check("kappa.lol's own pages are not",
+              !ip::isImageLink(QStringLiteral("https://kappa.lol/"), sites) &&
+                  !ip::isImageLink(QStringLiteral("https://kappa.lol/delete?ab"),
+                                   sites) &&
+                  !ip::isImageLink(QStringLiteral("https://kappa.lol/uploaders"),
+                                   sites));
+        const auto more =
+            ip::sites(QStringLiteral("kappa.lol segs.lol eblo.id kappalol.fun"));
+        check("eblo.id and kappalol.fun posts and albums are image links",
+              ip::isImageLink(QStringLiteral("https://eblo.id/hH0WwpT"), more) &&
+                  ip::isImageLink(QStringLiteral("https://eblo.id/AqUEzee"),
+                                  more) &&
+                  ip::isImageLink(QStringLiteral("https://kappalol.fun/Y8zpTA"),
+                                  more) &&
+                  ip::isImageLink(
+                      QStringLiteral("https://kappalol.fun/group/Ab12Cd"), more));
+        check("their own pages are not",
+              !ip::isImageLink(QStringLiteral("https://eblo.id/videos"), more) &&
+                  !ip::isImageLink(QStringLiteral("https://eblo.id/new"), more) &&
+                  !ip::isImageLink(QStringLiteral("https://kappalol.fun/board"),
+                                   more) &&
+                  !ip::isImageLink(
+                      QStringLiteral("https://kappalol.fun/profile/twenixz"),
+                      more) &&
+                  !ip::isImageLink(QStringLiteral("https://kappalol.fun/text/Ab12"),
+                                   more));
+        check("an image file on any site is one",
+              ip::isImageLink(QStringLiteral("https://example.com/a/b.PNG"),
+                              sites) &&
+                  ip::isImageLink(
+                      QStringLiteral("https://cdn.example.org/x.webp?v=2"),
+                      sites));
+        check("other pages and local addresses are not",
+              !ip::isImageLink(QStringLiteral("https://example.com/page"),
+                               sites) &&
+                  !ip::isImageLink(QStringLiteral("http://192.168.1.5/a.png"),
+                                   sites) &&
+                  !ip::isImageLink(QStringLiteral("http://localhost/a.png"),
+                                   sites));
+        check("the same link written differently is one key",
+              ip::key(QStringLiteral("http://www.kappa.lol/abc/")) ==
+                  ip::key(QStringLiteral("https://kappa.lol/abc")));
+
+        // a picture under the message
+        QPixmap shot(300, 169);
+        shot.fill(QColor(47, 168, 79));
+        {
+            QPainter painter(&shot);
+            painter.fillRect(QRect(0, 0, 150, 169), QColor(40, 90, 200));
+        }
+        const auto link = QStringLiteral("https://kappa.lol/demo01");
+        ip::insertForTesting(link, Image::fromResourcePixmap(shot));
+        auto pictures =
+            std::make_shared<TwitchChannel>(QStringLiteral("pictures_room"));
+        split.setChannel(
+            IndirectChannel(std::static_pointer_cast<Channel>(pictures)));
+        split.resize(560, 420);
+        MessageBuilder builder;
+        builder.emplace<TextElement>(QStringLiteral("mist1x: смотри"),
+                                     MessageElementFlag::Text);
+        builder.addLink(*linkparser::parse(link), link);
+        auto message = builder.release();
+        const bool hasPreview =
+            std::ranges::any_of(message->elements, [](const auto &element) {
+                return dynamic_cast<ImagePreviewElement *>(element.get()) !=
+                       nullptr;
+            });
+        pictures->addMessage(message, MessageContext::Repost);
+        pump(400);
+        const auto image = split.getChannelView().grab().toImage();
+        int green = 0;
+        int blue = 0;
+        for (int y = 0; y < image.height(); ++y)
+        {
+            for (int x = 0; x < image.width(); ++x)
+            {
+                const QColor c = image.pixelColor(x, y);
+                green += std::abs(c.red() - 47) < 6 &&
+                         std::abs(c.green() - 168) < 6 &&
+                         std::abs(c.blue() - 79) < 6;
+                blue += std::abs(c.red() - 40) < 6 &&
+                        std::abs(c.green() - 90) < 6 &&
+                        std::abs(c.blue() - 200) < 6;
+            }
+        }
+        std::fprintf(stderr, "picture under the link: green=%d blue=%d\n",
+                     green, blue);
+        check("a screenshot link gets its picture under the message",
+              hasPreview && green > 3000 && blue > 3000);
+        if (!screenshotBase.isEmpty())
+        {
+            image.save(screenshotBase + "-picture.png", "PNG");
+        }
+
+        // the card above the input
+        auto *uploader = getApp()->getImageUploader();
+        auto *card = dynamic_cast<UploadPreview *>(
+            split.getChannelView().findChild<QFrame *>(
+                QStringLiteral("uploadPreview")));
+        check("the chat has a card for pasted pictures",
+              uploader != nullptr && card != nullptr && edit != nullptr);
+        if (uploader != nullptr && card != nullptr && edit != nullptr)
+        {
+            QByteArray png;
+            {
+                QBuffer buffer(&png);
+                buffer.open(QIODevice::WriteOnly);
+                shot.save(&buffer, "PNG");
+            }
+            // (typing into this fixture's input is not possible: its text
+            // handlers need services the fixture has not got)
+            uploader->updated.invoke({
+                .kind = ImageUploadUpdate::Kind::Started,
+                .textEdit = edit,
+                .imageData = png,
+            });
+            pump(100);
+            const bool uploading =
+                card->isVisible() && !card->deleteButton()->isVisible();
+            const auto uploaded = QStringLiteral("https://kappa.lol/up42");
+            uploader->updated.invoke({
+                .kind = ImageUploadUpdate::Kind::Finished,
+                .textEdit = edit,
+                .link = uploaded,
+                .deletionLink = QStringLiteral("https://kappa.lol/delete?K"),
+            });
+            pump(150);
+            check("while uploading the card shows the picture, no delete yet",
+                  uploading);
+            check("after the upload it has the delete button",
+                  card->isVisible() && card->deleteButton()->isVisible() &&
+                      card->link() == uploaded);
+            const auto geometry = card->geometry();
+            const auto viewHeight = split.getChannelView().height();
+            std::fprintf(stderr, "upload card: %d,%d %dx%d in a view %d high\n",
+                         geometry.x(), geometry.y(), geometry.width(),
+                         geometry.height(), viewHeight);
+            check("the card sits at the bottom of the chat, over the input",
+                  geometry.bottom() <= viewHeight &&
+                      geometry.bottom() > viewHeight - 24 &&
+                      geometry.height() >= 60);
+            if (!screenshotBase.isEmpty())
+            {
+                split.grab().save(screenshotBase + "-upload-card.png", "PNG");
+            }
+            card->hide();
+
+            // the same card on a bare input: it goes once the link is gone
+            QWidget view;
+            view.resize(500, 300);
+            ResizingTextEdit box;
+            UploadPreview bare(&view, &box, [](const QString &) {});
+            view.show();
+            box.setPlainText(QStringLiteral("look ") + uploaded +
+                             QStringLiteral(" "));
+            bare.apply({
+                .kind = ImageUploadUpdate::Kind::Finished,
+                .textEdit = &box,
+                .link = uploaded,
+            });
+            pump(50);
+            const bool stays = bare.isVisible();
+            box.setPlainText(QStringLiteral("look again"));
+            pump(50);
+            check("the card goes away once the link leaves the input",
+                  stays && !bare.isVisible());
+            view.hide();
+        }
     }
 
     QFile out(report);

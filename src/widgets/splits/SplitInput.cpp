@@ -52,6 +52,7 @@
 #include "widgets/helper/MessageView.hpp"
 #include "widgets/helper/ChannelPointsLabel.hpp"
 #include "widgets/helper/ResizingTextEdit.hpp"
+#include "widgets/helper/UploadPreview.hpp"
 #include "widgets/Notebook.hpp"
 #include "widgets/Scrollbar.hpp"
 #include "widgets/splits/InputCompletionPopup.hpp"
@@ -702,6 +703,25 @@ SplitInput::SplitInput(QWidget *parent, Split *_chatWidget,
             this->checkSpellingChanged();
         },
         this->signalHolder_);
+
+    // the pasted picture, its link and a delete button, over the chat's bottom
+    if (auto *uploader = getApp()->getImageUploader();
+        uploader != nullptr && this->channelView_ != nullptr)
+    {
+        auto *uploadPreview = new UploadPreview(
+            this->channelView_, this->ui_.textEdit,
+            [this](const QString &text) {
+                this->split_->getChannel()->addSystemMessage(text);
+            });
+        this->signalHolder_.managedConnect(
+            uploader->updated,
+            [this, uploadPreview](const ImageUploadUpdate &update) {
+                if (update.textEdit == this->ui_.textEdit)
+                {
+                    uploadPreview->apply(update);
+                }
+            });
+    }
 
     // misc
     this->installTextEditEvents();

@@ -32,6 +32,7 @@
 #include "providers/ffz/FfzEmotes.hpp"
 #include "providers/seventv/SeventvEmotes.hpp"
 #include "providers/seventv/SeventvPaints.hpp"
+#include "singletons/ImageUploader.hpp"
 #include "singletons/Resources.hpp"
 #include "singletons/WindowManager.hpp"
 #ifdef LEAFYRINO_BASELINE_USERCARD_PREVIEW
@@ -186,6 +187,11 @@ public:
         // Never connected: nothing in this fixture asks it to listen.
         return &this->pubSub;
     }
+    ImageUploader *getImageUploader() override
+    {
+        // Nothing is uploaded: the checks only drive its progress signal.
+        return &this->imageUploader;
+    }
 
     WindowManager windows;
     AccountController accounts;
@@ -201,6 +207,7 @@ public:
     SpellChecker spellChecker;
     PubSub pubSub{QStringLiteral("wss://127.0.0.1:9")};
     LinkResolver linkResolver;
+    ImageUploader imageUploader;
 };
 
 PreviewData fixture(const QString &scenario)

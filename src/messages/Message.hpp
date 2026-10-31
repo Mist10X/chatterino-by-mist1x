@@ -111,6 +111,18 @@ struct Message {
     std::vector<std::unique_ptr<MessageElement>> elements;
     ClientDetectionStatus clientDetection = ClientDetectionStatus::Unknown;
 
+    /// The room's chat mode changed ("now in slow mode"): such notices get a
+    /// soft purple box and an icon of the mode.
+    enum class RoomMode : std::uint8_t {
+        None,
+        Subscribers,
+        Slow,
+        Followers,
+        EmoteOnly,
+        UniqueChat,
+    };
+    RoomMode roomMode = RoomMode::None;
+
     ScrollbarHighlight getScrollBarHighlight() const;
     /// True when this message should hide the reward chrome and show the enlarged emote.
     bool usesTwitchGigantifyPresentation() const;

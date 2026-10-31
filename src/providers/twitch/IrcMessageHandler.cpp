@@ -34,10 +34,13 @@
 #include "util/IrcHelpers.hpp"
 
 #include <IrcMessage>
+#include <QHash>
 #include <QLocale>
+#include <QRegularExpression>
 #include <QStringBuilder>
 
 #include <algorithm>
+#include <array>
 #include <memory>
 
 using namespace Qt::StringLiterals;
@@ -270,6 +273,131 @@ std::optional<ClearChatMessage> parseClearChatMessage(
 /**
  * Parse a single IRC NOTICE message into a Chatterino message
  **/
+/// "10 minutes", "1 week" in the UI language.
+QString roomModeDuration(const QString &english)
+{
+    if (!activeUiLanguage().startsWith(u"ru"_s))
+    {
+        return english;
+    }
+    static const QRegularExpression part(
+        uR"((\d+)\s*(minute|hour|day|week|month)s?)"_s,
+        QRegularExpression::CaseInsensitiveOption);
+    // one / few / many
+    static const QHash<QString, std::array<QString, 3>> units{
+        {u"minute"_s, {u"минута"_s, u"минуты"_s, u"минут"_s}},
+        {u"hour"_s, {u"час"_s, u"часа"_s, u"часов"_s}},
+        {u"day"_s, {u"день"_s, u"дня"_s, u"дней"_s}},
+        {u"week"_s, {u"неделя"_s, u"недели"_s, u"недель"_s}},
+        {u"month"_s, {u"месяц"_s, u"месяца"_s, u"месяцев"_s}},
+    };
+    QStringList parts;
+    auto it = part.globalMatch(english);
+    while (it.hasNext())
+    {
+        const auto match = it.next();
+        const auto n = match.captured(1).toLongLong();
+        const auto &forms = units.value(match.captured(2).toLower());
+        const auto mod10 = n % 10;
+        const auto mod100 = n % 100;
+        const auto &form =
+            mod10 == 1 && mod100 != 11 ? forms[0]
+            : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
+                ? forms[1]
+                : forms[2];
+        parts.append(QString::number(n) + u' ' + form);
+    }
+    return parts.isEmpty() ? english : parts.join(u' ');
+}
+
+/// Room mode changes ("This room is now in slow mode..."): in the UI
+/// language and marked for the purple box. nullptr for other notices.
+MessagePtr roomModeNotice(Communi::IrcNoticeMessage *message)
+{
+    using Mode = Message::RoomMode;
+    const auto id = message->tags().getOrEmpty("msg-id");
+    const auto content = message->content();
+    Mode mode = Mode::None;
+    QString text;
+    if (id == u"subs_on")
+    {
+        mode = Mode::Subscribers;
+        text = uiText("This room is now in subscribers-only mode.");
+    }
+    else if (id == u"subs_off")
+    {
+        mode = Mode::Subscribers;
+        text = uiText("This room is no longer in subscribers-only mode.");
+    }
+    else if (id == u"slow_on")
+    {
+        // This room is now in slow mode. You may send messages every 30 seconds.
+        static const QRegularExpression seconds(uR"(every (\d+) second)"_s);
+        const auto match = seconds.match(content);
+        mode = Mode::Slow;
+        text = match.hasMatch()
+                   ? uiText("This room is now in slow mode. You may send "
+                            "messages every %1 seconds.")
+                         .arg(match.captured(1))
+                   : uiText("This room is now in slow mode.");
+    }
+    else if (id == u"slow_off")
+    {
+        mode = Mode::Slow;
+        text = uiText("This room is no longer in slow mode.");
+    }
+    else if (id == u"followers_on")
+    {
+        // This room is now in 10 minutes followers-only mode.
+        static const QRegularExpression duration(
+            uR"(now in (.+) followers-only)"_s);
+        const auto match = duration.match(content);
+        mode = Mode::Followers;
+        text = match.hasMatch()
+                   ? uiText("This room is now in %1 followers-only mode.")
+                         .arg(roomModeDuration(match.captured(1)))
+                   : uiText("This room is now in followers-only mode.");
+    }
+    else if (id == u"followers_on_zero")
+    {
+        mode = Mode::Followers;
+        text = uiText("This room is now in followers-only mode.");
+    }
+    else if (id == u"followers_off")
+    {
+        mode = Mode::Followers;
+        text = uiText("This room is no longer in followers-only mode.");
+    }
+    else if (id == u"emote_only_on")
+    {
+        mode = Mode::EmoteOnly;
+        text = uiText("This room is now in emote-only mode.");
+    }
+    else if (id == u"emote_only_off")
+    {
+        mode = Mode::EmoteOnly;
+        text = uiText("This room is no longer in emote-only mode.");
+    }
+    else if (id == u"r9k_on")
+    {
+        mode = Mode::UniqueChat;
+        text = uiText("This room is now in unique-chat mode.");
+    }
+    else if (id == u"r9k_off")
+    {
+        mode = Mode::UniqueChat;
+        text = uiText("This room is no longer in unique-chat mode.");
+    }
+    if (mode == Mode::None)
+    {
+        return nullptr;
+    }
+    MessageBuilder builder(systemMessage, text,
+                           calculateMessageTime(message).time());
+    builder->roomMode = mode;
+    return builder.release();
+}
+
 MessagePtr parseNoticeMessage(Communi::IrcNoticeMessage *message)
 {
     assert(message != nullptr);
@@ -316,6 +444,11 @@ MessagePtr parseNoticeMessage(Communi::IrcNoticeMessage *message)
 
         return makeSystemMessage(formattedMessage,
                                  calculateMessageTime(message).time());
+    }
+
+    if (auto mode = roomModeNotice(message))
+    {
+        return mode;
     }
 
     // default case
