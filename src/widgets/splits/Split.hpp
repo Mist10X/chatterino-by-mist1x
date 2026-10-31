@@ -182,6 +182,13 @@ private:
      * @brief Opens a Twitch channel's chat in a new tab
      */
     void joinChannelInNewTab(const ChannelPtr &channel);
+    /**
+     * @brief The raid went to `channel`: select its tab, or open one right
+     * after this split's tab (taking the user along only if this tab is the
+     * selected one). This split keeps its channel.
+     * @return false when this split is not in a window's tabs
+     */
+    bool openRaidTarget(const ChannelPtr &channel);
 
     /**
      * @brief Refresh moderation mode layouts/buttons

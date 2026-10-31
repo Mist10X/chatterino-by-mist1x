@@ -1162,6 +1162,63 @@ void Split::updateInputPlaceholder()
     this->input_->ui_.textEdit->setPlaceholderText(placeholderText);
 }
 
+bool Split::openRaidTarget(const ChannelPtr &channel)
+{
+    // the tabs this split is in (main window or a popup window)
+    SplitNotebook *notebook = nullptr;
+    QWidget *page = this;
+    for (auto *widget = this->parentWidget(); widget != nullptr;
+         widget = widget->parentWidget())
+    {
+        if ((notebook = dynamic_cast<SplitNotebook *>(widget)))
+        {
+            break;
+        }
+        page = widget;
+    }
+    if (notebook == nullptr)
+    {
+        return false;
+    }
+    // Only take the user along when they are looking at the raiding
+    // channel; a tab in the background opens the new one in the background.
+    const bool follow = notebook->getSelectedPage() == page;
+
+    // The channel's tab is open already: go there.
+    for (int i = 0; i < notebook->getPageCount(); ++i)
+    {
+        auto *container =
+            dynamic_cast<SplitContainer *>(notebook->getPageAt(i));
+        if (container == nullptr)
+        {
+            continue;
+        }
+        for (auto *split : container->getSplits())
+        {
+            if (split != this && split->getChannel() == channel)
+            {
+                if (follow)
+                {
+                    notebook->select(container);
+                    container->setSelected(split);
+                }
+                return true;
+            }
+        }
+    }
+
+    // Otherwise a new tab right after this one; this tab stays as it is.
+    auto *container = new SplitContainer(notebook);
+    auto *tab = notebook->addPageAt(container, notebook->indexOf(page) + 1,
+                                    QString(), follow);
+    container->setTab(tab);
+    tab->setParent(notebook);
+    auto *split = new Split(container);
+    split->setChannel(IndirectChannel(channel));
+    container->insertSplit(split);
+    return true;
+}
+
 void Split::joinChannelInNewTab(const ChannelPtr &channel)
 {
     auto &nb = getApp()->getWindows()->getMainWindow().getNotebook();
@@ -2057,10 +2114,12 @@ void Split::setChannel(IndirectChannel newChannel)
                     {
                         return;
                     }
-                    this->setChannel(IndirectChannel(channel));
-                    channel->addSystemMessage(
-                        uiText("You came here with the raid from %1")
-                            .arg(source));
+                    if (this->openRaidTarget(channel))
+                    {
+                        channel->addSystemMessage(
+                            uiText("You came here with the raid from %1")
+                                .arg(source));
+                    }
                 });
             });
         this->channelSignalHolder_.managedConnect(
