@@ -749,6 +749,7 @@ set(SOURCE_FILES
         util/BadgeRegistry.hpp
         util/BoostJsonWrap.cpp
         util/BoostJsonWrap.hpp
+        util/BundledFile.hpp
         util/CancellationToken.hpp
         util/ChannelHelpers.hpp
         util/Clipboard.cpp
@@ -1530,8 +1531,8 @@ if (APPLE AND BUILD_APP)
     set_target_properties(${EXECUTABLE_PROJECT} PROPERTIES MACOSX_BUNDLE TRUE)
     set_target_properties(${EXECUTABLE_PROJECT}
         PROPERTIES
-        MACOSX_BUNDLE_BUNDLE_NAME "Leafyrino"
-        MACOSX_BUNDLE_GUI_IDENTIFIER "com.leafyzito.leafyrino"
+        MACOSX_BUNDLE_BUNDLE_NAME "Chatterino by Mist1X"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "app.mist1x.chatterino"
         MACOSX_BUNDLE_LONG_VERSION_STRING "${PROJECT_VERSION}"
         MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}"
         MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"

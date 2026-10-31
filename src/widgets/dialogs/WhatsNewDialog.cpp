@@ -11,6 +11,7 @@
 #include "providers/twitch/TwitchAccount.hpp"
 #include "singletons/Paths.hpp"
 #include "singletons/Theme.hpp"
+#include "util/BundledFile.hpp"
 
 #include <QCoreApplication>
 #include <QDesktopServices>
@@ -48,8 +49,7 @@ struct Section {
 /// lines), newest first.
 QList<Section> readNotes()
 {
-    QFile file(QDir(QCoreApplication::applicationDirPath())
-                   .filePath(QStringLiteral("Что нового.txt")));
+    QFile file(bundledFilePath(QStringLiteral("Что нового.txt")));
     if (!file.open(QIODevice::ReadOnly))
     {
         return {};

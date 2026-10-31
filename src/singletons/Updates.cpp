@@ -22,6 +22,7 @@
 #include <QCryptographicHash>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QMessageBox>
 #include <QProcess>
@@ -110,6 +111,72 @@ NetworkRequest githubRequest(const QString &url)
         .followRedirects(true);
 }
 
+#ifdef Q_OS_MACOS
+/// "<...>/Chatterino by Mist1X.app" when running from a bundle, else empty.
+QString runningBundlePath()
+{
+    // applicationDirPath() is <...>/X.app/Contents/MacOS
+    QDir dir(QCoreApplication::applicationDirPath());
+    if (!dir.cdUp() || !dir.cdUp())
+    {
+        return {};
+    }
+    return dir.absolutePath().endsWith(u".app") ? dir.absolutePath()
+                                                : QString();
+}
+
+/// Waits for this process to quit, swaps the .app for the one in the DMG
+/// (the old one stays until the new one is in place) and starts it.
+const char *const MAC_UPDATE_SCRIPT = R"(#!/bin/sh
+PID="$1"; DMG="$2"; APP="$3"; LOG="$4"
+exec >"$LOG" 2>&1
+n=0
+while kill -0 "$PID" 2>/dev/null && [ "$n" -lt 120 ]; do sleep 0.5; n=$((n+1)); done
+MNT=$(mktemp -d /tmp/mist1x-update.XXXXXX) || exit 1
+cleanup() { hdiutil detach "$MNT" -force -quiet; rmdir "$MNT"; }
+fail() { echo "update failed: $1"; cleanup; [ -d "$APP" ] && open "$APP"; exit 1; }
+hdiutil attach -nobrowse -readonly -noverify -mountpoint "$MNT" "$DMG" || fail attach
+NEW=""
+for a in "$MNT"/*.app; do NEW="$a"; break; done
+[ -d "$NEW" ] || fail "no app in the image"
+TMP="$APP.new"; OLD="$APP.old"
+rm -rf "$TMP" "$OLD"
+ditto "$NEW" "$TMP" || fail copy
+xattr -cr "$TMP"
+codesign --verify --deep "$TMP" || { rm -rf "$TMP"; fail signature; }
+mv "$APP" "$OLD" || { rm -rf "$TMP"; fail replace; }
+mv "$TMP" "$APP" || { mv "$OLD" "$APP"; fail replace; }
+rm -rf "$OLD"
+cleanup
+rm -f "$DMG"
+open "$APP"
+)";
+
+/// Starts the swap above; false when it could not be started.
+bool startMacUpdate(const QString &dmgPath, const QString &miscDirectory)
+{
+    const auto bundle = runningBundlePath();
+    if (bundle.isEmpty())
+    {
+        return false;
+    }
+    const auto scriptPath = combinePath(miscDirectory, "update-mac.sh");
+    QFile script(scriptPath);
+    if (!script.open(QIODevice::Truncate | QIODevice::WriteOnly) ||
+        script.write(MAC_UPDATE_SCRIPT) < 0)
+    {
+        return false;
+    }
+    script.close();
+    script.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner |
+                          QFileDevice::ExeOwner);
+    return QProcess::startDetached(
+        QStringLiteral("/bin/sh"),
+        {scriptPath, QString::number(QCoreApplication::applicationPid()),
+         dmgPath, bundle, combinePath(miscDirectory, "update-mac.log")});
+}
+#endif
+
 }  // namespace
 
 namespace chatterino {
@@ -154,7 +221,8 @@ bool Updates::isDowngradeOf(const QString &online, const QString &current)
 void Updates::deleteOldFiles()
 {
     std::ignore = QtConcurrent::run([dir{this->paths.miscDirectory}] {
-        for (const auto *name : {"Update.exe", "update.zip"})
+        for (const auto *name :
+             {"Update.exe", "update.zip", "Update.dmg", "update-mac.sh"})
         {
             auto path = combinePath(dir, name);
             if (QFile::exists(path))
@@ -162,6 +230,15 @@ void Updates::deleteOldFiles()
                 QFile::remove(path);
             }
         }
+#ifdef Q_OS_MACOS
+        // left over when an update was interrupted after the swap
+        const auto bundle = runningBundlePath();
+        if (!bundle.isEmpty())
+        {
+            QDir(bundle + u".old").removeRecursively();
+            QDir(bundle + u".new").removeRecursively();
+        }
+#endif
     });
 }
 
@@ -191,6 +268,11 @@ bool Updates::isInstalledCopy()
     // the setup leaves its uninstaller next to the program
     return QFile::exists(
         QDir(QCoreApplication::applicationDirPath()).filePath("unins000.exe"));
+#elif defined(Q_OS_MACOS)
+    // an app that was moved out of the disk image and can be replaced
+    const auto bundle = runningBundlePath();
+    return !bundle.isEmpty() && !bundle.startsWith(u"/Volumes/") &&
+           QFileInfo(QFileInfo(bundle).absolutePath()).isWritable();
 #else
     return false;
 #endif
@@ -294,8 +376,13 @@ void Updates::installUpdates()
                         return;
                     }
 
+#ifdef Q_OS_MACOS
+                    const auto filePath =
+                        combinePath(this->paths.miscDirectory, "Update.dmg");
+#else
                     const auto filePath =
                         combinePath(this->paths.miscDirectory, "Update.exe");
+#endif
                     QFile file(filePath);
                     if (!file.open(QIODevice::Truncate | QIODevice::WriteOnly) ||
                         file.write(data) != data.size())
@@ -311,9 +398,15 @@ void Updates::installUpdates()
                     // The setup shows only its progress, closes this copy if
                     // it is still running, keeps the settings and starts the
                     // new version (AUTOUPDATE, see ChatterinoByMist1X.iss).
+#ifdef Q_OS_MACOS
+                    // the helper replaces this app after it has quit
+                    const bool started =
+                        startMacUpdate(filePath, this->paths.miscDirectory);
+#else
                     const bool started = QProcess::startDetached(
                         filePath, {"/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART",
                                    "/CLOSEAPPLICATIONS", "/AUTOUPDATE=1"});
+#endif
                     if (!started)
                     {
                         this->updateFailed_(
@@ -368,8 +461,13 @@ void Updates::checkForUpdates()
             return;
         }
 
+#ifdef Q_OS_MACOS
+        const auto setupName =
+            u"ChatterinoByMist1X-" % version % u"-macOS-arm64.dmg";
+#else
         const auto setupName =
             u"ChatterinoByMist1X-Setup-" % version % u".exe";
+#endif
         const auto portableName =
             u"ChatterinoByMist1X-" % version % u"-portable.zip";
         QString setup;

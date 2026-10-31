@@ -229,6 +229,22 @@ void Window::addCustomTitlebarButtons()
 {
     if (!this->hasCustomWindowFrame())
     {
+#ifdef Q_OS_MACOS
+        // The system title bar has no buttons for us, but the update card
+        // and the notices after an update (and for a new copy) are still due.
+        if (this->type_ == WindowType::Main)
+        {
+            initUpdateBanner(this, this->signalHolder_);
+            if (!getApp()->getArgs().uiSnapshot &&
+                !getApp()->getArgs().dontSaveSettings)
+            {
+                QTimer::singleShot(1200, this, [this] {
+                    showWhatsNewIfUpdated(this);
+                    showWelcomeDialogIfNew(this);
+                });
+            }
+        }
+#endif
         return;
     }
     if (this->type_ != WindowType::Main)
