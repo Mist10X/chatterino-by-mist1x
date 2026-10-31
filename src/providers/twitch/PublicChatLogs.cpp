@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <deque>
 #include <memory>
+#include <utility>
 #include <vector>
 
 namespace chatterino::publiclogs {
@@ -42,9 +43,13 @@ qint64 SPACING_MS = 1500;
 constexpr qint64 COOLDOWN_MS = 30000;
 // A mirror that failed or kept a page waiting is left out for a while (as the
 // Archive does): one dead service must not slow every page.
-constexpr qint64 COLD_MS = 10 * 60 * 1000;
-// Once one mirror has answered, a page waits this long for the others.
-constexpr int GRACE_MS = 3000;
+constexpr qint64 COLD_MS = 30 * 60 * 1000;
+// Once one mirror has answered, a page waits this long for the others. The
+// working mirrors answer within a second of each other (measured 31.10:
+// 0.4 s and 0.8 s); a slow one (14 s) would not make the timeout anyway.
+constexpr int GRACE_MS = 800;
+// A prefetched newest page is handed out for this long.
+constexpr qint64 PREFETCH_FRESH_MS = 90 * 1000;
 constexpr int REQUEST_TIMEOUT_MS = 8000;
 // A page that waited this long for its turn gives up on that mirror.
 constexpr qint64 PAGE_DEADLINE_MS = 25000;
@@ -512,10 +517,105 @@ std::optional<QJsonObject> parseLine(const QByteArray &line,
     return row;
 }
 
+namespace {
+
+/// The newest page of one person in one channel, asked for when the card
+/// opened.
+struct Prefetched {
+    qint64 at = 0;
+    bool done = false;
+    QJsonObject result;
+    std::vector<std::pair<QPointer<QObject>, PageCallback>> waiting;
+};
+
+QHash<QString, std::shared_ptr<Prefetched>> &prefetched()
+{
+    static QHash<QString, std::shared_ptr<Prefetched>> value;
+    return value;
+}
+
+QString prefetchKey(const QString &userId, const QString &channel)
+{
+    return userId + u'#' + channel.toLower();
+}
+
+/// A fresh or running prefetch of this page, or nullptr.
+std::shared_ptr<Prefetched> livePrefetch(const QString &key)
+{
+    auto entry = prefetched().value(key);
+    if (entry && entry->done && nowMs() - entry->at > PREFETCH_FRESH_MS)
+    {
+        prefetched().remove(key);
+        return nullptr;
+    }
+    return entry;
+}
+
+}  // namespace
+
+void prefetch(const QString &userId, const QString &login,
+              const QString &channel)
+{
+    const auto key = prefetchKey(userId, channel);
+    if (userId.isEmpty() || channel.isEmpty() || livePrefetch(key))
+    {
+        return;
+    }
+    if (prefetched().size() > 50)
+    {
+        prefetched().clear();  // cards of long ago
+    }
+    auto entry = std::make_shared<Prefetched>();
+    entry->at = nowMs();
+    prefetched().insert(key, entry);
+    requestPage(userId, login, channel, {}, nullptr,
+                [key, entry](const QJsonObject &page) {
+                    entry->done = true;
+                    entry->at = nowMs();
+                    entry->result = page;
+                    const auto status = page.value("status").toString();
+                    if (status != u"found" && status != u"empty" &&
+                        prefetched().value(key) == entry)
+                    {
+                        // a failure is not kept: the button asks again
+                        prefetched().remove(key);
+                    }
+                    for (auto &[caller, callback] :
+                         std::exchange(entry->waiting, {}))
+                    {
+                        if (caller)
+                        {
+                            callback(page);
+                        }
+                    }
+                });
+}
+
 void requestPage(const QString &userId, const QString &login,
                  const QString &channel, const QJsonObject &before,
                  const QObject *caller, PageCallback callback)
 {
+    // The newest page may be on its way already (asked when the card opened).
+    if (before.isEmpty() && caller != nullptr)
+    {
+        if (auto entry = livePrefetch(prefetchKey(userId, channel)))
+        {
+            QPointer<QObject> guard(const_cast<QObject *>(caller));
+            if (!entry->done)
+            {
+                entry->waiting.emplace_back(guard, std::move(callback));
+                return;
+            }
+            // as a request would: answered later, not inside this call
+            QTimer::singleShot(0, guard.data(),
+                               [result = entry->result,
+                                callback = std::move(callback)] {
+                                   callback(result);
+                               });
+            return;
+        }
+    }
+
     auto page = std::make_shared<Page>();
     page->userId = userId;
     page->login = login.toLower();
@@ -599,6 +699,7 @@ void setMirrorsForTesting(const QStringList &list, int spacingMs)
     hosts().resize(size_t(list.size()));
     refusedUsers().clear();
     refusedChannels().clear();
+    prefetched().clear();
     SPACING_MS = spacingMs;
 }
 

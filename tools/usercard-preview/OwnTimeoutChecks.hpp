@@ -23,9 +23,12 @@
 #include "messages/Image.hpp"
 #include "messages/MessageBuilder.hpp"
 #include "messages/MessageElement.hpp"
+#include "messages/MessageParseArgs.hpp"
 #include "providers/links/ImagePreview.hpp"
 #include "singletons/ImageUploader.hpp"
 #include "widgets/helper/UploadPreview.hpp"
+#include "widgets/splits/InputHighlighter.hpp"
+#include "controllers/spellcheck/SpellChecker.hpp"
 #include "providers/seventv/paints/LinearGradientPaint.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "singletons/Settings.hpp"
@@ -36,7 +39,10 @@
 #include "widgets/splits/Split.hpp"
 #include "widgets/splits/SplitInput.hpp"
 
+#include <IrcMessage>
 #include <QBuffer>
+#include <QSyntaxHighlighter>
+#include <QTextCharFormat>
 #include <QCoreApplication>
 #include <cstdio>
 #include <QElapsedTimer>
@@ -774,6 +780,118 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
                   stays && !bare.isVisible());
             view.hide();
         }
+    }
+
+    // 17. whispers as cards: header, the sender's name as written, global
+    //     badges only, a reply button; your own ones «to <Name>»
+    {
+        auto whispers = std::make_shared<Channel>(
+            QStringLiteral("/whispers"), Channel::Type::TwitchWhispers);
+        MessageBuilder theirs;
+        theirs.emplace<TimestampElement>();
+        theirs.emplace<TextElement>(QStringLiteral("OneShkof:"),
+                                    MessageElementFlag::Username,
+                                    QColor(QStringLiteral("#FF4D4D")),
+                                    FontStyle::ChatMediumBold)
+            ->setLink({Link::UserWhisper, QStringLiteral("OneShkof")});
+        theirs.emplace<TextElement>(QStringLiteral("о, да, работает"),
+                                    MessageElementFlag::Text);
+        auto incoming = theirs.release();
+        incoming->loginName = QStringLiteral("oneshkof");
+        MessageBuilder::makeWhisperCard(*incoming, uiText("Whisper"),
+                                        incoming->loginName);
+        const auto &els = incoming->elements;
+        const bool cardOk =
+            !els.empty() &&
+            dynamic_cast<NoticeIconElement *>(els.front().get()) &&
+            dynamic_cast<WhisperReplyElement *>(els.back().get()) &&
+            incoming->flags.has(MessageFlag::Whisper);
+        whispers->addMessage(incoming, MessageContext::Repost);
+        check("an incoming whisper is a card with a reply button", cardOk);
+
+        MessageBuilder mine;
+        mine.emplace<TimestampElement>();
+        mine.emplace<TextElement>(QStringLiteral("Mist1X_x:"),
+                                  MessageElementFlag::Username,
+                                  MessageColor::Text, FontStyle::ChatMediumBold)
+            ->setLink({Link::UserInfo, QStringLiteral("mist1x_x")});
+        mine.emplace<TextElement>(QStringLiteral("ну шо работает?"),
+                                  MessageElementFlag::Text);
+        auto own = mine.release();
+        MessageBuilder::makeWhisperCard(
+            *own, uiText("Whisper to %1").arg(QStringLiteral("OneShkof")), {});
+        whispers->addMessage(own, MessageContext::Repost);
+
+        split.setChannel(IndirectChannel(whispers));
+        split.resize(560, 260);
+        pump(300);
+        if (!screenshotBase.isEmpty())
+        {
+            split.getChannelView().grab().save(screenshotBase + "-whispers.png",
+                                               "PNG");
+        }
+    }
+
+    // 18. emotes in the input are set taller than the text: the input grows
+    //     with them instead of cutting them off
+    {
+        struct Tall : QSyntaxHighlighter {
+            using QSyntaxHighlighter::QSyntaxHighlighter;
+            void highlightBlock(const QString &text) override
+            {
+                auto font = this->document()->defaultFont();
+                if (font.pixelSize() > 0)
+                {
+                    font.setPixelSize(font.pixelSize() * 2);
+                }
+                else
+                {
+                    font.setPointSizeF(font.pointSizeF() * 2);
+                }
+                QTextCharFormat format;
+                format.setFont(font);
+                this->setFormat(0, int(text.size()), format);
+            }
+        };
+        ResizingTextEdit box;
+        box.resize(300, 40);
+        box.setPlainText(QStringLiteral("peepoHappy peepoHappy"));
+        const int plain = box.sizeHint().height();
+        Tall tall(box.document());
+        tall.rehighlight();
+        const int grown = box.sizeHint().height();
+        std::fprintf(stderr, "input height: plain=%d with emotes=%d\n", plain,
+                     grown);
+        check("taller emotes make the input taller", grown > plain + 4);
+    }
+
+    // 19. "/w <name> " at the start of the input is a «DM to <name>» chip
+    {
+        ResizingTextEdit box;
+        box.setFont(edit != nullptr ? edit->font() : box.font());
+        box.resize(520, 36);
+        InputHighlighter highlighter(*getApp()->getSpellChecker(), nullptr);
+        highlighter.setDocument(box.document());
+        box.paintOverlay = [&](QPainter &painter) {
+            highlighter.paintWhisperChip(painter, box);
+        };
+        box.setPlainText(QStringLiteral("/w oneshkof ну шо работает?"));
+        box.show();
+        pump(100);
+        const int prefix = highlighter.whisperPrefix();
+        if (!screenshotBase.isEmpty())
+        {
+            box.grab().save(screenshotBase + "-whisper-chip.png", "PNG");
+        }
+        box.setPlainText(QStringLiteral("/w oneshk"));
+        pump(20);
+        const int typing = highlighter.whisperPrefix();
+        box.setPlainText(QStringLiteral("обычное сообщение"));
+        pump(20);
+        check("a typed-out /w name becomes a chip, not while typing the name",
+              prefix == int(QStringLiteral("/w oneshkof ").size()) &&
+                  typing == 0 && highlighter.whisperPrefix() == 0);
+        box.hide();
     }
 
     QFile out(report);

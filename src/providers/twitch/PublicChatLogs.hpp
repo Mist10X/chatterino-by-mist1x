@@ -38,6 +38,12 @@ void requestPage(const QString &userId, const QString &login,
                  const QString &channel, const QJsonObject &before,
                  const QObject *caller, PageCallback callback);
 
+/// Starts on the newest page in the background (the usercard calls it when
+/// it opens). A requestPage for that page shortly after gets it at once, or
+/// joins the request still running.
+void prefetch(const QString &userId, const QString &login,
+              const QString &channel);
+
 /// Messages a page returns at most.
 constexpr int PAGE_SIZE = 100;
 

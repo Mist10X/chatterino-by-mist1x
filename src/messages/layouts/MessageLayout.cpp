@@ -14,6 +14,7 @@
 #include "providers/colors/ColorProvider.hpp"
 #include "singletons/Resources.hpp"
 #include "singletons/Settings.hpp"
+#include "singletons/Theme.hpp"
 #include "singletons/StreamerMode.hpp"
 #include "singletons/WindowManager.hpp"
 #include "util/DebugCount.hpp"
@@ -687,6 +688,31 @@ void MessageLayout::updateBuffer(QPixmap *buffer,
 
         painter.drawPixmap(QRect(left, top, int(size), int(size)),
                            clientDetectionIcon.value());
+    }
+
+    if (this->message_->flags.has(MessageFlag::Whisper) &&
+        this->container_.getLineCount() != 0)
+    {
+        // A whisper is a card across the chat's width.
+        const qreal s = this->scale_;
+        auto box = this->container_.getContentBounds().adjusted(-5 * s, -2 * s,
+                                                                5 * s, 2 * s);
+        box.setLeft(std::max(box.left(), qreal(s)));
+        box.setRight(std::max(box.right(),
+                              this->container_.getWidth() - 4 * s));
+        box.setTop(std::max(box.top(), qreal(0.5)));
+        box.setBottom(
+            std::min(box.bottom(), this->container_.getHeight() - 0.5));
+        const bool light = this->message_->flags.has(MessageFlag::Whisper) &&
+                           getApp()->getThemes()->isLightTheme();
+        painter.save();
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setPen(QPen(light ? QColor(0, 0, 0, 40) : QColor(255, 255, 255, 26),
+                            1.0));
+        painter.setBrush(light ? QColor(120, 90, 200, 14)
+                               : QColor(168, 132, 242, 16));
+        painter.drawRoundedRect(box, 7 * s, 7 * s);
+        painter.restore();
     }
 
     if (const auto kind = punishmentKind(*this->message_);

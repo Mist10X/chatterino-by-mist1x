@@ -528,6 +528,7 @@ SplitInput::SplitInput(QWidget *parent, Split *_chatWidget,
                                        });
     this->ui_.textEdit->paintOverlay = [this](QPainter &painter) {
         this->inputHighlighter->paintEmotes(painter, *this->ui_.textEdit);
+        this->inputHighlighter->paintWhisperChip(painter, *this->ui_.textEdit);
     };
     // Emote images arrive later than the text: lay the line out again then.
     this->signalHolder_.managedConnect(
@@ -2473,6 +2474,22 @@ void SplitInput::installTextEditEvents()
                 return;
             }
 
+            // Esc on a whisper: the same text as a normal chat message
+            if (event->key() == Qt::Key_Escape &&
+                event->modifiers() == Qt::NoModifier &&
+                this->inputHighlighter->whisperPrefix() > 0 &&
+                !(this->inputCompletionPopup_ &&
+                  this->inputCompletionPopup_->isVisible()))
+            {
+                auto cursor = this->ui_.textEdit->textCursor();
+                cursor.setPosition(0);
+                cursor.setPosition(this->inputHighlighter->whisperPrefix(),
+                                   QTextCursor::KeepAnchor);
+                cursor.removeSelectedText();
+                event->accept();
+                return;
+            }
+
             if (auto *popup = this->inputCompletionPopup_.data())
             {
                 if (popup->isVisible())
@@ -3077,6 +3094,18 @@ void SplitInput::updateRaidStatus()
 
 void SplitInput::onCursorPositionChanged()
 {
+    // The caret stays out of the whisper chip (Home goes to the message).
+    if (const int prefix = this->inputHighlighter->whisperPrefix(); prefix > 0)
+    {
+        auto cursor = this->ui_.textEdit->textCursor();
+        if (!cursor.hasSelection() && cursor.position() < prefix &&
+            cursor.position() > 0)
+        {
+            cursor.setPosition(prefix);
+            this->ui_.textEdit->setTextCursor(cursor);
+            return;
+        }
+    }
     this->updateCompletionPopup();
 }
 

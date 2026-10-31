@@ -1084,7 +1084,7 @@ public:
     };
     IntSetting scrollbackSplitLimit = {
         "/misc/scrollback/splitLimit",
-        1000,
+        3000,
     };
     IntSetting scrollbackUsercardLimit = {
         "/misc/scrollback/usercardLimit",

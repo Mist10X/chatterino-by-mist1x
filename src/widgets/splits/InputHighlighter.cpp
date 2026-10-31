@@ -7,6 +7,7 @@
 #include "Application.hpp"
 #include "common/Aliases.hpp"
 #include "common/LinkParser.hpp"
+#include "common/UiLanguage.hpp"
 #include "controllers/accounts/AccountController.hpp"
 #include "controllers/commands/CommandController.hpp"
 #include "controllers/spellcheck/SpellChecker.hpp"
@@ -22,6 +23,7 @@
 
 #include <QFontMetricsF>
 #include <QPainter>
+#include <QRegularExpression>
 #include <QTextBlock>
 #include <QTextBlockUserData>
 #include <QTextCharFormat>
@@ -279,7 +281,136 @@ void InputHighlighter::setEmotePreviewEnabled(bool enabled)
 
 bool InputHighlighter::needsDocument() const
 {
-    return this->spellCheck_ || this->emotePreview_;
+    // the whisper chip is always on
+    return true;
+}
+
+namespace {
+
+QFont whisperChipFont(const QFont &base)
+{
+    auto font = base;
+    if (font.pixelSize() > 0)
+    {
+        font.setPixelSize(std::max(9, int(std::round(font.pixelSize() * 0.86))));
+    }
+    else
+    {
+        font.setPointSizeF(font.pointSizeF() * 0.86);
+    }
+    return font;
+}
+
+QString whisperChipText(const QString &target)
+{
+    return uiText("DM to %1").arg(target);
+}
+
+}  // namespace
+
+void InputHighlighter::highlightWhisper(const QString &text)
+{
+    if (this->currentBlock().blockNumber() != 0)
+    {
+        return;
+    }
+    // the name is followed by a space: it is typed out (or completed)
+    static const QRegularExpression whisper(
+        QStringLiteral("^/(?:w|whisper)\\s+@?([A-Za-z0-9_]{2,25})\\s"));
+    const auto match = whisper.match(text);
+    if (!match.hasMatch())
+    {
+        this->whisperPrefix_ = 0;
+        this->whisperTarget_.clear();
+        return;
+    }
+    this->whisperTarget_ = match.captured(1);
+    this->whisperPrefix_ = int(match.capturedLength());
+
+    // the prefix keeps its characters but is invisible and as wide as the chip
+    const auto base = this->document()->defaultFont();
+    const QFontMetricsF metrics(base);
+    const QFontMetricsF chipMetrics(whisperChipFont(base));
+    const qreal chip =
+        chipMetrics.horizontalAdvance(whisperChipText(this->whisperTarget_)) +
+        metrics.height() + 13;
+    const auto prefix = match.captured(0);
+    QTextCharFormat format;
+    format.setForeground(Qt::transparent);
+    format.setFontLetterSpacingType(QFont::AbsoluteSpacing);
+    format.setFontLetterSpacing((chip + 6 - metrics.horizontalAdvance(prefix)) /
+                                prefix.size());
+    this->setFormat(0, this->whisperPrefix_, format);
+}
+
+void InputHighlighter::paintWhisperChip(QPainter &painter,
+                                        const QTextEdit &edit) const
+{
+    if (this->whisperPrefix_ == 0 || this->document() == nullptr)
+    {
+        return;
+    }
+    QTextCursor start(this->document());
+    start.setPosition(0);
+    QTextCursor end(this->document());
+    end.setPosition(this->whisperPrefix_);
+    const auto from = edit.cursorRect(start);
+    const auto to = edit.cursorRect(end);
+    if (to.top() != from.top())
+    {
+        return;  // a very narrow input: no room for the chip on the line
+    }
+    const auto base = this->document()->defaultFont();
+    const QFontMetricsF metrics(base);
+    const QRectF chip(from.left() + 1, from.center().y() - metrics.height() / 2,
+                      std::max<qreal>(10, to.left() - from.left() - 6),
+                      metrics.height());
+    const QColor teal(93, 202, 165);
+
+    painter.save();
+    painter.setRenderHint(QPainter::Antialiasing);
+    auto fill = teal;
+    fill.setAlpha(34);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(fill);
+    painter.drawRoundedRect(chip, 4, 4);
+
+    // envelope
+    const qreal side = chip.height() * 0.62;
+    const QRectF icon(chip.left() + 6, chip.center().y() - side * 0.36,
+                      side, side * 0.72);
+    QPen pen(teal, 1.3);
+    pen.setJoinStyle(Qt::RoundJoin);
+    painter.setPen(pen);
+    painter.setBrush(Qt::NoBrush);
+    painter.drawRoundedRect(icon, 1.5, 1.5);
+    painter.drawPolyline(QPolygonF{icon.topLeft() + QPointF(0.6, 0.8),
+                                   QPointF(icon.center().x(),
+                                           icon.top() + icon.height() * 0.55),
+                                   icon.topRight() + QPointF(-0.6, 0.8)});
+
+    painter.setFont(whisperChipFont(base));
+    painter.setPen(teal);
+    painter.drawText(chip.adjusted(icon.width() + 11, 0, -4, 0),
+                     Qt::AlignLeft | Qt::AlignVCenter,
+                     whisperChipText(this->whisperTarget_));
+
+    // the hint at the right end, when the line leaves room for it
+    QTextCursor last(this->document());
+    last.movePosition(QTextCursor::End);
+    const auto tail = edit.cursorRect(last);
+    const auto hint = uiText("Esc — normal message");
+    const QFontMetricsF hintMetrics(whisperChipFont(base));
+    const qreal right = edit.viewport()->width() - 6;
+    if (tail.top() == from.top() &&
+        right - tail.right() > hintMetrics.horizontalAdvance(hint) + 16)
+    {
+        painter.setPen(edit.palette().color(QPalette::PlaceholderText));
+        painter.drawText(QRectF(tail.right(), chip.top(),
+                                right - tail.right(), chip.height()),
+                         Qt::AlignRight | Qt::AlignVCenter, hint);
+    }
+    painter.restore();
 }
 
 bool InputHighlighter::showsEmotes() const
@@ -317,6 +448,19 @@ void InputHighlighter::highlightEmotes(const QString &text)
     auto data = std::make_unique<EmoteBlockData>();
     const QFontMetricsF metrics(this->document()->defaultFont());
     const qreal height = std::round(metrics.height() * 1.4);
+    // The hidden name of an emote is set in a font as tall as the emote: the
+    // line then grows to fit it, instead of the emote spilling over the lines
+    // around it (and over the input's edge).
+    auto tall = this->document()->defaultFont();
+    if (tall.pixelSize() > 0)
+    {
+        tall.setPixelSize(int(std::round(tall.pixelSize() * 1.4)));
+    }
+    else
+    {
+        tall.setPointSizeF(tall.pointSizeF() * 1.4);
+    }
+    const QFontMetricsF tallMetrics(tall);
 
     auto it = this->tokenRegex.globalMatch(text);
     while (it.hasNext())
@@ -357,9 +501,11 @@ void InputHighlighter::highlightEmotes(const QString &text)
         const auto length = int(match.capturedLength());
         QTextCharFormat format;
         format.setForeground(Qt::transparent);
+        format.setFont(tall);
         format.setFontLetterSpacingType(QFont::AbsoluteSpacing);
         format.setFontLetterSpacing(
-            (width - metrics.horizontalAdvance(match.captured())) / length);
+            (width - tallMetrics.horizontalAdvance(match.captured())) /
+            length);
         this->setFormat(int(match.capturedStart()), length, format);
         data->emotes.push_back({int(match.capturedStart()), emote,
                                 QSizeF(width, height), int(length)});
@@ -447,6 +593,7 @@ void InputHighlighter::highlightBlock(const QString &text)
 
     if (!this->spellCheck_ || !this->spellChecker.isLoaded())
     {
+        this->highlightWhisper(text);
         return;
     }
     this->visitWords(
@@ -457,6 +604,7 @@ void InputHighlighter::highlightBlock(const QString &text)
                                 static_cast<int>(count), this->spellFmt);
             }
         });
+    this->highlightWhisper(text);
 }
 
 void InputHighlighter::visitWords(

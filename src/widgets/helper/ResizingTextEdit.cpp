@@ -20,7 +20,9 @@
 #include <QMimeDatabase>
 #include <QObject>
 #include <QPainter>
+#include <QTextBlock>
 #include <QTextDocument>
+#include <QTextLayout>
 #include <QtMath>
 
 namespace chatterino {
@@ -286,6 +288,18 @@ qreal ResizingTextEdit::documentHeightForWidth(int width) const
     }
 
     document.setPlainText(text);
+    // The highlighter's formats too: emotes make their lines taller.
+    auto from = this->document()->begin();
+    for (auto block = document.begin(); block.isValid() && from.isValid();
+         block = block.next(), from = from.next())
+    {
+        if (from.layout() != nullptr && block.layout() != nullptr &&
+            !from.layout()->formats().isEmpty())
+        {
+            block.layout()->setFormats(from.layout()->formats());
+        }
+    }
+    document.markContentsDirty(0, document.characterCount());
     document.setTextWidth(width);
     return document.size().height();
 }

@@ -865,6 +865,48 @@ private:
     QString url_;
 };
 
+/// A small line icon (NoticeIconLayoutElement::Icon) in a message's text.
+class NoticeIconElement : public MessageElement
+{
+public:
+    static constexpr std::string_view TYPE = "notice-icon";
+
+    NoticeIconElement(uint8_t icon, QColor color);
+
+    void addToContainer(MessageLayoutContainer &container,
+                        const MessageLayoutContext &ctx) override;
+
+    std::unique_ptr<MessageElement> clone() const override;
+
+    QJsonObject toJson() const override;
+    std::string_view type() const override;
+
+private:
+    uint8_t icon_;
+    QColor color_;
+};
+
+/// «Reply» button at the right end of a whisper card's line: puts
+/// "/w <name> " into the input.
+class WhisperReplyElement : public MessageElement
+{
+public:
+    static constexpr std::string_view TYPE = "whisper-reply";
+
+    explicit WhisperReplyElement(QString user);
+
+    void addToContainer(MessageLayoutContainer &container,
+                        const MessageLayoutContext &ctx) override;
+
+    std::unique_ptr<MessageElement> clone() const override;
+
+    QJsonObject toJson() const override;
+    std::string_view type() const override;
+
+private:
+    QString user_;
+};
+
 /// The picture under a message with a link to an image (a screenshot on
 /// kappa.lol, a direct .png link, ...). Shows nothing until it is loaded.
 class ImagePreviewElement : public MessageElement

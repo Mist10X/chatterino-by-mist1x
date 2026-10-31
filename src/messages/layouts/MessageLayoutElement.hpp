@@ -244,6 +244,7 @@ public:
         Followers,
         EmoteOnly,
         UniqueChat,
+        Mail,
     };
 
     NoticeIconLayoutElement(MessageElement &creator, Icon icon, QColor color,
@@ -261,6 +262,28 @@ protected:
 private:
     Icon icon_;
     QColor color_;
+    float scale_;
+};
+
+/// The «Reply» button of a whisper card, drawn at the right end of its box.
+class WhisperReplyLayoutElement : public MessageLayoutElement
+{
+public:
+    WhisperReplyLayoutElement(MessageElement &creator, QString text,
+                              QSizeF size, qreal buttonWidth, float scale);
+
+protected:
+    void paint(QPainter &painter, const MessageColors &messageColors) override;
+    QRegion paintAnimated(QPainter &painter, qreal yOffset) override;
+    int getMouseOverIndex(QPointF abs) const override;
+    qreal getXFromIndex(size_t index) override;
+    void addCopyTextToString(QString &str, uint32_t from = 0,
+                             uint32_t to = UINT32_MAX) const override;
+    size_t getSelectionIndexCount() const override;
+
+private:
+    QString text_;
+    qreal buttonWidth_;
     float scale_;
 };
 

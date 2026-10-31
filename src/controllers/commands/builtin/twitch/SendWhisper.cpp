@@ -18,6 +18,9 @@
 #include "providers/twitch/api/Helix.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
+#include "providers/twitch/TwitchUser.hpp"
+#include "providers/twitch/TwitchUsers.hpp"
+#include "common/UiLanguage.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/StreamerMode.hpp"
 #include "singletons/Theme.hpp"
@@ -91,21 +94,34 @@ QString formatWhisperError(HelixWhisperError error, const QString &message)
     return errorMessage;
 }
 
-bool appendWhisperMessageWordsLocally(const QStringList &words)
+/// Your whisper as a card: «Whisper to <Name>» above your global badges,
+/// your name (in its case and 7TV paint) and the text.
+bool appendWhisperMessageWordsLocally(const QStringList &words,
+                                      const QString &targetName)
 {
     auto *app = getApp();
 
     MessageBuilder b;
 
+    const auto &self = app->getAccounts()->twitch.getCurrent();
     b.emplace<TimestampElement>();
-    b.emplace<TextElement>(
-        app->getAccounts()->twitch.getCurrent()->getUserName(),
-        MessageElementFlag::Text, MessageColor::Text,
-        FontStyle::ChatMediumBold);
-    b.emplace<TextElement>("->", MessageElementFlag::Text,
-                           getApp()->getThemes()->messages.textColors.system);
-    b.emplace<TextElement>(words[1] + ":", MessageElementFlag::Text,
-                           MessageColor::Text, FontStyle::ChatMediumBold);
+    b.appendGlobalBadges(self->getUserId());
+    auto shown = self->getUserName();
+    if (auto *users = app->getTwitchUsers())
+    {
+        if (auto user = users->resolveID({self->getUserId()});
+            user && !user->displayName.isEmpty() &&
+            user->displayName.compare(shown, Qt::CaseInsensitive) == 0)
+        {
+            shown = user->displayName;
+        }
+    }
+    const auto selfColor = self->color();
+    b.emplace<TextElement>(shown + u':', MessageElementFlag::Username,
+                           selfColor.isValid() ? MessageColor(selfColor)
+                                               : MessageColor(MessageColor::Text),
+                           FontStyle::ChatMediumBold)
+        ->setLink({Link::UserInfo, self->getUserName()});
 
     const auto &acc = app->getAccounts()->twitch.getCurrent();
     const auto &accemotes = *acc->accessEmotes();
@@ -170,7 +186,13 @@ bool appendWhisperMessageWordsLocally(const QStringList &words)
 
     b->flags.set(MessageFlag::DoNotTriggerNotification);
     b->flags.set(MessageFlag::Whisper);
+    b->loginName = self->getUserName();
+    b->userID = self->getUserId();
     auto messagexD = b.release();
+    MessageBuilder::makeWhisperCard(
+        *messagexD,
+        uiText("Whisper to %1").arg(targetName.isEmpty() ? words[1] : targetName),
+        {});
 
     getApp()->getTwitch()->getWhispersChannel()->addMessage(
         messagexD, MessageContext::Original);
@@ -222,8 +244,8 @@ QString sendWhisper(const CommandContext &ctx)
              words{ctx.words}](const auto &targetUser) {
                 getHelix()->sendWhisper(
                     currentUser->getUserId(), targetUser.id, message,
-                    [words] {
-                        appendWhisperMessageWordsLocally(words);
+                    [words, targetName = targetUser.displayName] {
+                        appendWhisperMessageWordsLocally(words, targetName);
                     },
                     [channel, target, targetUser](auto error, auto message) {
                         auto errorMessage = formatWhisperError(error, message);

@@ -248,6 +248,15 @@ public:
     /// @returns The built message and a highlight result. If the message is
     ///          ignored (e.g. from a blocked user), then the returned pointer
     ///          will be en empty `shared_ptr`.
+    /// A whisper as a card: a header line (envelope, `title`, time) above
+    /// the badges, name and text; incoming ones get a «Reply» button.
+    static void makeWhisperCard(Message &message, const QString &title,
+                                const QString &replyTo);
+
+    /// Badges a person has everywhere (Chatterino, 7TV, FFZ, BTTV and the
+    /// other clients), no channel's.
+    void appendGlobalBadges(const QString &userID);
+
     static std::pair<MessagePtrMut, HighlightAlert> makeIrcMessage(
         Channel *channel, const Communi::IrcMessage *ircMessage,
         const MessageParseArgs &args, QString content,

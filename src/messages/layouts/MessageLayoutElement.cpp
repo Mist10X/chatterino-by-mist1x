@@ -1739,6 +1739,10 @@ void NoticeIconLayoutElement::paint(QPainter &painter,
                 QPolygonF{{6.4, 6.2}, {8.2, 4.6}, {8.2, 11.4}});
             painter.drawLine(QPointF(6.6, 11.4), QPointF(9.8, 11.4));
             break;
+        case Icon::Mail:
+            painter.drawRoundedRect(QRectF(2.2, 3.8, 11.6, 8.6), 1.6, 1.6);
+            painter.drawPolyline(QPolygonF{{2.8, 4.6}, {8, 8.6}, {13.2, 4.6}});
+            break;
     }
     painter.restore();
 }
@@ -1767,6 +1771,70 @@ void NoticeIconLayoutElement::addCopyTextToString(QString & /*str*/,
 }
 
 size_t NoticeIconLayoutElement::getSelectionIndexCount() const
+{
+    return 1;
+}
+
+WhisperReplyLayoutElement::WhisperReplyLayoutElement(MessageElement &creator,
+                                                     QString text, QSizeF size,
+                                                     qreal buttonWidth,
+                                                     float scale)
+    : MessageLayoutElement(creator, size)
+    , text_(std::move(text))
+    , buttonWidth_(buttonWidth)
+    , scale_(scale)
+{
+    this->trailingSpace = false;
+}
+
+void WhisperReplyLayoutElement::paint(QPainter &painter,
+                                      const MessageColors & /*messageColors*/)
+{
+    const QRectF rect(this->getRect());
+    const QRectF button(rect.right() - this->buttonWidth_, rect.top() + 1,
+                        this->buttonWidth_, rect.height() - 2);
+    QColor accent(168, 132, 242);
+    painter.save();
+    painter.setRenderHint(QPainter::Antialiasing);
+    auto edge = accent;
+    edge.setAlpha(110);
+    painter.setPen(QPen(edge, 1));
+    auto fill = accent;
+    fill.setAlpha(22);
+    painter.setBrush(fill);
+    painter.drawRoundedRect(button.adjusted(0.5, 0.5, -0.5, -0.5),
+                            5 * this->scale_, 5 * this->scale_);
+    painter.setPen(accent.lighter(115));
+    painter.setFont(
+        getApp()->getFonts()->getFont(FontStyle::ChatMediumSmall, this->scale_));
+    painter.drawText(button, Qt::AlignCenter, this->text_);
+    painter.restore();
+}
+
+QRegion WhisperReplyLayoutElement::paintAnimated(QPainter & /*painter*/,
+                                                 qreal /*yOffset*/)
+{
+    return {};
+}
+
+int WhisperReplyLayoutElement::getMouseOverIndex(QPointF /*abs*/) const
+{
+    return 0;
+}
+
+qreal WhisperReplyLayoutElement::getXFromIndex(size_t index)
+{
+    return index == 0 ? this->getRect().left() : this->getRect().right();
+}
+
+void WhisperReplyLayoutElement::addCopyTextToString(QString & /*str*/,
+                                                    uint32_t /*from*/,
+                                                    uint32_t /*to*/) const
+{
+    // a button, not part of the message's text
+}
+
+size_t WhisperReplyLayoutElement::getSelectionIndexCount() const
 {
     return 1;
 }

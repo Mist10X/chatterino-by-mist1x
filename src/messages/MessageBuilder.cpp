@@ -18,6 +18,7 @@
 #include "controllers/ignores/IgnorePhrase.hpp"
 #include "controllers/userdata/UserDataController.hpp"
 #include "messages/AsciiArt.hpp"
+#include "messages/layouts/MessageLayoutElement.hpp"
 #include "messages/ast/Parser.hpp"
 #include "messages/Emote.hpp"
 #include "messages/Image.hpp"
@@ -3246,26 +3247,12 @@ void MessageBuilder::appendUsername(Communi::TagsRef tags,
     }
     else if (args.isReceivedWhisper)
     {
-        // Sender username
-        this->emplace<TextElement>(usernameText, MessageElementFlag::Username,
+        // Sender username; the card's header says it is a whisper to you
+        this->emplace<TextElement>(usernameText + u':',
+                                   MessageElementFlag::Username,
                                    this->usernameColor_,
                                    FontStyle::ChatMediumBold)
             ->setLink({Link::UserWhisper, this->message().displayName});
-
-        auto currentUser = app->getAccounts()->twitch.getCurrent();
-
-        // Separator
-        this->emplace<TextElement>("->", MessageElementFlag::Username,
-                                   MessageColor::System, FontStyle::ChatMedium);
-
-        QColor selfColor = currentUser->color();
-        MessageColor selfMsgColor =
-            selfColor.isValid() ? selfColor : MessageColor::System;
-
-        // Your own username
-        this->emplace<TextElement>(currentUser->getUserName() + ":",
-                                   MessageElementFlag::Username, selfMsgColor,
-                                   FontStyle::ChatMediumBold);
     }
     else
     {
@@ -3689,11 +3676,91 @@ void MessageBuilder::addWords(
     this->flushPendingModifiers();
 }
 
+void MessageBuilder::makeWhisperCard(Message &message, const QString &title,
+                                     const QString &replyTo)
+{
+    auto &elements = message.elements;
+    std::unique_ptr<MessageElement> timestamp;
+    if (auto it = std::ranges::find_if(elements,
+                                       [](const auto &element) {
+                                           return dynamic_cast<TimestampElement *>(
+                                                      element.get()) != nullptr;
+                                       });
+        it != elements.end())
+    {
+        timestamp = std::move(*it);
+        elements.erase(it);
+    }
+    std::vector<std::unique_ptr<MessageElement>> header;
+    header.push_back(std::make_unique<NoticeIconElement>(
+        uint8_t(NoticeIconLayoutElement::Icon::Mail), QColor(168, 132, 242)));
+    header.push_back(std::make_unique<TextElement>(
+        title, MessageElementFlag::Text, MessageColor::System,
+        FontStyle::ChatMediumSmall));
+    if (timestamp)
+    {
+        header.push_back(std::make_unique<TextElement>(
+            u"·"_s, MessageElementFlag::Text, MessageColor::System,
+            FontStyle::ChatMediumSmall));
+        header.push_back(std::move(timestamp));
+    }
+    header.push_back(
+        std::make_unique<LinebreakElement>(MessageElementFlag::Text));
+    elements.insert(elements.begin(), std::make_move_iterator(header.begin()),
+                    std::make_move_iterator(header.end()));
+    if (!replyTo.isEmpty())
+    {
+        elements.push_back(std::make_unique<WhisperReplyElement>(replyTo));
+    }
+    message.flags.set(MessageFlag::Whisper);
+}
+
+void MessageBuilder::appendGlobalBadges(const QString &userID)
+{
+    this->appendChatterinoBadges(userID);
+    this->appendFfzBadges(nullptr, userID);
+    this->appendFfzApBadges(userID);
+    this->appendBttvBadges(userID);
+    this->appendMoltorinoBadges(userID);
+    this->appendSeventvBadges(userID);
+    this->appendDankChatBadges(userID);
+    this->appendChatsenBadges(userID);
+    this->appendBluzyrinoBadges(userID);
+    this->appendJilChatBadges(userID);
+    this->appendBadgeHQBadges(userID);
+    this->appendLimerinoBadges(userID);
+    this->appendHomiesBadges(userID);
+    this->appendFolhinhaBadges(userID);
+}
+
 void MessageBuilder::appendTwitchBadges(Communi::TagsRef tags,
                                         TwitchChannel *twitchChannel)
 {
     if (twitchChannel == nullptr)
     {
+        // A whisper: only the badges a person has on all of Twitch (staff,
+        // partner, Turbo, Prime...), none of a channel's.
+        auto *twitchBadges = getApp()->getTwitchBadges();
+        if (twitchBadges == nullptr)
+        {
+            return;
+        }
+        for (const auto &badge : parseBadgeTag(tags))
+        {
+            if (badge.flag_ == MessageElementFlag::BadgeSubscription ||
+                badge.flag_ == MessageElementFlag::BadgeChannelAuthority ||
+                badge.flag_ == MessageElementFlag::BadgePredictions ||
+                badge.key_ == u"bits" || badge.key_ == u"bits-leader" ||
+                badge.key_ == u"sub-gifter" || badge.key_ == u"founder")
+            {
+                continue;
+            }
+            if (auto emote = twitchBadges->badge(badge.key_, badge.value_))
+            {
+                this->emplace<BadgeElement>(*emote, badge.flag_)
+                    ->setTooltip((*emote)->tooltip.string);
+            }
+        }
         return;
     }
 

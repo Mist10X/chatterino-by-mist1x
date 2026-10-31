@@ -5377,6 +5377,16 @@ void UserInfoPopup::updateUserData()
         // Upgrade a provisional name-only buffer to a strict UID-filtered one.
         this->updateLatestMessages();
 
+        // The public logs' newest page starts loading now, so the history
+        // button shows it at once.
+        if (getSettings()->usercardPublicLogs && !this->offlinePreview_ &&
+            dynamic_cast<TwitchChannel *>(this->underlyingChannel_.get()) !=
+                nullptr)
+        {
+            publiclogs::prefetch(this->userId_, this->userName_,
+                                 this->underlyingChannel_->getName());
+        }
+
         this->resetNameHistory();
         this->updateLoadMoreMessagesButton();
         this->maybeStartUsercardMessageAutoLoad();

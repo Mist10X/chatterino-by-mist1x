@@ -355,6 +355,58 @@ inline int runPublicLogChecks(QJsonArray &checks)
                   timer.elapsed() < 2500 &&
                   server.arrivals[2].size() == silentBefore);
     }
+    // Asked when the card opened: the history button gets the page at once,
+    // without asking the mirrors again.
+    {
+        publiclogs::prefetch(QStringLiteral("4004"), QStringLiteral("viewer"),
+                             QStringLiteral("chan"));
+        size_t before = 0;
+        waitUntil([&] {
+            before = 0;
+            for (const auto &a : server.arrivals)
+            {
+                before += a.size();
+            }
+            return before > 0;
+        }, 3000);
+        QObject holder;
+        // joins the running request
+        std::optional<QJsonObject> joined;
+        publiclogs::requestPage(QStringLiteral("4004"),
+                                QStringLiteral("viewer"), QStringLiteral("chan"),
+                                {}, &holder, [&](const QJsonObject &value) {
+                                    joined = value;
+                                });
+        waitUntil([&] {
+            return joined.has_value();
+        }, 10000);
+        size_t after = 0;
+        for (const auto &a : server.arrivals)
+        {
+            after += a.size();
+        }
+        // then comes from the kept page
+        QElapsedTimer timer;
+        timer.start();
+        std::optional<QJsonObject> kept;
+        publiclogs::requestPage(QStringLiteral("4004"),
+                                QStringLiteral("viewer"), QStringLiteral("chan"),
+                                {}, &holder, [&](const QJsonObject &value) {
+                                    kept = value;
+                                });
+        waitUntil([&] {
+            return kept.has_value();
+        }, 3000);
+        size_t last = 0;
+        for (const auto &a : server.arrivals)
+        {
+            last += a.size();
+        }
+        check("a page asked when the card opened is not asked again",
+              joined && joined->value("rows").toArray().size() == 5 && kept &&
+                  kept->value("rows").toArray().size() == 5 &&
+                  timer.elapsed() < 200 && after == last);
+    }
     check("bad input is rejected without a request",
           page("12ab", {}).value_or(QJsonObject{}).value("error") ==
               "invalid_request");

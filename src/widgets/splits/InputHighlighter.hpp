@@ -52,6 +52,14 @@ public:
 
     /// Draws the emotes over their invisible, re-spaced names.
     void paintEmotes(QPainter &painter, const QTextEdit &edit) const;
+    /// "/w <name> " at the start is shown as a «DM to <name>» chip (the text
+    /// stays, so sending is unchanged); Esc turns it into a normal message.
+    void paintWhisperChip(QPainter &painter, const QTextEdit &edit) const;
+    /// Characters of the "/w <name> " prefix, 0 without one.
+    int whisperPrefix() const
+    {
+        return this->whisperPrefix_;
+    }
     /// Whether any emote is shown (repaint for animation then).
     bool showsEmotes() const;
     /// An emote image got its size after the line was laid out.
@@ -62,6 +70,7 @@ protected:
 
 private:
     void highlightEmotes(const QString &text);
+    void highlightWhisper(const QString &text);
 
     void visitWords(
         const QString &text,
@@ -79,6 +88,8 @@ private:
     bool spellCheck_ = false;
     bool emotePreview_ = false;
     bool pendingSizes_ = false;
+    int whisperPrefix_ = 0;
+    QString whisperTarget_;
     int shownEmotes_ = 0;
 };
 

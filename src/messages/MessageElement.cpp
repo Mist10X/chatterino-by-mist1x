@@ -15,6 +15,8 @@
 #include "messages/layouts/MessageLayoutContainer.hpp"
 #include "messages/layouts/MessageLayoutContext.hpp"
 #include "messages/layouts/MessageLayoutElement.hpp"
+#include "common/UiLanguage.hpp"
+#include "singletons/Fonts.hpp"
 #include "messages/Message.hpp"
 #include "providers/emoji/Emojis.hpp"
 #include "providers/links/ImagePreview.hpp"
@@ -2553,6 +2555,100 @@ QJsonObject ClipCardElement::toJson() const
 }
 
 std::string_view ClipCardElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
+NoticeIconElement::NoticeIconElement(uint8_t icon, QColor color)
+    : MessageElement(MessageElementFlag::Text)
+    , icon_(icon)
+    , color_(color)
+{
+}
+
+void NoticeIconElement::addToContainer(MessageLayoutContainer &container,
+                                       const MessageLayoutContext &ctx)
+{
+    if (!this->matchesFlags(ctx.flags))
+    {
+        return;
+    }
+    const qreal side = 14.0 * container.getScale();
+    container.addElement(new NoticeIconLayoutElement(
+        *this, NoticeIconLayoutElement::Icon(this->icon_), this->color_,
+        QSizeF(side, side), container.getScale()));
+}
+
+std::unique_ptr<MessageElement> NoticeIconElement::clone() const
+{
+    auto el = std::make_unique<NoticeIconElement>(this->icon_, this->color_);
+    el->cloneFrom(*this);
+    return el;
+}
+
+QJsonObject NoticeIconElement::toJson() const
+{
+    auto base = MessageElement::toJson();
+    base["type"_L1] = u"NoticeIconElement"_s;
+    base["icon"_L1] = int(this->icon_);
+    return base;
+}
+
+std::string_view NoticeIconElement::type() const
+{
+    return std::remove_pointer_t<decltype(this)>::TYPE;
+}
+
+WhisperReplyElement::WhisperReplyElement(QString user)
+    : MessageElement(MessageElementFlag::Text)
+    , user_(std::move(user))
+{
+    this->setLink({Link::InsertText, u"/w "_s + this->user_ + u' '});
+    this->setTooltip(uiText("Reply to %1").arg(this->user_));
+}
+
+void WhisperReplyElement::addToContainer(MessageLayoutContainer &container,
+                                         const MessageLayoutContext &ctx)
+{
+    if (!this->matchesFlags(ctx.flags))
+    {
+        return;
+    }
+    const auto scale = container.getScale();
+    const auto font =
+        getApp()->getFonts()->getFont(FontStyle::ChatMediumSmall, scale);
+    const QFontMetricsF metrics(font);
+    const auto text = uiText("Reply");
+    const qreal button = metrics.horizontalAdvance(text) + 16 * scale;
+    const qreal height = metrics.height() + 4 * scale;
+    // at the right end of the line; on a line of its own when it is full
+    if (container.remainingWidth() < button + 8 * scale)
+    {
+        container.breakLine();
+    }
+    const qreal width = std::max(button, container.remainingWidth() - 2 * scale);
+    container.addElement(
+        (new WhisperReplyLayoutElement(*this, text, QSizeF(width, height),
+                                       button, scale))
+            ->setLink(this->getLink()));
+}
+
+std::unique_ptr<MessageElement> WhisperReplyElement::clone() const
+{
+    auto el = std::make_unique<WhisperReplyElement>(this->user_);
+    el->cloneFrom(*this);
+    return el;
+}
+
+QJsonObject WhisperReplyElement::toJson() const
+{
+    auto base = MessageElement::toJson();
+    base["type"_L1] = u"WhisperReplyElement"_s;
+    base["user"_L1] = this->user_;
+    return base;
+}
+
+std::string_view WhisperReplyElement::type() const
 {
     return std::remove_pointer_t<decltype(this)>::TYPE;
 }

@@ -917,6 +917,8 @@ void IrcMessageHandler::handleWhisperMessage(Communi::IrcMessage *ircMessage)
     }
 
     message->flags.set(MessageFlag::Whisper);
+    MessageBuilder::makeWhisperCard(*message, uiText("Whisper"),
+                                    message->loginName);
     MessageBuilder::triggerHighlights(c, message, alert);
 
     getApp()->getTwitch()->setLastUserThatWhisperedMe(message->loginName);
