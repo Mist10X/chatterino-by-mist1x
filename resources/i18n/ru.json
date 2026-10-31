@@ -2970,5 +2970,15 @@
   "Whisper to %1": "Личное сообщение для %1",
   "Reply to %1": "Ответить %1 в личные сообщения",
   "DM to %1": "ЛС для %1",
-  "Esc — normal message": "Esc — обычное сообщение"
+  "Esc — normal message": "Esc — обычное сообщение",
+  "Show the Chatterino by Mist1X badge to its other users": "Показывать значок Chatterino by Mist1X другим его пользователям",
+  "Your chat messages carry an invisible mark (like the one Twitch's web chat adds). Other people with Chatterino by Mist1X see the build's badge at your name. Nothing is sent anywhere else.": "К вашим сообщениям в чате добавляется невидимая метка (такую же добавляет веб-чат Twitch). Другие пользователи Chatterino by Mist1X увидят у вашего ника значок сборки. Больше никуда ничего не отправляется.",
+  "Show the badge at other users of Chatterino by Mist1X": "Показывать значок у других пользователей Chatterino by Mist1X",
+  "Tell the users list my Twitch ID (test)": "Сообщать мой Twitch ID в список пользователей (тест)",
+  "At start and once a day the app sends your Twitch ID, login and version of Chatterino by Mist1X to the build's users list. Then everyone with the build sees its badge at your name even before you write. Nothing else is sent: no token, no messages.": "При запуске и раз в сутки программа отправляет в список пользователей сборки ваш Twitch ID, логин и версию Chatterino by Mist1X. Тогда значок у вашего ника видят все пользователи сборки, даже до того как вы что-то написали. Больше ничего не отправляется: ни токен, ни сообщения.",
+  "Chatterino by Mist1X users": "Пользователи Chatterino by Mist1X",
+  "First seen": "Впервые",
+  "Last seen": "Последний раз",
+  "Users: %1": "Пользователей: %1",
+  "Could not load the list (%1)": "Не удалось загрузить список (%1)"
 }

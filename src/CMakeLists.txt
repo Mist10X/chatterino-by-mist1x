@@ -620,6 +620,8 @@ set(SOURCE_FILES
         providers/twitch/ChannelPointReward.hpp
         providers/twitch/ClipPreview.cpp
         providers/twitch/ClipPreview.hpp
+        providers/twitch/Mist1XMark.cpp
+        providers/twitch/Mist1XMark.hpp
         providers/links/ImagePreview.cpp
         providers/links/ImagePreview.hpp
         providers/twitch/IrcMessageHandler.cpp
@@ -1043,6 +1045,8 @@ set(SOURCE_FILES
         widgets/helper/MissedDigest.hpp
         widgets/helper/UploadPreview.cpp
         widgets/helper/UploadPreview.hpp
+        widgets/dialogs/Mist1XUsersDialog.cpp
+        widgets/dialogs/Mist1XUsersDialog.hpp
         providers/twitch/ChannelStats.cpp
         providers/twitch/ChannelStats.hpp
         widgets/dialogs/WelcomeDialog.cpp

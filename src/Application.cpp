@@ -1,4 +1,5 @@
 #include "Application.hpp"
+#include "providers/twitch/Mist1XMark.hpp"
 
 #include "common/Args.hpp"
 #include "common/Channel.hpp"
@@ -316,6 +317,7 @@ void Application::initialize(Settings &settings, const Paths &paths)
     this->notifications->initialize();
 
     this->twitchBadges->loadTwitchBadges();
+    mist1xmark::startOnline();
 
 #ifdef CHATTERINO_HAVE_PLUGINS
     this->plugins->initialize(settings);

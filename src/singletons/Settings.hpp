@@ -1404,6 +1404,13 @@ public:
     /// When the channel's raid goes, the split moves to the raided channel,
     /// like the Twitch player does.
     BoolSetting followRaids{"/moltorino/chat/followRaids", true};
+    /// Messages carry a mark other users of this build recognize (the
+    /// client-nonce of IRC messages; see mist1xmark).
+    BoolSetting mist1xMarkMessages{"/moltorino/mist1x/markMessages", true};
+    /// The build's badge at the names of people whose messages carry it.
+    BoolSetting mist1xShowBadge{"/moltorino/mist1x/showBadge", true};
+    /// Tell the build's users list (test service) your Twitch ID and login.
+    BoolSetting mist1xShareId{"/moltorino/mist1x/shareId", true};
     BoolSetting showEmotesInInput{"/moltorino/input/showEmotes", true};
     /// A card at the top of the window for taskbar-flashing highlights elsewhere.
     BoolSetting showHighlightToasts{"/moltorino/highlights/showToast", true};

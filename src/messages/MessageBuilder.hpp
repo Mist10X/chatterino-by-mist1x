@@ -377,6 +377,7 @@ private:
     void appendTwitchBadges(Communi::TagsRef tags,
                             TwitchChannel *twitchChannel);
     void appendChatterinoBadges(const QString &userID);
+    void appendMist1XBadge(const QString &userID);
     void appendFfzBadges(TwitchChannel *twitchChannel, const QString &userID);
     void appendBttvBadges(const QString &userID);
     void appendSeventvBadges(const QString &userID);

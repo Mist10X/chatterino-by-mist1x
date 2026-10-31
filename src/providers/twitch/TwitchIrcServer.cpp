@@ -4,6 +4,8 @@
 
 #include "providers/twitch/TwitchIrcServer.hpp"
 
+#include "providers/twitch/Mist1XMark.hpp"
+
 #include "Application.hpp"
 #include "common/Channel.hpp"
 #include "common/Common.hpp"
@@ -107,7 +109,12 @@ private:
 
 QStringList makeIrcTags(QStringList tags = {})
 {
-    if (getSettings()->fakeWebChat)
+    if (getSettings()->mist1xMarkMessages)
+    {
+        // looks like the web chat's nonce, signed for other Mist1X users
+        tags.prepend(QStringLiteral("client-nonce=") + mist1xmark::makeNonce());
+    }
+    else if (getSettings()->fakeWebChat)
     {
         tags.prepend(QStringLiteral("client-nonce=") + makeWebClientNonce());
     }

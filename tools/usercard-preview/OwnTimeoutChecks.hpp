@@ -27,6 +27,8 @@
 #include "providers/links/ImagePreview.hpp"
 #include "singletons/ImageUploader.hpp"
 #include "widgets/helper/UploadPreview.hpp"
+#include "providers/twitch/IrcMessageHandler.hpp"
+#include "providers/twitch/Mist1XMark.hpp"
 #include "widgets/splits/InputHighlighter.hpp"
 #include "controllers/spellcheck/SpellChecker.hpp"
 #include "providers/seventv/paints/LinearGradientPaint.hpp"
@@ -892,6 +894,30 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
               prefix == int(QStringLiteral("/w oneshkof ").size()) &&
                   typing == 0 && highlighter.whisperPrefix() == 0);
         box.hide();
+    }
+
+    // 20. the Chatterino by Mist1X badge: a marked client-nonce, nothing else
+    {
+        mist1xmark::resetForTesting();
+        bool nonceOk = true;
+        for (int i = 0; i < 50; ++i)
+        {
+            const auto nonce = mist1xmark::makeNonce();
+            nonceOk = nonceOk && nonce.size() == 32 &&
+                      mist1xmark::isMarked(nonce) &&
+                      nonce == nonce.toLower();
+        }
+        check("own nonces look like the web chat's and carry the mark",
+              nonceOk &&
+                  !mist1xmark::isMarked(
+                      QStringLiteral("5d2627b0cbe56fa05faf5420def4807d")));
+
+        mist1xmark::remember(QStringLiteral("880001"));
+        const bool marked = mist1xmark::badgeFor(QStringLiteral("880001")).has_value();
+        const bool web = mist1xmark::badgeFor(QStringLiteral("880002")).has_value();
+        const bool later = mist1xmark::isKnown(QStringLiteral("880001"));
+        check("a marked message's sender gets the badge, others do not",
+              marked && !web && later);
     }
 
     QFile out(report);

@@ -43,6 +43,8 @@
 #include <QMap>
 #include <QPointer>
 #include <QPushButton>
+
+#include "widgets/dialogs/Mist1XUsersDialog.hpp"
 #include <QSet>
 #include <QSignalBlocker>
 #include <QSizePolicy>
@@ -765,11 +767,44 @@ MoltorinoPage::MoltorinoPage()
                      "the message input."))
         ->addTo(*view);
 
+    routeSetting(*view, QStringLiteral("Chat"),
+                 QStringLiteral("Raids and gifted subs"));
     SettingWidget::checkbox(uiText("Follow the raid to the raided channel"),
                             s.followRaids)
         ->setTooltip(uiText("When the channel's raid goes, the chat switches to "
                      "the raided channel at the same moment as on Twitch."))
         ->addTo(*view);
+
+    routeSetting(*view, QStringLiteral("Emotes and badges"),
+                 QStringLiteral("More badges"));
+    SettingWidget::checkbox(
+        uiText("Show the Chatterino by Mist1X badge to its other users"),
+        s.mist1xMarkMessages)
+        ->setTooltip(uiText(
+            "Your chat messages carry an invisible mark (like the one Twitch's "
+            "web chat adds). Other people with Chatterino by Mist1X see the "
+            "build's badge at your name. Nothing is sent anywhere else."))
+        ->addTo(*view);
+    SettingWidget::checkbox(
+        uiText("Show the badge at other users of Chatterino by Mist1X"),
+        s.mist1xShowBadge)
+        ->addTo(*view);
+    SettingWidget::checkbox(
+        uiText("Tell the users list my Twitch ID (test)"), s.mist1xShareId)
+        ->setTooltip(uiText(
+            "At start and once a day the app sends your Twitch ID, login and "
+            "version of Chatterino by Mist1X to the build's users list. Then "
+            "everyone with the build sees its badge at your name even before "
+            "you write. Nothing else is sent: no token, no messages."))
+        ->addTo(*view);
+    if (Mist1XUsersDialog::available())
+    {
+        view->addButton(uiText("Chatterino by Mist1X users"), [this] {
+            auto *dialog = new Mist1XUsersDialog(this);
+            dialog->setAttribute(Qt::WA_DeleteOnClose);
+            dialog->show();
+        });
+    }
 
     routeSetting(*view, QStringLiteral("Chat"),
                  QStringLiteral("If I am banned or timed out"));

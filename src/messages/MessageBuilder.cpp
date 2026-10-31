@@ -47,6 +47,7 @@
 #include "providers/repetitions/RepeatedMessageDetector.hpp"
 #include "providers/seventv/SeventvBadges.hpp"
 #include "providers/seventv/SeventvPaints.hpp"
+#include "providers/twitch/Mist1XMark.hpp"
 #include "providers/seventv/SeventvEmotes.hpp"
 #include "providers/seventv/SeventvPersonalEmotes.hpp"
 #include "providers/twitch/api/Helix.hpp"
@@ -2174,6 +2175,11 @@ std::pair<MessagePtrMut, HighlightAlert> MessageBuilder::makeIrcMessage(
     {
         const auto clientNonce = tags.getOrEmpty("client-nonce");
         builder.message().clientDetection = performClientDetection(clientNonce);
+        // sent from Chatterino by Mist1X: the badge from now on
+        if (mist1xmark::isMarked(clientNonce))
+        {
+            mist1xmark::remember(tags.getOrEmpty("user-id"));
+        }
     }
 
     if (tags.has("rm-deleted"))
@@ -2254,6 +2260,8 @@ std::pair<MessagePtrMut, HighlightAlert> MessageBuilder::makeIrcMessage(
         builder.appendLimerinoBadges(userID);
         builder.appendHomiesBadges(userID);
         builder.appendFolhinhaBadges(userID);
+        // the build's own badge comes last, after all the others
+        builder.appendMist1XBadge(userID);
 
         builder.appendUsername(tags, args);
 
@@ -3731,6 +3739,7 @@ void MessageBuilder::appendGlobalBadges(const QString &userID)
     this->appendLimerinoBadges(userID);
     this->appendHomiesBadges(userID);
     this->appendFolhinhaBadges(userID);
+    this->appendMist1XBadge(userID);
 }
 
 void MessageBuilder::appendTwitchBadges(Communi::TagsRef tags,
@@ -3818,6 +3827,17 @@ void MessageBuilder::appendTwitchBadges(Communi::TagsRef tags,
 
     auto badgeInfos = parseBadgeInfoTag(tags);
     appendBadges(this, badges, badgeInfos, twitchChannel);
+}
+
+void MessageBuilder::appendMist1XBadge(const QString &userID)
+{
+    if (auto badge = mist1xmark::badgeFor(userID))
+    {
+        this->emplace<BadgeElement>(*badge,
+                                    MessageElementFlag::BadgeChatterino);
+        this->message().externalBadges.emplace_back(
+            QStringLiteral("mist1x:Chatterino by Mist1X"));
+    }
 }
 
 void MessageBuilder::appendChatterinoBadges(const QString &userID)
@@ -4313,6 +4333,7 @@ MessagePtr MessageBuilder::makeSelfBadgePreviewMessage(
     builder.appendLimerinoBadges(userId);
     builder.appendHomiesBadges(userId);
     builder.appendFolhinhaBadges(userId);
+    builder.appendMist1XBadge(userId);
 
     MessageParseArgs args;
     args.isAction = true;
