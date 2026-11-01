@@ -1177,9 +1177,12 @@ bool Split::openRaidTarget(const ChannelPtr &channel)
     {
         return false;
     }
-    // Only take the user along when they are looking at the raiding
-    // channel; a tab in the background opens the new one in the background.
-    const bool follow = notebook->getSelectedPage() == page;
+    // Only when the user is looking at the raiding channel: a raid from a
+    // tab in the background opens nothing (no new tabs behind their back).
+    if (notebook->getSelectedPage() != page)
+    {
+        return false;
+    }
 
     // The channel's tab is open already: go there.
     for (int i = 0; i < notebook->getPageCount(); ++i)
@@ -1194,11 +1197,8 @@ bool Split::openRaidTarget(const ChannelPtr &channel)
         {
             if (split != this && split->getChannel() == channel)
             {
-                if (follow)
-                {
-                    notebook->select(container);
-                    container->setSelected(split);
-                }
+                notebook->select(container);
+                container->setSelected(split);
                 return true;
             }
         }
@@ -1207,7 +1207,7 @@ bool Split::openRaidTarget(const ChannelPtr &channel)
     // Otherwise a new tab right after this one; this tab stays as it is.
     auto *container = new SplitContainer(notebook);
     auto *tab = notebook->addPageAt(container, notebook->indexOf(page) + 1,
-                                    QString(), follow);
+                                    QString(), true);
     container->setTab(tab);
     tab->setParent(notebook);
     auto *split = new Split(container);
