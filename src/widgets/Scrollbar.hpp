@@ -36,6 +36,9 @@ public:
     void scrollToBottom(bool animate = false);
     void scrollToTop(bool animate = false);
     bool isAtBottom() const;
+    /// Shown past the end (the page grew under it, e.g. messages got
+    /// shorter): blank space below the last message. False while animating.
+    bool isPastBottom() const;
 
     qreal getMaximum() const;
     void setMaximum(qreal value);

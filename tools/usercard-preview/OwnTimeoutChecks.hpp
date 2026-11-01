@@ -36,6 +36,7 @@
 #include "singletons/Settings.hpp"
 #include "widgets/helper/ChannelView.hpp"
 #include "widgets/Scrollbar.hpp"
+#include "widgets/buttons/Button.hpp"
 #include "widgets/helper/ResizingTextEdit.hpp"
 #include "widgets/Label.hpp"
 #include "widgets/splits/Split.hpp"
@@ -918,6 +919,129 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
         const bool later = mist1xmark::isKnown(QStringLiteral("880001"));
         check("a marked message's sender gets the badge, others do not",
               marked && !web && later);
+    }
+
+    // 21. "More messages below" on a paused chat (pause while hovering, as
+    // the mouse is over the chat to click it): the end of the chat, no blank
+    // space under the last message - with a message limit and without
+    // while paused: nothing more / the missed messages filled in after a
+    // reconnect / older history added at the start
+    for (const auto &[limit, extra] :
+         std::vector<std::pair<size_t, int>>{{300, 0}, {0, 0}, {0, 1}, {0, 2}})
+    {
+        getSettings()->pauseOnHoverDuration = -1.F;
+        getSettings()->enableSmoothScrolling = false;
+        getSettings()->enableSmoothScrollingNewMessages = false;
+        auto room = std::make_shared<TwitchChannel>(
+            QStringLiteral("scroll_room_%1_%2").arg(limit).arg(extra));
+        room->followMessageLimit(room->messageLimitChanged, [limit] {
+            return limit;
+        });
+        split.setChannel(IndirectChannel(std::static_pointer_cast<Channel>(room)));
+        split.resize(560, 420);
+        split.show();
+        int n = 0;
+        auto add = [&] {
+            room->addMessage(
+                makeSystemMessage(QStringLiteral("line %1 with some words").arg(n++)),
+                MessageContext::Repost);
+        };
+        for (int i = 0; i < 400; ++i)
+        {
+            add();
+        }
+        pump(200);
+        auto &view = split.getChannelView();
+        auto &bar = view.getScrollBar();
+        bar.setDesiredValue(bar.getMinimum() + 40);  // read the history
+        pump(100);
+        for (int i = 0; i < 30; ++i)
+        {
+            add();
+            pump(10);
+        }
+        view.pause(PauseReason::Mouse);  // the mouse goes to the button
+        for (int i = 0; i < 30; ++i)
+        {
+            add();
+            pump(10);
+        }
+        if (extra != 0)
+        {
+            std::vector<MessagePtr> more;
+            for (int i = 0; i < 12; ++i)
+            {
+                MessageBuilder builder;
+                builder.emplace<TextElement>(
+                    QStringLiteral("filled %1 with some words").arg(i),
+                    MessageElementFlag::Text);
+                builder->id = QStringLiteral("filled-%1-%2").arg(extra).arg(i);
+                builder->messageText = builder->id;
+                more.push_back(builder.release());
+            }
+            if (extra == 1)
+            {
+                room->fillInMissingMessages(more);
+            }
+            else
+            {
+                room->addMessagesAtStart(more);
+            }
+            pump(50);
+        }
+        Button *jump = nullptr;
+        for (auto *button : view.findChildren<Button *>())
+        {
+            if (button->isVisible())
+            {
+                jump = button;
+            }
+        }
+        if (jump != nullptr)
+        {
+            Q_EMIT jump->leftClicked();
+        }
+        for (int i = 0; i < 40; ++i)
+        {
+            add();
+            pump(15);
+        }
+        pump(300);
+        auto gap = [&] {
+            // the lowest row with text-bright pixels, from the bottom up
+            const auto image = view.grab().toImage();
+            for (int y = image.height() - 1; y >= 0; --y)
+            {
+                for (int x = 0; x < image.width() - 20; ++x)
+                {
+                    if (QColor(image.pixel(x, y)).lightness() > 90)
+                    {
+                        return image.height() - 1 - y;
+                    }
+                }
+            }
+            return image.height();
+        };
+        const int paused = gap();
+        std::fprintf(stderr,
+                     "jump limit=%zu extra=%d button=%d paused gap=%d cur=%.2f bottom=%.2f "
+                     "max=%.2f min=%.2f page=%.2f\n",
+                     limit, extra, jump != nullptr, paused, bar.getCurrentValue(),
+                     bar.getBottom(), bar.getMaximum(), bar.getMinimum(),
+                     bar.getPageSize());
+        if (!screenshotBase.isEmpty())
+        {
+            view.grab().save(screenshotBase + QStringLiteral("-jump-%1-%2.png").arg(limit).arg(extra), "PNG");
+        }
+        view.unpause(PauseReason::Mouse);
+        pump(300);
+        add();
+        pump(300);
+        const int after = gap();
+        std::fprintf(stderr, "jump limit=%zu extra=%d unpaused gap=%d\n", limit, extra, after);
+        check(QStringLiteral("the jump to new messages leaves no blank space "
+                             "(limit %1, case %2)").arg(limit).arg(extra),
+              jump != nullptr && paused < 40 && after < 40);
     }
 
     QFile out(report);

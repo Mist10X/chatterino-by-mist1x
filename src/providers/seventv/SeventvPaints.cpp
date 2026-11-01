@@ -39,8 +39,13 @@ constexpr std::chrono::minutes SEVENTV_PAINT_FRAME_CACHE_LIFETIME{4};
 /// A saved assignment 7TV hasn't confirmed for this long is dropped.
 constexpr qint64 SAVED_ASSIGNMENT_LIFETIME_S = 14 * 24 * 3600;
 constexpr int SAVE_DELAY_MS = 30 * 1000;
-/// A paint 7TV confirmed this recently isn't looked up again.
-constexpr qint64 LOOKUP_AFTER_S = 15 * 60;
+/// A paint 7TV confirmed this recently isn't looked up again. 7TV pushes a
+/// change only to channels where the wearer's client reported presence, so
+/// the lookup is what catches a paint changed on the site.
+constexpr qint64 LOOKUP_AFTER_S = 5 * 60;
+/// Your own paint: asked again this soon (on your messages and by the timer).
+constexpr qint64 OWN_LOOKUP_AFTER_S = 20;
+constexpr std::chrono::seconds OWN_REFRESH_INTERVAL{60};
 constexpr int LOOKUP_INTERVAL_MS = 1000;
 /// 7TV refuses a query over its complexity limit (12 chatters pass, 16 not).
 constexpr size_t LOOKUP_BATCH = 10;
@@ -183,12 +188,25 @@ void SeventvPaints::ensureLoaded() const
         auto *self = const_cast<SeventvPaints *>(this);
         self->load();
         // Your own paint and badge first, before you write anything.
-        auto account = getApp()->getAccounts()->twitch.getCurrent();
-        if (account && !account->isAnon())
-        {
-            self->queueLookup(account->getUserName(), account->getUserId());
-        }
+        self->refreshOwn();
+        postToThread([self] {
+            self->ownTimer_ = std::make_unique<QTimer>();
+            QObject::connect(self->ownTimer_.get(), &QTimer::timeout,
+                             [self] {
+                                 self->refreshOwn();
+                             });
+            self->ownTimer_->start(OWN_REFRESH_INTERVAL);
+        });
     });
+}
+
+void SeventvPaints::refreshOwn()
+{
+    auto account = getApp()->getAccounts()->twitch.getCurrent();
+    if (account && !account->isAnon())
+    {
+        this->queueLookup(account->getUserName(), account->getUserId());
+    }
 }
 
 void SeventvPaints::load()
@@ -388,23 +406,41 @@ void SeventvPaints::queueLookup(const QString &login, const QString &userID)
         return;
     }
 
+    auto account = getApp()->getAccounts()->twitch.getCurrent();
+    const bool own =
+        account && !account->isAnon() &&
+        account->getUserName().compare(key, Qt::CaseInsensitive) == 0;
+    const auto after = own ? OWN_LOOKUP_AFTER_S : LOOKUP_AFTER_S;
     {
         std::shared_lock lock(this->mutex_);
         auto it = this->lookupTimes_.find(key);
         if (it != this->lookupTimes_.end() &&
-            nowSeconds() - it->second < LOOKUP_AFTER_S)
+            nowSeconds() - it->second < after)
         {
             return;
         }
     }
 
     std::unique_lock lock(this->lookupMutex_);
-    if (!this->lookedUp_.insert(key).second ||
-        this->lookupQueue_.size() >= LOOKUP_QUEUE_MAX)
+    if (own)
+    {
+        // Your own goes first: with many channels open the queue holds
+        // thousands of chatters (minutes at 10 a second), or is full.
+        std::erase_if(this->lookupQueue_, [&](const auto &entry) {
+            return entry.first == key;
+        });
+        this->lookedUp_.insert(key);
+        this->lookupQueue_.emplace_front(key, userID);
+    }
+    else if (!this->lookedUp_.insert(key).second ||
+             this->lookupQueue_.size() >= LOOKUP_QUEUE_MAX)
     {
         return;
     }
-    this->lookupQueue_.emplace_back(key, userID);
+    else
+    {
+        this->lookupQueue_.emplace_back(key, userID);
+    }
     lock.unlock();
     this->armLookup();
 }

@@ -133,6 +133,31 @@
 #include <utility>
 
 namespace {
+
+/// A click on a label with the "openUrl" property opens it in the browser
+/// (the followage row when Twitch keeps the date hidden).
+class OpenUrlOnClick : public QObject
+{
+public:
+    using QObject::QObject;
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override
+    {
+        // on the press: the card takes a left button's release (dragging)
+        if (event->type() == QEvent::MouseButtonPress &&
+            static_cast<QMouseEvent *>(event)->button() == Qt::LeftButton)
+        {
+            const auto url = watched->property("openUrl").toString();
+            if (!url.isEmpty())
+            {
+                QDesktopServices::openUrl(QUrl(url));
+                return true;
+            }
+        }
+        return QObject::eventFilter(watched, event);
+    }
+};
 constexpr QStringView TEXT_FOLLOWERS = u"Фолловеров %1";
 constexpr QStringView TEXT_CREATED = u"Создан %1";
 constexpr QStringView TEXT_TITLE = u"%1 — карточка в #%2";
@@ -2110,6 +2135,8 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split,
             createUsercardStatusRow(metadata, &this->ui_.followageRow,
                                     &this->ui_.followageIcon,
                                     &this->ui_.followageLabel);
+            this->ui_.followageLabel->installEventFilter(
+                new OpenUrlOnClick(this->ui_.followageLabel));
             createUsercardStatusRow(metadata, &this->ui_.subageRow,
                                     &this->ui_.subageIcon,
                                     &this->ui_.subageLabel);
@@ -6739,12 +6766,25 @@ void UserInfoPopup::setUsercardFollowage(
 
     if (!followedAt || !followedAt->isValid())
     {
-        this->ui_.followageLabel->setText(tr("Нет информации"));
-        this->ui_.followageLabel->setToolTip({});
+        // Twitch no longer tells anyone but moderators: the followage site
+        // shows it (opened in the browser, on this person).
+        const auto url =
+            u"https://followage.showmasterokda.com/?user="_s +
+            QString::fromUtf8(QUrl::toPercentEncoding(this->userName_));
+        this->ui_.followageLabel->setText(
+            uiText("Twitch hides the date · open on followage"));
+        this->ui_.followageLabel->setToolTip(
+            uiText("Opens followage.showmasterokda.com on %1: the channels "
+                   "they follow, with the dates")
+                .arg(this->userName_));
+        this->ui_.followageLabel->setProperty("openUrl", url);
+        this->ui_.followageLabel->setCursor(Qt::PointingHandCursor);
         this->ui_.followageRow->setVisible(true);
         this->ui_.followageIcon->setVisible(true);
         return;
     }
+    this->ui_.followageLabel->setProperty("openUrl", QVariant());
+    this->ui_.followageLabel->unsetCursor();
 
     const auto followedDate = followedAt->toLocalTime().date();
     auto relativeTime = QString();

@@ -1379,6 +1379,16 @@ void ChannelView::updatePauses()
         this->pauseScrollMinimumOffset_ = 0;
         this->pauseScrollMaximumOffset_ = 0;
 
+        const auto addedAtStart = std::exchange(this->pauseAddedAtStart_, 0);
+        if (std::exchange(this->pauseMessagesUpdated_, false))
+        {
+            this->messagesUpdated();  // rebuilds everything, the start too
+        }
+        else if (addedAtStart > 0)
+        {
+            this->shiftForMessagesAtStart(addedAtStart);
+        }
+
         this->queueLayout();
         // make sure we re-render
         this->update();
@@ -1602,6 +1612,18 @@ void ChannelView::performLayout(bool causedByScrollbar, bool disableAnimation)
 
     /// Update scrollbar
     this->updateScrollbar(messages, causedByScrollbar, disableAnimation);
+
+    // The messages at the bottom got shorter (collapsed, trimmed, a preview
+    // gone) while the view stayed: back to the real end, no blank space.
+    if (this->scrollBar_->isVisible() && this->scrollBar_->isPastBottom())
+    {
+        QTimer::singleShot(0, this, [this] {
+            if (this->scrollBar_->isPastBottom())
+            {
+                this->scrollBar_->scrollToBottom(false);
+            }
+        });
+    }
 
     this->goToBottom_->setVisible(this->enableScrollingToBottom_ &&
                                   this->scrollBar_->isVisible() &&
@@ -2448,15 +2470,14 @@ void ChannelView::messageAddedAtStart(std::vector<MessagePtr> &messages)
     auto addedMessages = this->messages_.pushFront(messageRefs);
     if (!addedMessages.empty())
     {
-        if (this->scrollBar_->isAtBottom())
+        if (this->paused())
         {
-            this->scrollBar_->scrollToBottom();
+            this->pauseAddedAtStart_ += addedMessages.size();
         }
         else
         {
-            this->scrollBar_->offset(qreal(addedMessages.size()));
+            this->shiftForMessagesAtStart(addedMessages.size());
         }
-        this->scrollBar_->offsetMaximum(qreal(addedMessages.size()));
     }
 
     if (this->showScrollbarHighlights())
@@ -2502,8 +2523,28 @@ void ChannelView::messageReplaced(size_t hint, const MessagePtr &prev,
     this->queueLayout();
 }
 
+void ChannelView::shiftForMessagesAtStart(size_t count)
+{
+    // the maximum first: an offset before it is clamped at the old bottom
+    const bool atBottom = this->scrollBar_->isAtBottom();
+    this->scrollBar_->offsetMaximum(qreal(count));
+    if (atBottom)
+    {
+        this->scrollBar_->scrollToBottom();
+    }
+    else
+    {
+        this->scrollBar_->offset(qreal(count));
+    }
+}
+
 void ChannelView::messagesUpdated()
 {
+    if (this->paused())
+    {
+        this->pauseMessagesUpdated_ = true;
+        return;
+    }
     auto snapshot = this->channel_->getMessageSnapshot();
 
     this->messages_.clear();

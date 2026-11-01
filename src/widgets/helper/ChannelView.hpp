@@ -349,6 +349,8 @@ private:
     void messageReplaced(size_t hint, const MessagePtr &prev,
                          const MessagePtr &replacement);
     void messagesUpdated();
+    /// The scrollbar after @a count older messages came in at the start.
+    void shiftForMessagesAtStart(size_t count);
 
     void updateScrollbar(const std::vector<MessageLayoutPtr> &messages,
                          bool causedByScrollbar, bool disableAnimation);
@@ -419,6 +421,12 @@ private:
     int pauseScrollMaximumOffset_ = 0;
     // Keeps track how many message indices we need to offset the selection when we resume scrolling
     uint32_t pauseSelectionOffset_ = 0;
+    // While paused the shown messages are frozen, so the scrollbar must not
+    // move under them: older messages added at the start and a refill (the
+    // messages missed while reconnecting) wait for the pause to end. Applied
+    // right away they left the bottom of the chat blank, the refill for good.
+    size_t pauseAddedAtStart_ = 0;
+    bool pauseMessagesUpdated_ = false;
 
     std::optional<MessageElementFlags> overrideFlags_;
     bool collapseMessages_{false};

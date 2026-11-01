@@ -132,6 +132,14 @@ bool Scrollbar::isAtBottom() const
     return this->atBottom_;
 }
 
+bool Scrollbar::isPastBottom() const
+{
+    return this->currentValueAnimation_.state() ==
+               QPropertyAnimation::Stopped &&
+           this->getBottom() > this->minimum_ &&
+           this->currentValue_ > this->getBottom() + 0.001;
+}
+
 void Scrollbar::setMaximum(qreal value)
 {
     this->maximum_ = value;
@@ -186,8 +194,21 @@ void Scrollbar::setPageSize(qreal value)
 void Scrollbar::setDesiredValue(qreal value, bool animated)
 {
     value = std::max(this->minimum_, std::min(this->getBottom(), value));
+    // already there - unless an animation is still heading somewhere else
+    // (past a bottom that has moved up since: blank space under the chat)
+    if (areClose(this->currentValue_, value) &&
+        this->currentValueAnimation_.state() == QPropertyAnimation::Stopped)
+    {
+        this->desiredValue_ = value;
+        this->atBottom_ = areClose(this->getBottom(), value);
+        return;
+    }
     if (areClose(this->currentValue_, value))
     {
+        this->currentValueAnimation_.stop();
+        this->desiredValue_ = value;
+        this->atBottom_ = areClose(this->getBottom(), value);
+        this->setCurrentValue(value);
         return;
     }
 

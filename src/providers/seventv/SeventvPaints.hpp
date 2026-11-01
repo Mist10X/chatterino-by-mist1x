@@ -5,9 +5,11 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QString>
+#include <QTimer>
 
 #include <atomic>
 #include <deque>
+#include <memory>
 #include <mutex>
 #include <shared_mutex>
 #include <span>
@@ -61,6 +63,8 @@ public:
 
 private:
     void load();
+    /// Your own paint, again: a change on the 7TV site shows within a minute.
+    void refreshOwn();
     void queueLookup(const QString &login, const QString &userID);
     void applyBadge(const QString &userID, const QJsonObject &badge);
     void save();
@@ -70,6 +74,7 @@ private:
     void applyLookup(const std::vector<std::pair<QString, QString>> &batch,
                      const QJsonObject &data);
 
+    std::unique_ptr<QTimer> ownTimer_;
     std::mutex lookupMutex_;
     std::unordered_set<QString> lookedUp_;
     std::deque<std::pair<QString, QString>> lookupQueue_;

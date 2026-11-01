@@ -2980,5 +2980,7 @@
   "First seen": "Впервые",
   "Last seen": "Последний раз",
   "Users: %1": "Пользователей: %1",
-  "Could not load the list (%1)": "Не удалось загрузить список (%1)"
+  "Could not load the list (%1)": "Не удалось загрузить список (%1)",
+  "Twitch hides the date · open on followage": "Twitch скрывает дату · открыть на followage",
+  "Opens followage.showmasterokda.com on %1: the channels they follow, with the dates": "Откроет followage.showmasterokda.com для %1: каналы, на которые подписан этот человек, с датами подписки"
 }

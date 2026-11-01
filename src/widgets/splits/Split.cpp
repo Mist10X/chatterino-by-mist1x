@@ -4,7 +4,6 @@
 
 #include "common/UiLanguage.hpp"
 #include "widgets/splits/Split.hpp"
-#include "widgets/helper/MissedDigest.hpp"
 #include "providers/twitch/ChannelStats.hpp"
 
 #include "Application.hpp"
@@ -370,8 +369,6 @@ Split::Split(QWidget *parent)
                                            this->clearShortcuts();
                                            this->addShortcuts();
                                        });
-
-    attachMissedDigest(this);
 }
 
 void Split::addShortcuts()

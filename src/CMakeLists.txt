@@ -1041,8 +1041,6 @@ set(SOURCE_FILES
         singletons/InstallCounter.hpp
         widgets/dialogs/StreamStatsDialog.cpp
         widgets/dialogs/StreamStatsDialog.hpp
-        widgets/helper/MissedDigest.cpp
-        widgets/helper/MissedDigest.hpp
         widgets/helper/UploadPreview.cpp
         widgets/helper/UploadPreview.hpp
         widgets/dialogs/Mist1XUsersDialog.cpp
