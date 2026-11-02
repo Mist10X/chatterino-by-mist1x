@@ -18,6 +18,7 @@
 #include "debug/Benchmark.hpp"
 #include "pajlada/settings/signalargs.hpp"
 #include "util/Backup.hpp"
+#include "util/FilesystemHelpers.hpp"
 #include "util/WindowsHelper.hpp"
 
 #include <pajlada/signals/scoped-connection.hpp>
@@ -424,9 +425,13 @@ Settings::Settings(const Modes &modes, const Args &args,
           (modes.isPortable || modes.isExternallyPackaged) ? false : true)
 {
     QString settingsPath = settingsDirectory + "/settings.json";
+    this->settingsPath_ = qStringToStdPath(settingsPath);
 
     // get global instance of the settings library
     auto settingsInstance = pajlada::Settings::SettingManager::getInstance();
+    // A save interrupted after writing settings.json.tmp (the program killed,
+    // an antivirus holding the file) left the newest settings there.
+    settingsInstance->loadOptions.attemptLoadFromTemporaryFile = true;
 
     if (settingsArgs.isTest)
     {
@@ -471,8 +476,12 @@ Settings::Settings(const Modes &modes, const Args &args,
             });
     }
 
-    settingsInstance->setBackupEnabled(true);
-    settingsInstance->setBackupSlots(9);
+    // The library's backup moves settings.json away before putting the new
+    // file in its place: killed (or blocked) in between, there was no
+    // settings.json at all. Without it the .tmp file replaces settings.json
+    // in one step, and the backups are copies made after a save (see
+    // requestSave).
+    settingsInstance->setBackupEnabled(false);
     settingsInstance->saveMethod = static_cast<
         pajlada::Settings::SettingManager::SaveMethod>(
         static_cast<uint64_t>(
@@ -648,7 +657,27 @@ pajlada::Settings::SettingManager::SaveResult Settings::requestSave() const
         return pajlada::Settings::SettingManager::SaveResult::Skipped;
     }
 
-    return pajlada::Settings::SettingManager::gSave();
+    auto result = pajlada::Settings::SettingManager::gSave();
+    if (result == pajlada::Settings::SettingManager::SaveResult::Success)
+    {
+        // settings.json.bkp-1 is the save just made, bkp-9 the oldest
+        constexpr int slots = 9;
+        auto slot = [this](int i) {
+            auto p = this->settingsPath_;
+            p += ".bkp-" + std::to_string(i);
+            return p;
+        };
+        std::error_code ec;
+        std::filesystem::remove(slot(slots), ec);
+        for (int i = slots - 1; i >= 1; --i)
+        {
+            std::filesystem::rename(slot(i), slot(i + 1), ec);
+        }
+        std::filesystem::copy_file(
+            this->settingsPath_, slot(1),
+            std::filesystem::copy_options::overwrite_existing, ec);
+    }
+    return result;
 }
 
 void Settings::saveSnapshot()

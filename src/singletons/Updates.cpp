@@ -15,6 +15,7 @@
 #include "common/UiLanguage.hpp"
 #include "singletons/Paths.hpp"
 #include "singletons/Settings.hpp"
+#include "singletons/WindowManager.hpp"
 #include "util/CombinePath.hpp"
 #include "util/PostToThread.hpp"
 
@@ -307,6 +308,15 @@ void Updates::installUpdates()
                         return;
                     }
                     file.close();
+
+                    // Everything saved now: the setup may close this copy
+                    // before it is done saving on exit.
+                    if (auto *app = dynamic_cast<Application *>(tryGetApp());
+                        app != nullptr && app->getWindows() != nullptr)
+                    {
+                        app->getWindows()->save();
+                    }
+                    getSettings()->requestSave();
 
                     // The setup shows only its progress, closes this copy if
                     // it is still running, keeps the settings and starts the

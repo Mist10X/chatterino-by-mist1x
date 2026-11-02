@@ -32,6 +32,7 @@
 #include <pajlada/settings/settingmanager.hpp>
 #include <pajlada/signals/signalholder.hpp>
 
+#include <filesystem>
 #include <optional>
 #include <string_view>
 
@@ -296,6 +297,8 @@ class Settings
     Settings *prevInstance_ = nullptr;
 
     bool disableSaving;
+    /// settings.json, for the backups made after each save
+    std::filesystem::path settingsPath_;
 
 public:
     Settings(const Modes &modes, const Args &args,
