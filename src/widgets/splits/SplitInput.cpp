@@ -4583,10 +4583,22 @@ void SplitInput::updateTextEditPalette()
     p.setColor(QPalette::Text, this->theme->messages.textColors.regular);
 
     // Selection background color
-    p.setBrush(QPalette::Highlight,
-               this->theme->isLightTheme()
-                   ? QColor(u"#68B1FF"_s)
-                   : this->theme->tabs.selected.backgrounds.regular);
+    // An opaque chat selection (Mist-Dark) is used here too, with dark text
+    const auto chatSelection = this->theme->messages.selection;
+    if (chatSelection.alpha() == 255)
+    {
+        p.setBrush(QPalette::Highlight, chatSelection);
+        auto dark = this->theme->messages.backgrounds.regular;
+        dark.setAlpha(255);
+        p.setColor(QPalette::HighlightedText, dark);
+    }
+    else
+    {
+        p.setBrush(QPalette::Highlight,
+                   this->theme->isLightTheme()
+                       ? QColor(u"#68B1FF"_s)
+                       : this->theme->tabs.selected.backgrounds.regular);
+    }
 
     // Background color
     p.setBrush(QPalette::Base, this->inputBackground());

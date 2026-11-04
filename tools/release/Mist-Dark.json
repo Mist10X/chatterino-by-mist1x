@@ -12,7 +12,7 @@
       "disabled": "#99131318",
       "highlightAnimationEnd": "#00e6e6e6",
       "highlightAnimationStart": "#6ee6e6e6",
-      "selection": "#5cb8a7f0",
+      "selection": "#ffb8a7f0",
       "textColors": {
         "caret": "#ffffff",
         "chatPlaceholder": "#5a5a66",
@@ -27,7 +27,7 @@
         "regular": "transparent"
       },
       "disabled": "#64000000",
-      "selection": "#5cb8a7f0",
+      "selection": "#ffb8a7f0",
       "textColors": {
         "caret": "#ffffff",
         "chatPlaceholder": "#5d5555",

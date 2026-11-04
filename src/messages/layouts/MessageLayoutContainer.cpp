@@ -1040,6 +1040,33 @@ void MessageLayoutContainer::paintSelectionRect(
     rect.setRight(right);
 
     painter.fillRect(rect, color);
+    if (color.alpha() != 255)
+    {
+        return;
+    }
+
+    // An opaque selection hides what is below it: paint the line again on
+    // top, text in the dark of the chat background (as in a text field).
+    auto dark = getTheme()->messages.backgrounds.regular;
+    dark.setAlpha(255);
+    MessageColors colors;
+    colors.regularText = colors.linkText = colors.systemText = dark;
+    TextLayoutElement::overrideColor = dark;
+    for (size_t i = line.startIndex; i < line.endIndex; ++i)
+    {
+        auto &element = this->elements_[i];
+        if (!QRectF(element->getRect()).translated(0, yOffset).intersects(rect))
+        {
+            continue;
+        }
+        painter.save();
+        painter.setClipRect(rect);
+        (void)element->paintAnimated(painter, yOffset);
+        painter.translate(0, yOffset);
+        element->paint(painter, colors);
+        painter.restore();
+    }
+    TextLayoutElement::overrideColor.reset();
 }
 
 std::optional<size_t> MessageLayoutContainer::paintSelectionStart(

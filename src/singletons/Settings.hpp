@@ -1503,13 +1503,8 @@ public:
         "/moltorino/client/sendActivityHeartbeats", true};
     BoolSetting hideAccountInHeartbeats{
         "/moltorino/client/hideAccountInHeartbeats", false};
-    BoolSetting trayHideOnClose{"/moltorino/tray/hideOnClose",
-#ifdef Q_OS_MACOS
-                                false
-#else
-                                true
-#endif
-    };
+    // The close button quits; hiding to the tray is opt-in.
+    BoolSetting trayHideOnClose{"/moltorino/tray/hideOnClose", false};
     BoolSetting trayNotifyOnSoundHighlights{
         "/moltorino/tray/notifyOnSoundHighlights",
 #ifdef Q_OS_MACOS

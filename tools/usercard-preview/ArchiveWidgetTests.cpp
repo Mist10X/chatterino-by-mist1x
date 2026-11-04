@@ -9,6 +9,7 @@
 #include <QElapsedTimer>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QLabel>
 #include <QLocalServer>
 #include <QLocalSocket>
 #include <QScrollBar>
@@ -17,6 +18,7 @@
 #include <QTimer>
 #include <QUuid>
 
+#include <algorithm>
 #include <cstdio>
 #include <functional>
 #include <memory>
@@ -229,7 +231,7 @@ int main(int argc, char **argv)
                   !widget.findChild<QTextBrowser *>()->toHtml().contains(
                       "<img src=\"https"),
               "saved HTML is literal text");
-        check(widget.plainText().contains("МУТ") &&
+        check(widget.plainText().contains("Мут") &&
                   widget.plainText().contains("10 мин"),
               "timeout and duration");
         check(widget.plainText().contains("AutoMod") &&
@@ -352,6 +354,76 @@ int main(int argc, char **argv)
         delete widget;
         check(timer.elapsed() < 100,
               "destroy card while request active is bounded");
+    }
+    {
+        // The punishments tab as the Archive's "Наказания" list (a picture
+        // with ARCHIVE_CARD_SHOT=<file.png>).
+        Server server;
+        server.transform = [](auto, auto data) {
+            auto event = [](const QString &kind, double at,
+                            const QString &channel, const QString &text,
+                            int duration = 0) {
+                QJsonObject row{{"kind", kind},
+                                {"user_id", "101"},
+                                {"channel", channel},
+                                {"at_ms", at}};
+                if (duration > 0)
+                    row.insert("duration", duration);
+                const QJsonObject said{{"user_id", "101"},
+                                       {"text", text},
+                                       {"at_ms", at - 1000},
+                                       {"automod", false}};
+                if (kind == "delete")
+                    row.insert("message", said);
+                row.insert("context", QJsonArray{said});
+                return row;
+            };
+            auto lift = [](QJsonObject row) {
+                row.insert("lifted", "unban");
+                return row;
+            };
+            auto moderation = block(
+                {event("timeout", 1793448436000.0, "kopsteep",
+                       "-реп чсв лерка LL стример", 600),
+                 event("delete", 1793448436000.0, "kopsteep",
+                       "-реп чсв лерка LL стример"),
+                 lift(event("ban", 1793246983000.0, "dangerlyoha",
+                       "СУЙ ПОКА ЛЕЖИТ ЛЕРКА")),
+                 event("delete", 1793238806000.0, "kopsteep",
+                       "1234567891011121314151617181920212223242526272829")});
+            moderation.insert("counts", QJsonObject{{"ban", 1},
+                                                    {"timeout", 1},
+                                                    {"delete", 2}});
+            data.insert("moderation", moderation);
+            auto messages = data.value("messages").toObject();
+            messages.insert("total", 593);
+            data.insert("messages", messages);
+            data.insert("dossier", block({}, "empty"));
+            return data;
+        };
+        ArchiveUserCard widget(server.endpoint());
+        widget.resize(430, 420);
+        widget.setTarget("101", "archive_demo", "dangerlyoha");
+        widget.show();
+        const bool found = until([&] {
+            return widget.property("archiveState") == "found";
+        });
+        check(found && widget.plainText().contains("Удаление") &&
+                  widget.plainText().contains("10 мин") &&
+                  widget.plainText().contains("СУЙ ПОКА ЛЕЖИТ ЛЕРКА") &&
+                  widget.plainText().contains("Бан · снят") &&
+                  std::ranges::any_of(
+                      widget.findChildren<QLabel *>("archiveChip"),
+                      [](QLabel *chip) {
+                          return chip->text().contains("бан");
+                      }),
+              "punishments read like the chat's punishment boxes");
+        const auto shot = qEnvironmentVariable("ARCHIVE_CARD_SHOT");
+        if (!shot.isEmpty())
+        {
+            QApplication::processEvents();
+            widget.grab().save(shot, "PNG");
+        }
     }
     std::printf("RESULT %d passed %d failed\n", passed, failed);
     return failed ? 1 : 0;

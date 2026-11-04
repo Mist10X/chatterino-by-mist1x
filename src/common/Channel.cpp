@@ -611,17 +611,18 @@ void Channel::upsertPersonalSeventvEmotes(
     // added emotes are inserted where appropriate.
 
     assertInGuiThread();
-    auto snapshot = this->getMessageSnapshot(5);
+    auto snapshot = this->getMessageSnapshot(30);
     if (snapshot.empty())
     {
         return;
     }
 
-    /// Finds the last message of the user (searches the last five messages).
+    /// Finds the last message of the user (searches the last 30 messages: a
+    /// looked-up set comes a moment later, in a busy chat).
     /// If no message is found, `std::nullopt` is returned.
     const auto findMessage = [&]() -> std::optional<MessagePtr> {
         auto size = static_cast<qsizetype>(snapshot.size());
-        auto end = std::max<qsizetype>(0, size - 5);
+        auto end = std::max<qsizetype>(0, size - 30);
 
         // explicitly using signed integers here to represent '-1'
         for (qsizetype i = size - 1; i >= end; i--)

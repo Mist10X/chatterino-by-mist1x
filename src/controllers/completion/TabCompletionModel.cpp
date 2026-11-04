@@ -20,7 +20,38 @@
 #include "providers/potat/PotatCommands.hpp"
 #include "singletons/Settings.hpp"
 
+#include <algorithm>
+
 namespace chatterino {
+
+namespace {
+
+bool hasCyrillic(const QString &text)
+{
+    return std::any_of(text.begin(), text.end(), [](QChar c) {
+        return c.script() == QChar::Script_Cyrillic;
+    });
+}
+
+}  // namespace
+
+QString TabCompletionModel::fromRussianLayout(const QString &text)
+{
+    static const QString ru = QStringLiteral(
+        "йцукенгшщзхъфывапролджэячсмитьбюё"
+        "ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮЁ\"№");
+    static const QString en = QStringLiteral(
+        "qwertyuiop[]asdfghjkl;'zxcvbnm,.`"
+        "QWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM<>~@#");
+    QString out;
+    out.reserve(text.size());
+    for (const QChar c : text)
+    {
+        const auto at = ru.indexOf(c);
+        out += at < 0 ? c : en.at(at);
+    }
+    return out;
+}
 
 TabCompletionModel::TabCompletionModel(Channel &channel, QObject *parent)
     : QStringListModel(parent)
@@ -40,6 +71,7 @@ void TabCompletionModel::updateResults(const QString &query,
         }
     }
     this->updateSourceFromQuery(query, isFirstWord);
+    this->setStringList({});
 
     if (this->source_)
     {
@@ -49,9 +81,11 @@ void TabCompletionModel::updateResults(const QString &query,
 #ifdef CHATTERINO_HAVE_PLUGINS
 
         bool done{};
-        std::tie(done, results) =
-            getApp()->getPlugins()->updateCustomCompletions(
+        if (auto *plugins = getApp()->getPlugins())
+        {
+            std::tie(done, results) = plugins->updateCustomCompletions(
                 query, fullTextContent, cursorPosition, isFirstWord);
+        }
         if (done)
         {
             auto uniqueResults = std::unique(results.begin(), results.end());
@@ -64,6 +98,23 @@ void TabCompletionModel::updateResults(const QString &query,
         auto uniqueResults = std::unique(results.begin(), results.end());
         results.erase(uniqueResults, results.end());
         this->setStringList(results);
+    }
+
+    // Typed in the Russian layout by mistake ("ЗщпСрфьз", "\"ьшые1ч"):
+    // emotes and names are Latin, so try the same keys in the English one.
+    if (this->rowCount() == 0 && hasCyrillic(query))
+    {
+        const auto converted = fromRussianLayout(query);
+        this->updateSourceFromQuery(converted, isFirstWord);
+        if (this->source_)
+        {
+            this->source_->update(converted);
+            QStringList results;
+            this->source_->addToStringList(results, 0, isFirstWord);
+            auto uniqueResults = std::unique(results.begin(), results.end());
+            results.erase(uniqueResults, results.end());
+            this->setStringList(results);
+        }
     }
 }
 

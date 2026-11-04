@@ -1235,6 +1235,8 @@ size_t TextLayoutElement::getSelectionIndexCount() const
     return this->getText().length() + (this->trailingSpace ? 1 : 0);
 }
 
+std::optional<QColor> TextLayoutElement::overrideColor;
+
 void TextLayoutElement::paint(QPainter &painter,
                               const MessageColors & /*messageColors*/)
 {
@@ -1250,7 +1252,7 @@ void TextLayoutElement::paint(QPainter &painter,
     bool isNametag = this->getLink().type == chatterino::Link::UserInfo ||
                      this->getLink().type == chatterino::Link::UserWhisper;
     bool drawPaint = isNametag && this->messageColor_ != MessageColor::System &&
-                     getSettings()->displaySevenTVPaints;
+                     getSettings()->displaySevenTVPaints && !overrideColor;
     if (drawPaint)
     {
         auto paint = app->getSeventvPaints()->getPaint(
@@ -1276,7 +1278,7 @@ void TextLayoutElement::paint(QPainter &painter,
         }
     }
 
-    painter.setPen(this->color_);
+    painter.setPen(overrideColor.value_or(this->color_));
     painter.setFont(font);
 
     const QFontMetricsF metrics(font);
@@ -1652,7 +1654,12 @@ NoticeIconLayoutElement::NoticeIconLayoutElement(MessageElement &creator,
 void NoticeIconLayoutElement::paint(QPainter &painter,
                                     const MessageColors & /*messageColors*/)
 {
-    const QRectF rect(this->getRect());
+    paintIcon(painter, this->icon_, this->color_, QRectF(this->getRect()));
+}
+
+void NoticeIconLayoutElement::paintIcon(QPainter &painter, Icon icon,
+                                        QColor color, const QRectF &rect)
+{
     // drawn on a 16 x 16 grid, centered in the element
     const qreal unit = std::min(rect.width(), rect.height()) / 16.0;
     painter.save();
@@ -1660,7 +1667,6 @@ void NoticeIconLayoutElement::paint(QPainter &painter,
     painter.translate(rect.center().x() - 8 * unit,
                       rect.center().y() - 8 * unit);
     painter.scale(unit, unit);
-    auto color = this->color_;
     color.setAlpha(215);
     QPen pen(color, 1.5);
     pen.setCapStyle(Qt::RoundCap);
@@ -1668,7 +1674,7 @@ void NoticeIconLayoutElement::paint(QPainter &painter,
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
 
-    switch (this->icon_)
+    switch (icon)
     {
         case Icon::Ban:
             painter.drawEllipse(QPointF(8, 8), 6, 6);

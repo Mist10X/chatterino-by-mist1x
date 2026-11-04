@@ -171,6 +171,10 @@ public:
                       MessageColor::Type messageColor, float scale_,
                       float dpr = 1.0F);
 
+    /// While set, text is painted in this colour: dark text over an opaque
+    /// selection, as in a text field.
+    static std::optional<QColor> overrideColor;
+
 protected:
     void addCopyTextToString(QString &str, uint32_t from = 0,
                              uint32_t to = UINT32_MAX) const override;
@@ -249,6 +253,10 @@ public:
 
     NoticeIconLayoutElement(MessageElement &creator, Icon icon, QColor color,
                             QSizeF size, float scale);
+
+    /// The icon in @a rect, as the chat draws it (also used outside the chat).
+    static void paintIcon(QPainter &painter, Icon icon, QColor color,
+                          const QRectF &rect);
 
 protected:
     void paint(QPainter &painter, const MessageColors &messageColors) override;

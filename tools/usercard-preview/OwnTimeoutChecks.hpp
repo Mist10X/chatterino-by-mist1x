@@ -36,11 +36,16 @@
 #include "singletons/Settings.hpp"
 #include "widgets/helper/ChannelView.hpp"
 #include "widgets/Scrollbar.hpp"
+#include "controllers/completion/TabCompletionModel.hpp"
 #include "widgets/buttons/Button.hpp"
 #include "widgets/helper/ResizingTextEdit.hpp"
 #include "widgets/Label.hpp"
 #include "widgets/splits/Split.hpp"
 #include "widgets/splits/SplitInput.hpp"
+#include "widgets/helper/CornerBanners.hpp"
+#include "singletons/Theme.hpp"
+#include <QTextEdit>
+#include <QMouseEvent>
 
 #include <IrcMessage>
 #include <QBuffer>
@@ -1042,6 +1047,154 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
         check(QStringLiteral("the jump to new messages leaves no blank space "
                              "(limit %1, case %2)").arg(limit).arg(extra),
               jump != nullptr && paused < 40 && after < 40);
+    }
+
+    // 22. Tab after typing in the Russian layout by mistake
+    {
+        auto room =
+            std::make_shared<TwitchChannel>(QStringLiteral("layout_room"));
+        room->addRecentChatter(QStringLiteral("mist1x_x"));
+        room->addRecentChatter(QStringLiteral("someone"));
+        TabCompletionModel model(*room, nullptr);
+        auto first = [&](const QString &query) {
+            model.updateResults(query, query, int(query.size()), false);
+            return model.rowCount() > 0
+                       ? model.index(0).data().toString()
+                       : QString();
+        };
+        // only "@" queries here: the emote sources need the whole program
+        const auto at = first(QStringLiteral("@ьшые"));
+        const auto plain = first(QStringLiteral("@mist"));
+        const auto none = first(QStringLiteral("@рфк"));
+        const auto keys = TabCompletionModel::fromRussianLayout(
+            QStringLiteral("ЗщпСрфьз \"ьшые1ч_ч ЛУЛ Ж)"));
+        std::fprintf(stderr, "layout at=%s plain=%s none=%s keys=%s\n",
+                     qPrintable(at), qPrintable(plain), qPrintable(none),
+                     qPrintable(keys));
+        check(QStringLiteral("Tab completes a name typed in the Russian "
+                             "layout"),
+              at.startsWith(QStringLiteral("@mist1x_x")) &&
+                  plain.startsWith(QStringLiteral("@mist1x_x")) &&
+                  none.isEmpty() &&
+                  keys == QStringLiteral("PogChamp @mist1x_x KEK :)"));
+    }
+
+    // 23. Clicking a raid banner away must not start a selection in the chat
+    {
+        struct PressCounter : QWidget {
+            int presses = 0;
+            void mousePressEvent(QMouseEvent *event) override
+            {
+                ++this->presses;
+                event->accept();
+            }
+        } view;
+        view.resize(400, 300);
+        auto *stack = new CornerBannerStack(&view);
+        stack->show({.kind = CornerBannerData::Kind::Raid,
+                     .login = QStringLiteral("raider"),
+                     .amount = 12});
+        CornerBanner *banner = nullptr;
+        for (auto *child : view.findChildren<QWidget *>())
+        {
+            banner = banner ? banner : dynamic_cast<CornerBanner *>(child);
+        }
+        if (banner)
+        {
+            const QPointF at(banner->width() / 2.0, banner->height() / 2.0);
+            QMouseEvent press(QEvent::MouseButtonPress, at,
+                              banner->mapToGlobal(at), Qt::LeftButton,
+                              Qt::LeftButton, Qt::NoModifier);
+            QApplication::sendEvent(banner, &press);
+            QMouseEvent release(QEvent::MouseButtonRelease, at,
+                                banner->mapToGlobal(at), Qt::LeftButton,
+                                Qt::NoButton, Qt::NoModifier);
+            QApplication::sendEvent(banner, &release);
+        }
+        std::fprintf(stderr, "raid banner presses under it=%d\n", view.presses);
+        check(QStringLiteral("closing a raid banner with the mouse does not "
+                             "press the chat below"),
+              banner != nullptr && view.presses == 0 && banner->isLeaving());
+    }
+
+    // 24. An opaque selection (Mist-Dark) keeps the text readable: lavender
+    //     fill with the text dark on top, as in a text field
+    {
+        auto room =
+            std::make_shared<TwitchChannel>(QStringLiteral("select_room"));
+        split.setChannel(
+            IndirectChannel(std::static_pointer_cast<Channel>(room)));
+        split.resize(560, 160);
+        for (const auto *text : {"first line WWWWWWWWWWWW",
+                                 "selected text stays readable WWWWWWWWWWWW",
+                                 "last line WWWWWWWWWWWW"})
+        {
+            room->addMessage(makeSystemMessage(QString::fromUtf8(text)),
+                             MessageContext::Repost);
+        }
+        auto &theme = *getTheme();
+        const auto previous = theme.messages.selection;
+        theme.messages.selection = QColor(184, 167, 240);
+        pump(300);
+        auto &view = split.getChannelView();
+        auto drag = [&](QEvent::Type type, QPointF at, Qt::MouseButtons held) {
+            QMouseEvent event(type, at, view.mapToGlobal(at), Qt::LeftButton,
+                              held, Qt::NoModifier);
+            QApplication::sendEvent(&view, &event);
+        };
+        // from the second line to the end of the view
+        drag(QEvent::MouseButtonPress, QPointF(4, 36), Qt::LeftButton);
+        drag(QEvent::MouseMove, QPointF(view.width() - 30, 60),
+             Qt::LeftButton);
+        drag(QEvent::MouseButtonRelease,
+             QPointF(view.width() - 30, 60), Qt::NoButton);
+        pump(200);
+        const auto image = view.grab().toImage();
+
+        // the input box selects with the same lavender and dark text
+        // the input palette is rebuilt from the theme (as on a theme change)
+        split.getInput().setProperty(
+            "backgroundColor", split.getInput().property("backgroundColor"));
+        // (typing here needs the whole program, so the palette is checked)
+        auto *edit = split.getInput().findChild<QTextEdit *>();
+        const auto highlight =
+            edit ? edit->palette().color(QPalette::Highlight) : QColor();
+        const auto highlighted =
+            edit ? edit->palette().color(QPalette::HighlightedText) : QColor();
+        std::fprintf(stderr, "input selection %s on %s\n",
+                     qPrintable(highlighted.name()), qPrintable(highlight.name()));
+        check(QStringLiteral("the input box selects with the same lavender"),
+              highlight == QColor(184, 167, 240) && highlighted.value() < 60);
+        theme.messages.selection = previous;
+        split.getInput().setProperty(
+            "backgroundColor", split.getInput().property("backgroundColor"));
+        int lavender = 0;
+        int dark = 0;
+        for (int y = 0; y < image.height(); ++y)
+        {
+            // dark text counts only on rows that are mostly lavender
+            int rowLavender = 0;
+            int rowDark = 0;
+            for (int x = 0; x < image.width(); ++x)
+            {
+                const QColor c = image.pixelColor(x, y);
+                rowLavender +=
+                    c.red() == 184 && c.green() == 167 && c.blue() == 240;
+                rowDark += c.red() < 60 && c.green() < 60 && c.blue() < 70;
+            }
+            lavender += rowLavender;
+            dark += rowLavender > image.width() / 2 ? rowDark : 0;
+        }
+        std::fprintf(stderr, "opaque selection lavender=%d dark=%d\n", lavender,
+                     dark);
+        if (!screenshotBase.isEmpty())
+        {
+            image.save(screenshotBase + "-selection.png", "PNG");
+        }
+        check(QStringLiteral("an opaque selection shows dark text over "
+                             "lavender"),
+              lavender > 2000 && dark > 200);
+        view.clearSelection();
     }
 
     QFile out(report);

@@ -24,6 +24,10 @@ public:
     void updateResults(const QString &query, const QString &fullTextContent,
                        int cursorPosition, bool isFirstWord = false);
 
+    /// The same keys pressed in the English layout: "ЗщпСрфьз" -> "PogChamp".
+    /// Only Cyrillic letters (and the Russian " and №) change.
+    static QString fromRussianLayout(const QString &text);
+
 private:
     enum class SourceKind {
 

@@ -32,6 +32,9 @@
 #include "providers/ffz/FfzEmotes.hpp"
 #include "providers/seventv/SeventvEmotes.hpp"
 #include "providers/seventv/SeventvPaints.hpp"
+#include "providers/seventv/SeventvAPI.hpp"
+#include "providers/seventv/SeventvPersonalEmotes.hpp"
+#include "providers/seventv/SeventvPersonalLookup.hpp"
 #include "singletons/ImageUploader.hpp"
 #include "singletons/Resources.hpp"
 #include "singletons/WindowManager.hpp"
@@ -174,6 +177,14 @@ public:
     {
         return &this->seventv;
     }
+    SeventvPersonalEmotes *getSeventvPersonalEmotes() override
+    {
+        return &this->personalEmotes;
+    }
+    SeventvAPI *getSeventvAPI() override
+    {
+        return &this->seventvApi;
+    }
     SpellChecker *getSpellChecker() override
     {
         return &this->spellChecker;
@@ -204,6 +215,8 @@ public:
     BttvEmotes bttv;
     FfzEmotes ffz;
     SeventvEmotes seventv;
+    SeventvPersonalEmotes personalEmotes;
+    SeventvAPI seventvApi;
     SpellChecker spellChecker;
     PubSub pubSub{QStringLiteral("wss://127.0.0.1:9")};
     LinkResolver linkResolver;
@@ -617,6 +630,10 @@ int main(int argc, char **argv)
          QStringLiteral("One real page from the public mirrors: "
                         "user-id,login,channel (network!)"),
          QStringLiteral("who")},
+        {{QStringLiteral("seventv-personal-live")},
+         QStringLiteral("Look up 7TV personal sets of user-id:login,... "
+                        "(network!)"),
+         QStringLiteral("users")},
         {{QStringLiteral("viewer-counts-live")},
          QStringLiteral("Real viewer counts for logins a,b,c (network!)"),
          QStringLiteral("logins")},
@@ -720,6 +737,66 @@ int main(int argc, char **argv)
                           .toJson());
         }
         return counts ? 0 : 35;
+    }
+    if (parser.isSet(QStringLiteral("seventv-personal-live")))
+    {
+        NetworkManager::init();
+        auto &lookup = SeventvPersonalLookup::instance();
+        const auto store = QDir(QDir::tempPath())
+                               .filePath(QStringLiteral("seventv-personal-test.json"));
+        QFile::remove(store);
+        lookup.setStorePath(store);
+        const auto users =
+            parser.value(QStringLiteral("seventv-personal-live")).split(',');
+        for (const auto &user : users)
+        {
+            const auto parts = user.split(':');
+            lookup.noteChatter(parts.value(0), parts.value(1));
+        }
+        QElapsedTimer timer;
+        timer.start();
+        // every user answered (a set or "none") and every found set loaded
+        auto done = [&] {
+            for (const auto &user : users)
+            {
+                const auto id = user.split(':').value(0);
+                const auto set = lookup.rememberedSet(id);
+                if (lookup.queued() > 0 ||
+                    (!set.isEmpty() &&
+                     app.personalEmotes.getEmoteSetsForTwitchUser(id).isEmpty()))
+                {
+                    return false;
+                }
+            }
+            return true;
+        };
+        publiclogchecks::waitUntil([&] {
+            return timer.elapsed() > 1500 && done();
+        }, 30000);
+        lookup.save();
+        lookup.setStorePath(store);  // read back from disk
+        QJsonObject result;
+        for (const auto &user : users)
+        {
+            const auto id = user.split(':').value(0);
+            QStringList names;
+            for (const auto &set :
+                 app.personalEmotes.getEmoteSetsForTwitchUser(id))
+            {
+                for (const auto &[name, emote] : *set)
+                {
+                    names.append(name.string);
+                }
+            }
+            result.insert(id, QJsonObject{
+                                  {"rememberedSet", lookup.rememberedSet(id)},
+                                  {"emotes", names.join(' ')},
+                              });
+        }
+        std::fprintf(stderr, "%s\n",
+                     QJsonDocument(result).toJson().constData());
+        QFile::remove(store);
+        return 0;
     }
     if (parser.isSet(QStringLiteral("public-logs-live")))
     {

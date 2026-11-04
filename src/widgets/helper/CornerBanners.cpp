@@ -272,8 +272,16 @@ void CornerBanner::paintEvent(QPaintEvent * /*event*/)
                      amountString);
 }
 
+void CornerBanner::mousePressEvent(QMouseEvent *event)
+{
+    // Keep the press: passed on, the chat below starts a selection and never
+    // sees the release, so it keeps selecting as if the button were held.
+    event->accept();
+}
+
 void CornerBanner::mouseReleaseEvent(QMouseEvent *event)
 {
+    event->accept();
     if (this->rect().contains(event->position().toPoint()))
     {
         this->dismiss();

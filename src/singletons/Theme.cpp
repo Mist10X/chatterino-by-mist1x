@@ -602,6 +602,16 @@ void Theme::parseFrom(const QJsonObject &root, bool isCustomTheme)
         this->isLightTheme()
             ? u"#68B1FF"_s
             : this->tabs.selected.backgrounds.regular.name(QColor::HexArgb));
+    // An opaque chat selection (Mist-Dark): the same lavender with dark text
+    if (this->messages.selection.alpha() == 255)
+    {
+        auto dark = this->messages.backgrounds.regular;
+        dark.setAlpha(255);
+        this->splits.input.styleSheet +=
+            u"selection-background-color: %1; selection-color: %2;"_s.arg(
+                this->messages.selection.name(QColor::HexArgb),
+                dark.name(QColor::HexArgb));
+    }
 
     if (this->isLightTheme())
     {

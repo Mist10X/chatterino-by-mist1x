@@ -13,6 +13,7 @@
 #include "providers/seventv/SeventvEventAPI.hpp"
 #include "providers/seventv/SeventvPaints.hpp"
 #include "providers/seventv/SeventvPersonalEmotes.hpp"
+#include "providers/seventv/SeventvPersonalLookup.hpp"
 #include "util/PostToThread.hpp"
 #include "util/QMagicEnum.hpp"
 #include "util/Variant.hpp"
@@ -404,6 +405,14 @@ void Client::onEntitlementCreate(
             qCDebug(chatterinoSeventvEventAPI)
                 << "Assign user" << entitlement.seventvUsername
                 << "to emote set" << entitlement.refID;
+            for (const auto &user : entitlement.connections)
+            {
+                if (const auto *twitch = std::get_if<TwitchUser>(&user))
+                {
+                    SeventvPersonalLookup::instance().remember(
+                        twitch->id, entitlement.refID);
+                }
+            }
             if (auto set =
                     app->getSeventvPersonalEmotes()->assignUsersToEmoteSet(
                         entitlement.refID, entitlement.connections))

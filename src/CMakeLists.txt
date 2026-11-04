@@ -595,6 +595,8 @@ set(SOURCE_FILES
         providers/seventv/SeventvPaints.hpp
         providers/seventv/SeventvPersonalEmotes.cpp
         providers/seventv/SeventvPersonalEmotes.hpp
+        providers/seventv/SeventvPersonalLookup.cpp
+        providers/seventv/SeventvPersonalLookup.hpp
 
         providers/seventv/paints/Paint.hpp
         providers/seventv/paints/Paint.cpp

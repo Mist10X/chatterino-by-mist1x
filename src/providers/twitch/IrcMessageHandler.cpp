@@ -5,6 +5,8 @@
 #include "common/UiLanguage.hpp"
 #include "providers/twitch/IrcMessageHandler.hpp"
 
+#include "providers/seventv/SeventvPersonalLookup.hpp"
+
 #include "Application.hpp"
 #include "common/Channel.hpp"
 #include "common/Common.hpp"
@@ -601,6 +603,10 @@ void IrcMessageHandler::handlePrivMessage(Communi::IrcPrivateMessage *message,
     }
 
     parsePrivMessageInto(message, *twitchChannel, twitchChannel);
+
+    // a 7TV personal set the EventAPI did not announce (yet)
+    SeventvPersonalLookup::instance().noteChatter(
+        message->tag("user-id").toString(), message->nick());
 }
 
 void IrcMessageHandler::parsePrivMessageInto(
