@@ -31,6 +31,7 @@
 #include "widgets/buttons/TitlebarButton.hpp"
 #include "widgets/dialogs/SettingsDialog.hpp"
 #include "widgets/dialogs/switcher/QuickSwitcherPopup.hpp"
+#include "widgets/dialogs/Mist1XUsersDialog.hpp"
 #include "widgets/dialogs/UpdateDialog.hpp"
 #include "singletons/InstallCounter.hpp"
 #include "widgets/helper/ArchiveActions.hpp"
@@ -266,7 +267,15 @@ void Window::addCustomTitlebarButtons()
     // installed this build
     if (archiveConnected())
     {
-        auto *installs = this->addTitleBarLabel([] {
+        // a click lists who uses it (with the admin key), else the releases
+        auto *installs = this->addTitleBarLabel([this] {
+            if (Mist1XUsersDialog::available())
+            {
+                auto *dialog = new Mist1XUsersDialog(this);
+                dialog->setAttribute(Qt::WA_DeleteOnClose);
+                dialog->show();
+                return;
+            }
             QDesktopServices::openUrl(QUrl(QStringLiteral(
                 "https://github.com/Mist10X/chatterino-by-mist1x/releases")));
         });

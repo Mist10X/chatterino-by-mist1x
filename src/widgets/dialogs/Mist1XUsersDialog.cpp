@@ -68,13 +68,17 @@ Mist1XUsersDialog::Mist1XUsersDialog(QWidget *parent)
     , status_(new QLabel(this))
 {
     this->setWindowTitle(uiText("Chatterino by Mist1X users"));
-    this->resize(620, 460);
+    // sized so every column fits, no resizing by hand
+    this->resize(640, 470);
     auto *layout = new QVBoxLayout(this);
     this->table_->setHorizontalHeaderLabels(
         {uiText("Name"), uiText("Version"), uiText("First seen"),
          uiText("Last seen")});
     this->table_->horizontalHeader()->setSectionResizeMode(
         0, QHeaderView::Stretch);
+    this->table_->setColumnWidth(1, 52);
+    this->table_->setColumnWidth(2, 148);
+    this->table_->setColumnWidth(3, 148);
     this->table_->verticalHeader()->hide();
     this->table_->setEditTriggers(QAbstractItemView::NoEditTriggers);
     this->table_->setSelectionBehavior(QAbstractItemView::SelectRows);

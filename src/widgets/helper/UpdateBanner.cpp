@@ -7,14 +7,11 @@
 #include "Application.hpp"
 #include "common/UiLanguage.hpp"
 #include "singletons/Fonts.hpp"
-#include "singletons/Paths.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/Theme.hpp"
 #include "singletons/Updates.hpp"
 
-#include <QDir>
 #include <QEvent>
-#include <QFile>
 #include <QFontMetricsF>
 #include <QMessageBox>
 #include <QMouseEvent>
@@ -27,30 +24,22 @@ namespace chatterino {
 
 namespace {
 
-/// The version whose card was closed; kept in Misc, next to the settings.
-QString dismissedFile()
+/// The version whose card was closed: only until the next start, so an
+/// update is not forgotten for good by one click on the cross.
+QString &dismissed()
 {
-    return QDir(getApp()->getPaths().miscDirectory)
-        .filePath("update-dismissed.txt");
+    static QString version;
+    return version;
 }
 
 QString dismissedVersion()
 {
-    QFile file(dismissedFile());
-    if (!file.open(QIODevice::ReadOnly))
-    {
-        return {};
-    }
-    return QString::fromUtf8(file.readAll()).trimmed();
+    return dismissed();
 }
 
 void setDismissedVersion(const QString &version)
 {
-    QFile file(dismissedFile());
-    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
-    {
-        file.write(version.toUtf8());
-    }
+    dismissed() = version;
 }
 
 class Banner final : public QWidget
