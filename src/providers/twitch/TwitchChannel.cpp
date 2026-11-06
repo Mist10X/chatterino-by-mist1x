@@ -4935,7 +4935,7 @@ void TwitchChannel::tryEmitPollCreatedSystemMessage(const PollEvent &poll)
     }
 
     this->lastPollSystemMessageKey_ = key;
-    this->addSystemMessage(QString("%1 created a poll: \"%2\"")
+    this->addSystemMessage(uiText(QString("%1 created a poll: \"%2\""))
                                .arg(poll.createdByName, poll.title));
 }
 
@@ -5084,20 +5084,20 @@ void TwitchChannel::handlePredictionUpdate(const QJsonObject &payload)
         if (systemMessageKind == "created")
         {
             this->addSystemMessage(
-                QString("%1 created a prediction: \"%2\"")
+                uiText(QString("%1 created a prediction: \"%2\""))
                     .arg(predictionActorOrFallback(prediction.createdByName),
                          prediction.title));
         }
         else if (systemMessageKind == "locked")
         {
             this->addSystemMessage(
-                QString("%1 locked the prediction")
+                uiText(QString("%1 locked the prediction"))
                     .arg(predictionActorOrFallback(prediction.lockedByName)));
         }
         else if (systemMessageKind == "canceled")
         {
             this->addSystemMessage(
-                QString("%1 deleted and refunded the prediction")
+                uiText(QString("%1 deleted and refunded the prediction"))
                     .arg(predictionActorOrFallback(prediction.endedByName)));
         }
         else if (systemMessageKind == "resolved")
@@ -5105,14 +5105,14 @@ void TwitchChannel::handlePredictionUpdate(const QJsonObject &payload)
             const auto winnerTitle = predictionWinnerTitle(prediction);
             if (winnerTitle.isEmpty())
             {
-                this->addSystemMessage(QString("%1 paid out the prediction")
+                this->addSystemMessage(uiText(QString("%1 paid out the prediction"))
                                            .arg(predictionActorOrFallback(
                                                prediction.endedByName)));
             }
             else
             {
                 this->addSystemMessage(
-                    QString("%1 paid out the prediction: \"%2\" won")
+                    uiText(QString("%1 paid out the prediction: \"%2\" won"))
                         .arg(predictionActorOrFallback(prediction.endedByName),
                              winnerTitle));
             }
@@ -5132,10 +5132,152 @@ void TwitchChannel::handlePredictionUpdate(const QJsonObject &payload)
         {
             prediction.selfPoints = (*cur)->selfPoints;
             prediction.selfOutcomeId = (*cur)->selfOutcomeId;
+            prediction.selfResult = (*cur)->selfResult;
+            prediction.selfPointsWon = (*cur)->selfPointsWon;
         }
     }
 
+    if (prediction.status == "RESOLVED")
+    {
+        this->announceOwnPredictionResult(prediction);
+    }
     this->setActivePrediction(std::move(prediction));
+}
+
+std::optional<qlonglong> TwitchChannel::predictionPayout(
+    const PredictionEvent &prediction)
+{
+    if (prediction.selfResult == "WIN" && prediction.selfPointsWon > 0)
+    {
+        return prediction.selfPointsWon;
+    }
+    if (prediction.selfResult == "LOSE")
+    {
+        return 0;
+    }
+    if (prediction.selfPoints <= 0 || prediction.status != "RESOLVED" ||
+        prediction.winningOutcomeId.isEmpty() ||
+        prediction.selfOutcomeId.isEmpty())
+    {
+        return std::nullopt;
+    }
+    if (prediction.selfOutcomeId != prediction.winningOutcomeId)
+    {
+        return 0;
+    }
+    qlonglong total = 0;
+    qlonglong winner = 0;
+    for (const auto &outcome : prediction.outcomes)
+    {
+        total += outcome.totalPoints;
+        if (outcome.id == prediction.winningOutcomeId)
+        {
+            winner = outcome.totalPoints;
+        }
+    }
+    if (winner <= 0)
+    {
+        return std::nullopt;
+    }
+    // the winners split the whole pool by their share of the winning side
+    return qlonglong(double(prediction.selfPoints) * double(total) /
+                     double(winner));
+}
+
+void TwitchChannel::announceOwnPredictionResult(
+    const PredictionEvent &prediction)
+{
+    if (prediction.id.isEmpty() ||
+        this->ownPredictionResultShownFor_ == prediction.id ||
+        !getSettings()->showPredictionSystemMessages)
+    {
+        return;
+    }
+    const auto payout = predictionPayout(prediction);
+    if (!payout)
+    {
+        return;
+    }
+    this->ownPredictionResultShownFor_ = prediction.id;
+    if (*payout > 0)
+    {
+        const auto profit = *payout - prediction.selfPoints;
+        this->addSystemMessage(
+            uiText(QString("Your prediction won: %1 channel points back (+%2)"))
+                .arg(formatChannelPoints(*payout),
+                     formatChannelPoints(std::max<qlonglong>(0, profit))));
+    }
+    else if (prediction.selfPoints > 0)
+    {
+        this->addSystemMessage(
+            uiText(QString("Your prediction lost: -%1 channel points"))
+                .arg(formatChannelPoints(prediction.selfPoints)));
+    }
+}
+
+void TwitchChannel::handlePredictionUserEvent(const QJsonObject &payload)
+{
+    assertInGuiThread();
+
+    const auto type = payload.value("type").toString();
+    const auto bet =
+        payload.value("data").toObject().value("prediction").toObject();
+    const auto eventId = bet.value("event_id").toString();
+    if (eventId.isEmpty())
+    {
+        return;
+    }
+
+    std::optional<PredictionEvent> current;
+    {
+        auto locked = this->activePrediction_.accessConst();
+        if (locked->has_value() && (*locked)->id == eventId)
+        {
+            current = **locked;
+        }
+    }
+
+    const auto points = bet.value("points").toInteger();
+    const auto outcomeId = bet.value("outcome_id").toString();
+    const auto result = bet.value("result").toObject();
+    const auto resultType = result.value("type").toString();
+
+    if (current)
+    {
+        // a bet made on the website or another device shows here too
+        if (points > 0)
+        {
+            current->selfPoints = int(points);
+        }
+        if (!outcomeId.isEmpty())
+        {
+            current->selfOutcomeId = outcomeId;
+        }
+        if (type == "prediction-result" && !resultType.isEmpty())
+        {
+            current->selfResult = resultType;
+            current->selfPointsWon = result.value("points_won").toInteger();
+        }
+        if (current->selfResult != "REFUND")
+        {
+            this->announceOwnPredictionResult(*current);
+        }
+        this->setActivePrediction(std::move(current));
+        return;
+    }
+
+    // the prediction is already gone from here: still say how it went
+    if (type == "prediction-result" &&
+        (resultType == "WIN" || resultType == "LOSE"))
+    {
+        PredictionEvent gone;
+        gone.id = eventId;
+        gone.selfPoints = int(points);
+        gone.selfOutcomeId = outcomeId;
+        gone.selfResult = resultType;
+        gone.selfPointsWon = result.value("points_won").toInteger();
+        this->announceOwnPredictionResult(gone);
+    }
 }
 
 void TwitchChannel::handlePollUpdate(const QJsonObject &payload)
@@ -5180,25 +5322,25 @@ void TwitchChannel::handlePollUpdate(const QJsonObject &payload)
             const auto winnerTitle = pollWinnerTitle(pollEvent);
             if (winnerTitle.isEmpty())
             {
-                this->addSystemMessage(QString("%1 ended the poll: \"%2\"")
+                this->addSystemMessage(uiText(QString("%1 ended the poll: \"%2\""))
                                            .arg(actor, pollEvent.title));
             }
             else
             {
-                this->addSystemMessage(QString("%1 ended the poll: \"%2\" won")
+                this->addSystemMessage(uiText(QString("%1 ended the poll: \"%2\" won"))
                                            .arg(actor, winnerTitle));
             }
         }
         else if (systemMessageKind == "terminated")
         {
             this->addSystemMessage(
-                QString("%1 ended the poll early")
+                uiText(QString("%1 ended the poll early"))
                     .arg(predictionActorOrFallback(pollEvent.endedByName)));
         }
         else if (systemMessageKind == "archived")
         {
             this->addSystemMessage(
-                QString("%1 archived the poll")
+                uiText(QString("%1 archived the poll"))
                     .arg(predictionActorOrFallback(pollEvent.endedByName)));
         }
     };
@@ -5659,6 +5801,9 @@ void TwitchChannel::refreshActivePrediction()
                                 prediction->selfPoints = (*cur)->selfPoints;
                                 prediction->selfOutcomeId =
                                     (*cur)->selfOutcomeId;
+                                prediction->selfResult = (*cur)->selfResult;
+                                prediction->selfPointsWon =
+                                    (*cur)->selfPointsWon;
                             }
                         }
                     }

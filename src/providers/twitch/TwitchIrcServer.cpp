@@ -459,6 +459,33 @@ void TwitchIrcServer::initialize()
             });
         });
 
+    // the own bet: placed (maybe on the website) and paid out
+    this->signalHolder.managedConnect(
+        getApp()->getTwitchPubSub()->prediction.userResult,
+        [this](const auto &payload) {
+            const auto channelId = payload.value("data")
+                                       .toObject()
+                                       .value("prediction")
+                                       .toObject()
+                                       .value("channel_id")
+                                       .toString();
+            if (channelId.isEmpty())
+            {
+                return;
+            }
+            auto chan = this->getChannelOrEmptyByID(channelId);
+            postToThread([chan, payload] {
+                if (isAppAboutToQuit())
+                {
+                    return;
+                }
+                if (auto *channel = dynamic_cast<TwitchChannel *>(chan.get()))
+                {
+                    channel->handlePredictionUserEvent(payload);
+                }
+            });
+        });
+
     this->signalHolder.managedConnect(
         getApp()->getTwitchPubSub()->chatWarning.updated,
         [this](const auto &payload) {

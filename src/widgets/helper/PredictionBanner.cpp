@@ -1,6 +1,8 @@
 #include "common/UiLanguage.hpp"
 #include "widgets/helper/PredictionBanner.hpp"
 
+#include "widgets/helper/PredictionPalette.hpp"
+
 #include "Application.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
 #include "singletons/Settings.hpp"
@@ -33,9 +35,9 @@ constexpr int BASE_ICON_SIZE = 14;
 constexpr int BASE_HEADER_FONT_SIZE = 11;
 constexpr int BASE_TITLE_FONT_SIZE = 15;
 constexpr int BASE_OUTCOME_FONT_SIZE = 12;
-constexpr int BASE_BAR_HEIGHT = 3;
+constexpr int BASE_BAR_HEIGHT = 4;
 constexpr int BASE_TOP_MARGIN = 4;
-constexpr int BASE_BOTTOM_MARGIN = 7;
+constexpr int BASE_BOTTOM_MARGIN = 13;
 constexpr int BASE_RIGHT_MARGIN = 8;
 constexpr int BASE_HEADER_LEFT_MARGIN = 8;
 constexpr int BASE_CONTENT_LEFT_MARGIN = 8;
@@ -63,51 +65,32 @@ QString stateTextForPrediction(const TwitchChannel::PredictionEvent &prediction)
 {
     if (prediction.status == "ACTIVE")
     {
-        return "LIVE";
+        return uiText(QString("Betting open"));
     }
     if (prediction.status == "LOCKED")
     {
-        return "LOCKED";
+        return uiText(QString("Bets locked"));
     }
     if (prediction.status == "RESOLVED")
     {
-        return "RESOLVED";
+        return uiText(QString("Paid out"));
     }
     if (prediction.status == "CANCELED")
     {
-        return "CANCELED";
+        return uiText(QString("Refunded"));
     }
     return prediction.status;
 }
 
-constexpr std::array<const char *, 10> OUTCOME_PALETTE = {{
-    "#1f8fff",
-    "#e9198b",
-    "#16a34a",
-    "#f59e0b",
-    "#9147ff",
-    "#14b8a6",
-    "#ef4444",
-    "#84cc16",
-    "#06b6d4",
-    "#f97316",
-}};
-
 QColor outcomeColorByIndex(int index)
 {
-    return QColor(OUTCOME_PALETTE[index % OUTCOME_PALETTE.size()]);
+    return predictionpalette::outcome(index);
 }
 
 QColor outcomeColorForPrediction(
     const TwitchChannel::PredictionOutcome &outcome, int index)
 {
-    if (outcome.color == "PINK")
-        return QColor("#e9198b");
-    if (outcome.color == "GREEN")
-        return QColor("#16a34a");
-    if (outcome.color == "BLUE" && index == 0)
-        return QColor("#1f8fff");
-    return outcomeColorByIndex(index);
+    return predictionpalette::outcome(index, outcome.color);
 }
 
 QString formatCompactPoints(qlonglong value)
@@ -522,7 +505,26 @@ void PredictionBanner::updateLayout()
     }
 
     QString metadata;
-    if (prediction.selfPoints > 0)
+    const auto payout = TwitchChannel::predictionPayout(prediction);
+    if (payout && *payout > 0)
+    {
+        metadata = QString("<span style=\"color:%1;font-weight:700;\">"
+                           "%2</span>")
+                       .arg(predictionpalette::won().name(),
+                            uiText(QString("Your prediction won: +%1"))
+                                .arg(formatChannelPoints(*payout))
+                                .toHtmlEscaped());
+    }
+    else if (payout && prediction.selfPoints > 0)
+    {
+        metadata = QString("<span style=\"color:%1;font-weight:700;\">"
+                           "%2</span>")
+                       .arg(predictionpalette::lost().name(),
+                            uiText(QString("Your prediction lost: -%1"))
+                                .arg(formatChannelPoints(prediction.selfPoints))
+                                .toHtmlEscaped());
+    }
+    else if (prediction.selfPoints > 0)
     {
         QString betOutcomeTitle;
         for (const auto &out : prediction.outcomes)
@@ -535,7 +537,7 @@ void PredictionBanner::updateLayout()
         }
         if (betOutcomeTitle.isEmpty())
         {
-            betOutcomeTitle = "an outcome";
+            betOutcomeTitle = uiText(QString("an outcome"));
         }
         metadata = uiText(QString("You bet %1 on %2"))
                        .arg(formatChannelPoints(prediction.selfPoints),
@@ -562,7 +564,7 @@ void PredictionBanner::updateLayout()
     }
     else
     {
-        metadata = "Prediction";
+        metadata = uiText(QString("Prediction"));
     }
     const auto predictionAge = formatPredictionAge(prediction.createdAt);
     if (!predictionAge.isEmpty())
@@ -622,7 +624,9 @@ void PredictionBanner::updateLayout()
                         "<span style=\"color:#22c55e;font-weight:700;\">"
                         "Winner:</span> "
                         "<span style=\"color:%1;font-weight:700;\">%2</span>"))
-                        .arg(wColor.name(), winner.title.toHtmlEscaped()));
+                        .arg(wColor.name(), winner.title.toHtmlEscaped())
+                        .replace(QStringLiteral("#22c55e"),
+                                 predictionpalette::won().name()));
             }
             else
             {
@@ -662,8 +666,8 @@ void PredictionBanner::updateLayout()
         if (leftWon)
         {
             leftName =
-                QString("<span style=\"color:#22c55e;font-weight:700;"
-                        "\">WINNER</span> "
+                QString::fromUtf8("<span style=\"color:#6fcf97;font-weight:700;"
+                        "\">\xe2\x9c\x93</span> "
                         "<span style=\"color:%1;font-weight:700;\">%2</span>")
                     .arg(outcomeColorForPrediction(leftOutcome, 0).name(),
                          leftName);
@@ -698,10 +702,10 @@ void PredictionBanner::updateLayout()
             if (rightWon)
             {
                 rightName =
-                    QString(
+                    QString::fromUtf8(
                         "<span style=\"color:%1;font-weight:700;\">%2</span> "
-                        "<span style=\"color:#22c55e;font-weight:700;"
-                        "\">WINNER</span>")
+                        "<span style=\"color:#6fcf97;font-weight:700;"
+                        "\">\xe2\x9c\x93</span>")
                         .arg(outcomeColorForPrediction(rightOutcome, 1).name(),
                              rightName);
             }
@@ -758,19 +762,26 @@ void PredictionBanner::updateTimer()
             this->timerLabel_->setText(uiText("LIVE"));
             this->timerLabel_->show();
             this->timerLabel_->setStyleSheet(
-                QString("font-size: %1px; color: #9147ff; font-weight: 700;")
-                    .arg(this->headerFontSize_));
+                QString("font-size: %1px; color: %2; font-weight: 700;")
+                    .arg(this->headerFontSize_)
+                    .arg(predictionpalette::accent().name()));
             return;
         }
 
         qint64 remaining = now.secsTo(endsAt);
-        auto timerColor = QColor("#ef4444");
+        // calm lavender while there is time; amber in the last minute, red
+        // in the last seconds
+        auto timerColor = predictionpalette::accent();
 
         if (remaining > 0)
         {
-            if (remaining > 300)
+            if (remaining <= 10)
             {
-                timerColor = QColor("#f59e0b");
+                timerColor = predictionpalette::lost();
+            }
+            else if (remaining <= 60)
+            {
+                timerColor = predictionpalette::locked();
             }
 
             this->timerLabel_->setText(
@@ -781,7 +792,7 @@ void PredictionBanner::updateTimer()
         {
             this->timerLabel_->setText(uiText("Closing soon"));
             this->timerLabel_->show();
-            timerColor = QColor("#f59e0b");
+            timerColor = predictionpalette::locked();
         }
 
         this->timerLabel_->setStyleSheet(
@@ -797,8 +808,9 @@ void PredictionBanner::updateTimer()
                 stateTextForPrediction(*this->prediction_));
             this->timerLabel_->show();
             this->timerLabel_->setStyleSheet(
-                QString("font-size: %1px; color: #d99024; font-weight: 700;")
-                    .arg(this->headerFontSize_));
+                QString("font-size: %1px; color: %2; font-weight: 700;")
+                    .arg(this->headerFontSize_)
+                    .arg(predictionpalette::locked().name()));
         }
         else if (this->prediction_->status == "RESOLVED")
         {
@@ -806,8 +818,9 @@ void PredictionBanner::updateTimer()
                 stateTextForPrediction(*this->prediction_));
             this->timerLabel_->show();
             this->timerLabel_->setStyleSheet(
-                QString("font-size: %1px; color: #22c55e; font-weight: 700;")
-                    .arg(this->headerFontSize_));
+                QString("font-size: %1px; color: %2; font-weight: 700;")
+                    .arg(this->headerFontSize_)
+                    .arg(predictionpalette::won().name()));
         }
         else if (this->prediction_->status == "CANCELED")
         {
@@ -815,8 +828,9 @@ void PredictionBanner::updateTimer()
                 stateTextForPrediction(*this->prediction_));
             this->timerLabel_->show();
             this->timerLabel_->setStyleSheet(
-                QString("font-size: %1px; color: #9ca3af; font-weight: 700;")
-                    .arg(this->headerFontSize_));
+                QString("font-size: %1px; color: %2; font-weight: 700;")
+                    .arg(this->headerFontSize_)
+                    .arg(predictionpalette::muted().name()));
         }
         else
         {
@@ -921,10 +935,11 @@ void PredictionBanner::updateLabelStyles()
 
     this->metadataLabel_->setStyleSheet(
         QString("font-size: %1px; color: %2;").arg(hfs).arg(dimColor));
+    // the question reads like chat text, the rest stays quiet
     this->titleLabel_->setStyleSheet(
         QString("font-size: %1px; font-weight: bold; color: %2;")
             .arg(tfs)
-            .arg(textColor.name()));
+            .arg(this->theme->messages.textColors.regular.name()));
     this->leftOutcomeLabel_->setStyleSheet(
         QString("font-size: %1px;").arg(ofs));
     this->rightOutcomeLabel_->setStyleSheet(
@@ -965,11 +980,14 @@ void PredictionBanner::paintEvent(QPaintEvent * /*event*/)
         return;
     }
 
-    painter.setRenderHint(QPainter::Antialiasing, false);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setPen(Qt::NoPen);
+    const qreal barRadius = barRect.height() / 2.0;
+    const int gap = std::max(2, barRect.height() / 2);
 
     auto baseBarColor = this->theme->splits.header.border;
-    baseBarColor.setAlpha(80);
-    painter.fillRect(barRect, baseBarColor);
+    painter.setBrush(baseBarColor);
+    painter.drawRoundedRect(barRect, barRadius, barRadius);
 
     qlonglong totalPoints = 0;
     for (const auto &outcome : this->prediction_->outcomes)
@@ -1011,11 +1029,23 @@ void PredictionBanner::paintEvent(QPaintEvent * /*event*/)
                                  : (barRect.left() + qRound(cumulativeFraction *
                                                             barRect.width()));
 
-        if (nextLeft > currentLeft)
+        // segments are separate pills with a small gap between them
+        const int segLeft = currentLeft + (i == 0 ? 0 : gap / 2);
+        const int segRight =
+            nextLeft - (i == outcomeCount - 1 ? 0 : gap - gap / 2);
+        if (segRight - segLeft >= 1)
         {
-            painter.fillRect(QRect(currentLeft, barRect.top(),
-                                   nextLeft - currentLeft, barRect.height()),
-                             outcomeColorForPrediction(outcome, i));
+            auto color = outcomeColorForPrediction(outcome, i);
+            const auto &winner = this->prediction_->winningOutcomeId;
+            if (!winner.isEmpty() && outcome.id != winner)
+            {
+                color.setAlpha(90);  // paid out: the losing sides fade
+            }
+            painter.setBrush(color);
+            painter.drawRoundedRect(QRectF(segLeft, barRect.top(),
+                                           segRight - segLeft,
+                                           barRect.height()),
+                                    barRadius, barRadius);
         }
         currentLeft = nextLeft;
     }
@@ -1025,8 +1055,12 @@ void PredictionBanner::resizeEvent(QResizeEvent *event)
 {
     BaseWidget::resizeEvent(event);
 
+    // a rounded strip inside the card, in line with the text above
     const int barH = this->outcomeBar_->height();
-    this->outcomeBar_->setGeometry(0, this->height() - barH, this->width(),
+    const int inset = scaledInt(BASE_CONTENT_LEFT_MARGIN * this->scale(), 0);
+    const int below = scaledInt(5 * this->scale(), 0);
+    this->outcomeBar_->setGeometry(inset, this->height() - barH - below,
+                                   std::max(0, this->width() - inset * 2),
                                    barH);
 
     if (this->prediction_)

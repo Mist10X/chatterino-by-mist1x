@@ -10,6 +10,7 @@
 #include "util/Helpers.hpp"
 #include "widgets/buttons/SvgButton.hpp"
 #include "widgets/helper/Line.hpp"
+#include "widgets/helper/PredictionPalette.hpp"
 #include "widgets/splits/Split.hpp"
 
 #include <QComboBox>
@@ -169,79 +170,91 @@ private:
     std::function<void()> callback_;
 };
 
-// 10 distinct, accessible colors for prediction outcomes.
-// First 3 match Twitch's native Blue/Pink/Green.
-constexpr std::array<const char *, 10> OUTCOME_PALETTE = {{
-    "#1f8fff",  // 0  Blue
-    "#e9198b",  // 1  Pink
-    "#16a34a",  // 2  Green
-    "#f59e0b",  // 3  Amber
-    "#9147ff",  // 4  Purple
-    "#14b8a6",  // 5  Teal
-    "#ef4444",  // 6  Red
-    "#84cc16",  // 7  Lime
-    "#06b6d4",  // 8  Cyan
-    "#f97316",  // 9  Orange
-}};
-
 QColor outcomeColor(int index, const QString &explicitColor = QString())
 {
-    // For 2-outcome predictions, honour the explicit Twitch color strings.
-    if (explicitColor == "PINK")
-        return QColor("#e9198b");
-    if (explicitColor == "GREEN")
-        return QColor("#16a34a");
-    if (explicitColor == "BLUE" && index == 0)
-        return QColor("#1f8fff");
-
-    return QColor(OUTCOME_PALETTE[index % OUTCOME_PALETTE.size()]);
+    return predictionpalette::outcome(index, explicitColor);
 }
 
 QString formatStatus(const QString &status)
 {
     if (status == "ACTIVE")
     {
-        return "Active";
+        return uiText(QString("Betting open"));
     }
     if (status == "LOCKED")
     {
-        return "Locked";
+        return uiText(QString("Bets locked"));
     }
     if (status == "RESOLVED")
     {
-        return "Resolved";
+        return uiText(QString("Paid out"));
     }
     if (status == "CANCELED")
     {
-        return "Canceled";
+        return uiText(QString("Refunded"));
     }
     return status;
 }
 
 QColor statusColor(const QString &status)
 {
-    if (status == "ACTIVE")
-    {
-        return QColor("#9147ff");
-    }
-    if (status == "LOCKED")
-    {
-        return QColor("#d99024");
-    }
-    if (status == "RESOLVED")
-    {
-        return QColor("#22c55e");
-    }
-    if (status == "CANCELED")
-    {
-        return QColor("#9ca3af");
-    }
-    return QColor("#64748b");
+    return predictionpalette::status(status);
 }
 
 QString formatCompact(qlonglong value)
 {
     return formatCompactNumber(value);
+}
+
+QString formatMultiplier(double multiplier)
+{
+    return QString::fromUtf8("\xc3\x97%1").arg(multiplier, 0, 'f', 1);
+}
+
+/// The coefficient as a tinted pill in the outcome's colour: readable on the
+/// dark cards.
+QString multiplierChipStyle(const QColor &color, int radius, int padX)
+{
+    return QString("color: %1; background: rgba(%2, %3, %4, 46);"
+                   "border: none; border-radius: %5px; padding: 0 %6px;"
+                   "font-weight: 700;")
+        .arg(color.name())
+        .arg(color.red())
+        .arg(color.green())
+        .arg(color.blue())
+        .arg(radius)
+        .arg(padX);
+}
+
+/// Text of one statistic line under an outcome in the two-option view.
+QString betStatText(const QString &role,
+                    const TwitchChannel::PredictionOutcome &outcome,
+                    double multiplier)
+{
+    if (role == "multiplier")
+    {
+        return formatMultiplier(multiplier);
+    }
+    if (role == "points")
+    {
+        return uiText(QString("%1 pts")).arg(formatCompact(outcome.totalPoints));
+    }
+    if (role == "users")
+    {
+        return uiText(QString("%1 people"))
+            .arg(QLocale().toString(outcome.totalUsers));
+    }
+    return formatCompact(outcome.topPoints);
+}
+
+QString topBetTooltip(const TwitchChannel::PredictionOutcome &outcome)
+{
+    if (outcome.topPredictorName.isEmpty() || outcome.topPoints <= 0)
+    {
+        return QString();
+    }
+    return uiText(QString("Top bet: %1 by %2"))
+        .arg(formatChannelPoints(outcome.topPoints), outcome.topPredictorName);
 }
 
 QString formatRemainingTime(int totalSeconds)
@@ -371,6 +384,29 @@ double predictionOutcomeMultiplier(
 QString formatBetPayoutSummaryText(
     const TwitchChannel::PredictionEvent &prediction)
 {
+    // paid out: what actually came back
+    if (const auto payout = TwitchChannel::predictionPayout(prediction))
+    {
+        if (*payout > 0)
+        {
+            return QString("<span style=\"color:%1; font-weight:700;\">"
+                           "%2</span>")
+                .arg(predictionpalette::won().name(),
+                     uiText(QString("Your prediction won: +%1"))
+                         .arg(formatChannelPoints(*payout))
+                         .toHtmlEscaped());
+        }
+        if (prediction.selfPoints > 0)
+        {
+            return QString("<span style=\"color:%1; font-weight:700;\">"
+                           "%2</span>")
+                .arg(predictionpalette::lost().name(),
+                     uiText(QString("Your prediction lost: -%1"))
+                         .arg(formatChannelPoints(prediction.selfPoints))
+                         .toHtmlEscaped());
+        }
+    }
+
     const double multiplier =
         predictionOutcomeMultiplier(prediction, prediction.selfOutcomeId);
     if (multiplier <= 0.0 || prediction.selfPoints <= 0)
@@ -926,7 +962,7 @@ void PredictionDialog::updateInPlace()
             this->findChild<QLabel *>("PredictionReturn_" + outcome.id);
         if (returnLabel)
         {
-            returnLabel->setText(QString::number(multiplier, 'f', 1) + "x");
+            returnLabel->setText(formatMultiplier(multiplier));
         }
 
         // Update stats labels (manage view)
@@ -952,22 +988,10 @@ void PredictionDialog::updateInPlace()
             }
 
             const auto statRole = w->property("statRole").toString();
+            w->setText(betStatText(statRole, outcome, multiplier));
             if (statRole == "points")
             {
-                w->setText(formatCompact(outcome.totalPoints));
-            }
-            else if (statRole == "multiplier")
-            {
-                w->setText(QString::number(multiplier, 'f', 1) + "x");
-            }
-            else if (statRole == "users")
-            {
-                w->setText(locale.toString(outcome.totalUsers));
-            }
-            else if (statRole == "crown")
-            {
-                w->setText(formatCompact(outcome.topPoints));
-                w->setToolTip(outcome.topPredictorName);
+                w->setToolTip(topBetTooltip(outcome));
             }
         }
 
@@ -987,7 +1011,7 @@ void PredictionDialog::updateInPlace()
             }
             else if (statRole == "multiplier")
             {
-                w->setText(QString::number(multiplier, 'f', 1) + "x");
+                w->setText(formatMultiplier(multiplier));
             }
             else if (statRole == "users")
             {
@@ -1546,9 +1570,14 @@ void PredictionDialog::updateUI()
     auto *layout = new QVBoxLayout(this->activeWidget_);
     const bool createMode = !hasOpenPrediction(this->currentPrediction_) &&
                             this->channel_->hasModRights();
+    // a paid-out prediction stays readable for viewers: who won, how the
+    // own bet went
+    const bool viewerResults = !this->channel_->hasModRights() &&
+                               this->currentPrediction_ &&
+                               this->currentPrediction_->status == "RESOLVED";
     const bool emptyViewerState =
         !hasOpenPrediction(this->currentPrediction_) &&
-        !this->channel_->hasModRights();
+        !this->channel_->hasModRights() && !viewerResults;
     const int topMargin = margin;
     const int bottomMargin = emptyViewerState ? margin : 0;
 
@@ -1560,6 +1589,10 @@ void PredictionDialog::updateUI()
         if (this->channel_->hasModRights())
         {
             this->buildCreateUI();
+        }
+        else if (viewerResults)
+        {
+            this->buildBettingUI();
         }
         else
         {
@@ -2788,9 +2821,16 @@ void PredictionDialog::buildBettingUI()
         {
             statusLabel->setText(uiText("Submissions locked"));
         }
+        else if (const auto *winner = findPredictionOutcome(
+                     prediction, prediction.winningOutcomeId);
+                 prediction.status == "RESOLVED" && winner != nullptr)
+        {
+            statusLabel->setText(uiText(QString("Winning outcome: %1"))
+                                     .arg(winner->title));
+        }
         else
         {
-            statusLabel->setText(formatStatus(prediction.status).toLower());
+            statusLabel->setText(formatStatus(prediction.status));
         }
     }
     questionCardLayout->activate();
@@ -2815,7 +2855,14 @@ void PredictionDialog::buildBettingUI()
         for (int i = 0; i < 2; ++i)
         {
             const auto &outcome = prediction.outcomes.at(i);
-            const QColor color = outcomeColor(i, outcome.color);
+            QColor color = outcomeColor(i, outcome.color);
+            if (prediction.status == "RESOLVED" &&
+                !prediction.winningOutcomeId.isEmpty() &&
+                outcome.id != prediction.winningOutcomeId)
+            {
+                // paid out: the losing sides fade into the card
+                color = color.darker(185);
+            }
             const int percentage =
                 totalPoints > 0
                     ? static_cast<int>((outcome.totalPoints * 100.0) /
@@ -2852,18 +2899,27 @@ void PredictionDialog::buildBettingUI()
                 rowLay->setContentsMargins(0, 0, 0, 0);
                 rowLay->setSpacing(rowSpacing);
 
-                auto *iconLabel = new QLabel(row);
-                const int iconSize = std::max(10, int(12 * effectiveScale));
-                iconLabel->setPixmap(renderSvgIcon(svgData, color, iconSize));
-                iconLabel->setFixedSize(iconSize, iconSize);
-
+                Q_UNUSED(svgData);
                 auto *valLabel = new QLabel(value, row);
                 valLabel->setObjectName("PredictionBetStatValue");
                 valLabel->setProperty("outcomeId", outcome.id);
                 valLabel->setProperty("statRole", statRole);
                 valLabel->setFont(statFont);
-                valLabel->setStyleSheet(
-                    "background: transparent; border: none;");
+                if (statRole == "multiplier")
+                {
+                    valLabel->setFont(getApp()->getFonts()->getFont(
+                        FontStyle::UiMediumBold, effectiveScale * 1.15F));
+                    valLabel->setStyleSheet(multiplierChipStyle(
+                        color, std::max(3, int(6 * effectiveScale)),
+                        std::max(4, int(6 * effectiveScale))));
+                    valLabel->setToolTip(
+                        uiText("Payout per point if this outcome wins"));
+                }
+                else
+                {
+                    valLabel->setStyleSheet(
+                        "background: transparent; border: none;");
+                }
 
                 if (!tooltip.isEmpty())
                 {
@@ -2872,29 +2928,30 @@ void PredictionDialog::buildBettingUI()
 
                 if (isLeft)
                 {
-                    rowLay->addWidget(iconLabel, 0, Qt::AlignVCenter);
-                    rowLay->addWidget(valLabel, 1,
-                                      Qt::AlignLeft | Qt::AlignVCenter);
-                }
-                else
-                {
                     rowLay->addStretch(1);
                     rowLay->addWidget(valLabel, 0,
                                       Qt::AlignRight | Qt::AlignVCenter);
-                    rowLay->addWidget(iconLabel, 0, Qt::AlignVCenter);
+                }
+                else
+                {
+                    rowLay->addWidget(valLabel, 0,
+                                      Qt::AlignLeft | Qt::AlignVCenter);
+                    rowLay->addStretch(1);
                 }
 
                 statsLayout->addWidget(row);
             };
 
-            addStatRow(SVG_POINTS, formatCompact(outcome.totalPoints),
-                       QString(), "points");
-            addStatRow(SVG_TROPHY, QString::number(multiplier, 'f', 1) + "x",
+            // the coefficient first and clearly; points and people as plain
+            // words under it (the top bet sits in the points' tooltip)
+            addStatRow(SVG_TROPHY,
+                       betStatText("multiplier", outcome, multiplier),
                        QString(), "multiplier");
-            addStatRow(SVG_USERS, locale.toString(outcome.totalUsers),
+            statsLayout->addSpacing(std::max(2, int(3 * effectiveScale)));
+            addStatRow(SVG_POINTS, betStatText("points", outcome, multiplier),
+                       topBetTooltip(outcome), "points");
+            addStatRow(SVG_USERS, betStatText("users", outcome, multiplier),
                        QString(), "users");
-            addStatRow(SVG_CROWN, formatCompact(outcome.topPoints),
-                       outcome.topPredictorName, "crown");
 
             // ── Center/Inner Block (Title, Pct, Bar) ──
             auto *innerWidget = new QWidget(halfWidget);
@@ -2906,14 +2963,20 @@ void PredictionDialog::buildBettingUI()
                 std::max(2, int(4 * effectiveScale)));
             innerLayout->setSpacing(0);
 
-            auto *nameLabel = new QLabel(outcome.title, innerWidget);
+            const bool won = prediction.status == "RESOLVED" &&
+                             outcome.id == prediction.winningOutcomeId;
+            const auto shownTitle =
+                won ? QString::fromUtf8("\xe2\x9c\x93 ") + outcome.title
+                    : outcome.title;
+            auto *nameLabel = new QLabel(shownTitle, innerWidget);
+            nameLabel->setTextFormat(Qt::PlainText);
             nameLabel->setFont(optionNameFont);
             nameLabel->setAlignment(isLeft
                                         ? (Qt::AlignRight | Qt::AlignVCenter)
                                         : (Qt::AlignLeft | Qt::AlignVCenter));
             nameLabel->setWordWrap(false);
             nameLabel->setMinimumWidth(
-                QFontMetrics(optionNameFont).horizontalAdvance(outcome.title));
+                QFontMetrics(optionNameFont).horizontalAdvance(shownTitle));
             nameLabel->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
             nameLabel->setStyleSheet(
                 QString("color: %1; font-weight: 700; background: transparent; "
@@ -2966,22 +3029,12 @@ void PredictionDialog::buildBettingUI()
             innerLayout->addWidget(barContainer, 0,
                                    isLeft ? Qt::AlignRight : Qt::AlignLeft);
 
-            if (isLeft)
-            {
-                halfLayout->addWidget(statsWidget, 0,
-                                      Qt::AlignLeft | Qt::AlignBottom);
-                halfLayout->addStretch(1);
-                halfLayout->addWidget(innerWidget, 0,
-                                      Qt::AlignRight | Qt::AlignTop);
-            }
-            else
-            {
-                halfLayout->addWidget(innerWidget, 0,
-                                      Qt::AlignLeft | Qt::AlignTop);
-                halfLayout->addStretch(1);
-                halfLayout->addWidget(statsWidget, 0,
-                                      Qt::AlignRight | Qt::AlignBottom);
-            }
+            // one column per side, read top to bottom: name, share, bar,
+            // then the coefficient and the totals, all leaning to the middle
+            halfLayout->setDirection(QBoxLayout::TopToBottom);
+            const auto towardMiddle = isLeft ? Qt::AlignRight : Qt::AlignLeft;
+            halfLayout->addWidget(innerWidget, 0, towardMiddle);
+            halfLayout->addWidget(statsWidget, 0, towardMiddle);
 
             cardsRow->addWidget(halfWidget, 1);
 
@@ -2993,9 +3046,9 @@ void PredictionDialog::buildBettingUI()
                 auto *divider = new QWidget(dividerContainer);
                 divider->setObjectName("PredictionDivider");
                 divider->setFixedWidth(1);
-                divider->setFixedHeight(std::max(40, int(52 * effectiveScale)));
+                divider->setFixedHeight(std::max(70, int(96 * effectiveScale)));
                 dividerLayout->addWidget(divider, 0,
-                                         Qt::AlignHCenter | Qt::AlignBottom);
+                                         Qt::AlignHCenter | Qt::AlignVCenter);
                 cardsRow->addWidget(dividerContainer, 0);
             }
         }
@@ -3063,7 +3116,14 @@ void PredictionDialog::buildBettingUI()
                  ++i)
             {
                 const auto &outcome = prediction.outcomes.at(i);
-                const QColor color = outcomeColor(i, outcome.color);
+                QColor color = outcomeColor(i, outcome.color);
+                if (prediction.status == "RESOLVED" &&
+                    !prediction.winningOutcomeId.isEmpty() &&
+                    outcome.id != prediction.winningOutcomeId)
+                {
+                    // paid out: the losing sides fade into the card
+                    color = color.darker(185);
+                }
                 const int pct =
                     totalPoints > 0
                         ? static_cast<int>((outcome.totalPoints * 100.0) /
@@ -3115,7 +3175,13 @@ void PredictionDialog::buildBettingUI()
                     sectionPad, std::max(1, int(1 * effectiveScale)));
                 cardLayout->setSpacing(std::max(4, int(5 * effectiveScale)));
 
-                auto *nameLabel = new QLabel(outcome.title, card);
+                const bool won = prediction.status == "RESOLVED" &&
+                                 outcome.id == prediction.winningOutcomeId;
+                auto *nameLabel = new QLabel(
+                    won ? QString::fromUtf8("\xe2\x9c\x93 ") + outcome.title
+                        : outcome.title,
+                    card);
+                nameLabel->setTextFormat(Qt::PlainText);
                 nameLabel->setObjectName("PredictionOutcomeName");
                 nameLabel->setFont(buttonFont);
                 nameLabel->setToolTip(outcome.title);
@@ -3134,20 +3200,18 @@ void PredictionDialog::buildBettingUI()
                 metaLayout->setContentsMargins(0, 0, 0, 0);
                 metaLayout->setSpacing(std::max(3, int(4 * effectiveScale)));
 
-                auto *returnValue = new QLabel(
-                    QString::number(multiplier, 'f', 1) + "x", metaWidget);
+                auto *returnValue =
+                    new QLabel(formatMultiplier(multiplier), metaWidget);
                 returnValue->setObjectName("PredictionReturn_" + outcome.id);
-                returnValue->setFont(compactMetaFont);
-                returnValue->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+                returnValue->setFont(buttonFont);
+                returnValue->setAlignment(Qt::AlignCenter);
+                returnValue->setStyleSheet(multiplierChipStyle(
+                    color, std::max(3, int(5 * effectiveScale)),
+                    std::max(3, int(5 * effectiveScale))));
+                returnValue->setToolTip(
+                    uiText("Payout per point if this outcome wins"));
                 installSelectionTarget(returnValue);
                 metaLayout->addWidget(returnValue, 0, Qt::AlignVCenter);
-
-                auto *returnLabel = new QLabel(uiText("RETURN"), metaWidget);
-                returnLabel->setObjectName("PredictionOutcomeStats");
-                returnLabel->setFont(compactMetaFont);
-                returnLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                installSelectionTarget(returnLabel);
-                metaLayout->addWidget(returnLabel, 0, Qt::AlignVCenter);
 
                 auto *pctLabel = new QLabel(QString::number(pct) + "%", card);
                 pctLabel->setObjectName("PredictionPct_" + outcome.id);
@@ -3368,16 +3432,16 @@ void PredictionDialog::buildBettingUI()
                 statsRow->addWidget(column, 1);
             };
 
-            addDetailStat(SVG_TROPHY, "PAYOUT",
+            addDetailStat(SVG_TROPHY, uiText("PAYOUT"),
                           QString::number(multiplier, 'f', 1) + "x", QString(),
                           "multiplier");
-            addDetailStat(SVG_USERS, "VOTERS",
+            addDetailStat(SVG_USERS, uiText("VOTERS"),
                           locale.toString(selectedOutcome->totalUsers),
                           QString(), "users");
-            addDetailStat(SVG_POINTS, "POINTS",
+            addDetailStat(SVG_POINTS, uiText("POINTS"),
                           formatCompact(selectedOutcome->totalPoints),
                           QString(), "points");
-            addDetailStat(SVG_CROWN, "TOP BET",
+            addDetailStat(SVG_CROWN, uiText("TOP BET"),
                           formatCompact(selectedOutcome->topPoints),
                           selectedOutcome->topPredictorName, "crown");
 
@@ -3464,10 +3528,7 @@ void PredictionDialog::buildBettingUI()
                 auto *wagerRow = new QHBoxLayout();
                 wagerRow->setSpacing(rowSpacing);
 
-                auto *wagerLabel = new QLabel(uiText("Wager"), bottomCard);
-                wagerLabel->setObjectName("PredictionSectionTitle");
-                wagerLabel->setFont(buttonFont);
-                wagerRow->addWidget(wagerLabel);
+                // the input says "Amount" already; only the balance here
                 wagerRow->addStretch(1);
 
                 auto *balLabel = new QLabel(
@@ -3905,8 +3966,9 @@ void PredictionDialog::refreshStyle()
 {
     const float rawScale = this->scale();
     const float effectiveScale = contentScale(rawScale);
-    const int radius = std::max(1, int(2 * rawScale));
-    const int smallRadius = std::max(1, int(2 * rawScale));
+    // rounded like the other Mist cards
+    const int radius = std::max(2, int(7 * rawScale));
+    const int smallRadius = std::max(2, int(5 * rawScale));
     const int inputPaddingY = 0;
     const int inputPaddingX = std::max(4, int(5 * effectiveScale));
     const int inputMinHeight = std::max(14, int(20 * effectiveScale));

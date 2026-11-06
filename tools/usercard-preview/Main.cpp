@@ -21,6 +21,7 @@
 #include "widgets/helper/HighlightToast.hpp"
 #include "providers/twitch/PubSubManager.hpp"
 #include "OwnTimeoutChecks.hpp"
+#include "PredictionDemo.hpp"
 #include "LinkPreviewChecks.hpp"
 #include "PublicLogsChecks.hpp"
 #include "providers/twitch/api/TwitchGql.hpp"
@@ -35,6 +36,7 @@
 #include "providers/seventv/SeventvAPI.hpp"
 #include "providers/seventv/SeventvPersonalEmotes.hpp"
 #include "providers/seventv/SeventvPersonalLookup.hpp"
+#include "singletons/Logging.hpp"
 #include "singletons/ImageUploader.hpp"
 #include "singletons/Resources.hpp"
 #include "singletons/WindowManager.hpp"
@@ -185,6 +187,10 @@ public:
     {
         return &this->seventvApi;
     }
+    ILogging *getChatLogger() override
+    {
+        return &this->chatLog;
+    }
     SpellChecker *getSpellChecker() override
     {
         return &this->spellChecker;
@@ -217,6 +223,16 @@ public:
     SeventvEmotes seventv;
     SeventvPersonalEmotes personalEmotes;
     SeventvAPI seventvApi;
+    /// system messages on a synthetic channel are written nowhere
+    struct NoChatLog final : ILogging {
+        void addMessage(const QString &, MessagePtr, const QString &,
+                        const QString &) override
+        {
+        }
+        void closeChannel(const QString &, const QString &) override
+        {
+        }
+    } chatLog;
     SpellChecker spellChecker;
     PubSub pubSub{QStringLiteral("wss://127.0.0.1:9")};
     LinkResolver linkResolver;
@@ -617,6 +633,9 @@ int main(int argc, char **argv)
         {{QStringLiteral("own-timeout-checks")},
          QStringLiteral("Drive the own-timeout input states on a synthetic "
                         "channel and exit")},
+        {{QStringLiteral("prediction-demo")},
+         QStringLiteral("Render the prediction banner and dialog with "
+                        "synthetic predictions and exit")},
         {{QStringLiteral("clip-demo")},
          QStringLiteral("Last synthetic message carries a clip link with a "
                         "ready card (no network)")},
@@ -949,6 +968,13 @@ int main(int argc, char **argv)
             parser.value(QStringLiteral("screenshot")));
         splitOwner.reset();
         return failed == 0 ? 0 : 31;
+    }
+    if (parser.isSet(QStringLiteral("prediction-demo")))
+    {
+        const int failed = predictiondemo::runPredictionDemo(
+            split, parser.value(QStringLiteral("screenshot")));
+        splitOwner.reset();
+        return failed;
     }
     auto controlsOwner = std::make_unique<QWidget>();
     auto &controls = *controlsOwner;

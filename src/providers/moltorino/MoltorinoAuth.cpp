@@ -1,6 +1,7 @@
 #include "providers/moltorino/MoltorinoAuth.hpp"
 
 #include "Application.hpp"
+#include "common/UiLanguage.hpp"
 #include "common/network/NetworkRequest.hpp"
 #include "common/network/NetworkResult.hpp"
 #include "controllers/accounts/AccountController.hpp"
@@ -1593,18 +1594,17 @@ MoltorinoAuthToken resolveReadToken(QString *errorMessage)
 
 QString authRequiredMessage(const QString &action)
 {
-    return QString("Additional login required for %1. Add an account in "
-                   "Settings -> "
-                   "Moltorino -> Authentication, then try again.")
-        .arg(action);
+    return uiText(QString("Additional login required for %1. Add an account "
+                          "in Settings -> %2, then try again."))
+        .arg(uiText(action), uiText(QString("Sign-in for extra features")));
 }
 
 QString authExpiredMessage(const QString &action)
 {
-    return QString("Your saved login is missing or may have expired. "
-                   "Refresh accounts or add the account again in Settings -> "
-                   "Moltorino -> Authentication, then try %1 again.")
-        .arg(action);
+    return uiText(QString("Your saved login is missing or may have expired. "
+                          "Refresh accounts or add the account again in "
+                          "Settings -> %2, then try %1 again."))
+        .arg(uiText(action), uiText(QString("Sign-in for extra features")));
 }
 
 QString normalizeAuthError(const QString &action, const QString &error)

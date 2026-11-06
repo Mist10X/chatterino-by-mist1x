@@ -1064,6 +1064,7 @@ set(SOURCE_FILES
         widgets/helper/PollBanner.hpp
         widgets/helper/PredictionBanner.cpp
         widgets/helper/PredictionBanner.hpp
+        widgets/helper/PredictionPalette.hpp
         widgets/helper/RegExpItemDelegate.cpp
         widgets/helper/RegExpItemDelegate.hpp
         widgets/helper/ResizingTextEdit.cpp

@@ -212,7 +212,16 @@ public:
         QString endedByName;  // mod who resolved/canceled
         QString selfOutcomeId;
         int selfPoints = 0;
+        /// own result from predictions-user-v1: "WIN", "LOSE" or "REFUND"
+        QString selfResult;
+        qlonglong selfPointsWon = 0;
     };
+
+    /// What the own bet paid out once the prediction is resolved: 0 for a
+    /// lost bet, nothing while it is open or without a bet. Twitch's exact
+    /// figure when it came, otherwise the share of the pool.
+    static std::optional<qlonglong> predictionPayout(
+        const PredictionEvent &prediction);
 
     struct PollChoice {
         QString id;
@@ -345,6 +354,9 @@ public:
         const;
     void setActivePrediction(std::optional<PredictionEvent> prediction);
     void handlePredictionUpdate(const QJsonObject &data);
+    /// predictions-user-v1: the own bet was placed (here or elsewhere) or
+    /// paid out.
+    void handlePredictionUserEvent(const QJsonObject &payload);
     void handleUserPointsUpdate(const QJsonObject &payload);
     void refreshPrediction(bool force = false);
     SharedAccessGuard<const std::optional<PollEvent>> accessPoll() const;
@@ -778,6 +790,9 @@ private:
     QDateTime lastPredictionRefreshAt_;
     QDateTime lastPredictionUpdateAt_;
     QString lastPredictionSystemMessageKey_;
+    /// the prediction whose own result is already in the chat
+    QString ownPredictionResultShownFor_;
+    void announceOwnPredictionResult(const PredictionEvent &prediction);
     UniqueAccess<std::optional<PollEvent>> activePoll_;
     std::atomic<bool> pollFetchInFlight_{false};
     QDateTime lastPollRefreshAt_;
