@@ -141,7 +141,6 @@
   "Zulu": "Зулу",
   "This site does not provide a preview": "Сайт не отдаёт данные для предпросмотра",
   "Preview unavailable (": "Предпросмотр недоступен (",
-  "When automatic chat cleanup is enabled in Archive, all chats grow until its hourly cleanup. Selected channels are exempt. Saved Archive data is not deleted.": "Если в Архиве включена автоочистка, все чаты накапливаются до ежечасной очистки. Выбранные каналы не очищаются. Сохранённые данные Архива не удаляются.",
   "Show page title instead of the link": "Показывать заголовок страницы вместо ссылки",
   "Show a card under Twitch clip links": "Показывать карточку под ссылками на клипы Twitch",
   "playing %1": "играет в %1",
@@ -158,7 +157,7 @@
   "Show chat in channels where I am banned": "Показывать чат на каналах, где я забанен",
   "Twitch hides a channel's chat from a banned account. While you are banned, the chat is read through Twitch's anonymous guest connection (read only, like a viewer who is not logged in).": "Twitch скрывает чат канала от забаненного аккаунта. Пока вы забанены, чат читается через гостевое подключение Twitch (только чтение, как у зрителя без входа).",
   "Load older messages from public chat logs": "Подгружать старые сообщения из публичных логов",
-  "The History button in the usercard reads the person's older messages in this channel from the public chat logs (logs.zonian.dev, logs.twitchmetrics.xyz, logs.spanix.team) without the Archive. People and channels that opted out are not shown.": "Кнопка «История» в карточке берёт старые сообщения человека в этом канале из публичных логов чата (logs.zonian.dev, logs.twitchmetrics.xyz, logs.spanix.team) без Архива. Люди и каналы, отказавшиеся от логирования, не показываются.",
+  "The History button in the usercard reads the person's older messages in this channel from the public chat logs (logs.zonian.dev, logs.twitchmetrics.xyz, logs.spanix.team). People and channels that opted out are not shown.": "Кнопка «История» в карточке берёт старые сообщения человека в этом канале из публичных логов чата (logs.zonian.dev, logs.twitchmetrics.xyz, logs.spanix.team). Люди и каналы, отказавшиеся от логирования, не показываются.",
   "Show the slow mode countdown in the chat input": "Показывать отсчёт медленного режима в строке ввода",
   "After your message in a slow mode channel, the input shows how long until the next one can be sent. The input stays usable.": "После вашего сообщения на канале с медленным режимом в строке ввода видно, сколько ждать до следующего. Строка ввода при этом не блокируется.",
   "Queue messages sent during slow mode": "Ставить в очередь сообщения во время медленного режима",
@@ -453,5 +452,7 @@
   "TOP BET": "ТОП",
   "%1 people": "%1 чел.",
   "Top bet: %1 by %2": "Самая крупная ставка: %1 — %2",
-  "Payout per point if this outcome wins": "Сколько вернётся за каждый балл, если победит этот вариант"
+  "Payout per point if this outcome wins": "Сколько вернётся за каждый балл, если победит этот вариант",
+  "Hide community gift messages only when the gift meets the enabled banner's minimum. Smaller gifts remain visible in chat.": "Скрывать сообщения о подаренных подписках только тогда, когда подарок достигает порога включённого баннера. Небольшие подарки остаются видны в чате.",
+    "Need %1 more points": "Не хватает %1 баллов"
 }

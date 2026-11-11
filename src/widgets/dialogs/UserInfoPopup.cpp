@@ -62,8 +62,6 @@
 #include "widgets/buttons/SvgButton.hpp"
 #include "widgets/dialogs/EditUserNotesDialog.hpp"
 #include "widgets/dialogs/UserBadgesDialog.hpp"
-#include "widgets/helper/ArchiveActions.hpp"
-#include "widgets/helper/ArchiveUserCard.hpp"
 #include "widgets/helper/ChannelView.hpp"
 #include "widgets/helper/InvisibleSizeGrip.hpp"
 #include "widgets/helper/Line.hpp"
@@ -2485,32 +2483,6 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split,
         this->ui_.messagesHeading->setSizePolicy(QSizePolicy::Ignored,
                                                  QSizePolicy::Preferred);
         headerLayout->addWidget(this->ui_.messagesHeading, 1);
-        this->ui_.archiveToggle =
-            new LabelButton(tr("Архив"), this, QSize{2, 0});
-        this->ui_.archiveToggle->setObjectName("UsercardArchiveToggle");
-        this->ui_.archiveToggle->setToolTip(
-            tr("Что сохранено об этом пользователе в Архиве"));
-        this->ui_.archiveToggle->hide();
-        headerLayout->addWidget(this->ui_.archiveToggle);
-        QObject::connect(this->ui_.archiveToggle, &Button::leftClicked, this,
-                         [this] {
-                             if (this->ui_.archivePanel)
-                             {
-                                 this->ui_.contentTabs->setCurrentWidget(
-                                     this->ui_.archivePanel);
-                             }
-                         });
-        this->ui_.messagesToggle =
-            new LabelButton(tr("Сообщения"), this, QSize{2, 0});
-        this->ui_.messagesToggle->setObjectName("UsercardMessagesToggle");
-        this->ui_.messagesToggle->setToolTip(tr("Вернуться к сообщениям"));
-        this->ui_.messagesToggle->hide();
-        headerLayout->addWidget(this->ui_.messagesToggle);
-        QObject::connect(this->ui_.messagesToggle, &Button::leftClicked, this,
-                         [this] {
-                             this->ui_.contentTabs->setCurrentWidget(
-                                 this->ui_.messagesPage);
-                         });
         this->ui_.historyButton =
             new LabelButton(tr("История"), this, QSize{2, 0});
         this->ui_.historyButton->setObjectName("UsercardHistory");
@@ -2519,9 +2491,9 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split,
         headerLayout->addWidget(this->ui_.historyButton);
         QObject::connect(this->ui_.historyButton, &Button::leftClicked, this,
                          [this] {
-                             if (this->canUseArchiveHistory())
+                             if (this->canUsePublicHistory())
                              {
-                                 this->requestArchiveHistory(true);
+                                 this->requestPublicHistory();
                              }
                              else if (!this->offlinePreview_ &&
                                       this->canLoadMoreUsercardMessages())
@@ -2568,64 +2540,11 @@ UserInfoPopup::UserInfoPopup(bool closeAutomatically, Split *split,
         logs->setAlignment(this->ui_.loadMoreMessages, Qt::AlignHCenter);
     }
 
-    const auto historyEndpoint = configuredArchiveEndpoint();
-    this->archiveHistorySyntheticEndpoint_ =
-        historyEndpoint.socketName.startsWith("LeafyrinoArchive-test-") &&
-        historyEndpoint.datasetId == u"leafyrino-card-demo-v1";
-    this->archiveHistoryClient_ = new ArchiveClient(historyEndpoint, this);
-    QObject::connect(this->archiveHistoryClient_, &ArchiveClient::historyReady,
-                     this, &UserInfoPopup::applyArchiveHistory);
-    QObject::connect(this->archiveHistoryClient_,
-                     &ArchiveClient::historyLoading, this, [this] {
-                         this->archiveHistoryStatus_ =
-                             tr("Поиск в публичных логах…");
-                         this->updateArchiveHistoryButton();
-                     });
-    QObject::connect(
-        this->archiveHistoryClient_, &ArchiveClient::failed, this,
-        [this](const QString &, const QString &message) {
-            this->archiveHistoryLoading_ = false;
-            if (!this->archiveHistoryPublic_ && !this->offlinePreview_ &&
-                getSettings()->usercardPublicLogs)
-            {
-                // The Archive is not running: its saved history is skipped,
-                // the public logs do not need it.
-                this->archiveLocalComplete_ = true;
-                this->archiveHistoryStatus_ =
-                    this->archiveConfigured()
-                        ? tr("Архив не отвечает; публичные логи — кнопкой "
-                             "«История»")
-                        : QString();
-                if (this->archiveHistoryPreserveAnchor_)
-                {
-                    QTimer::singleShot(0, this, [this] {
-                        this->requestArchiveHistory(true);
-                    });
-                }
-            }
-            else
-            {
-                this->archiveHistoryStatus_ = message;
-            }
-            this->updateArchiveHistoryButton();
-            this->updateUsercardMessagesVisibility();
-        });
-
     // size grip
     if (closeAutomatically)
     {
         layers->addWidget(new InvisibleSizeGrip(this), 0, 0, 2, 1,
                           Qt::AlignRight | Qt::AlignBottom);
-    }
-
-    if (archiveConnected() || this->offlinePreview_)
-    {
-        auto *archive = new ArchiveUserCard(this);
-        this->setArchivePanel(archive);
-        QObject::connect(this, &UserInfoPopup::archiveIdentityChanged, archive,
-                         &ArchiveUserCard::setTarget);
-        QObject::connect(this, &UserInfoPopup::archiveIdentityUnavailable,
-                         archive, &ArchiveUserCard::setIdentityUnavailable);
     }
 
     if (!this->offlinePreview_)
@@ -2729,12 +2648,7 @@ void UserInfoPopup::themeChangedEvent()
         this->ui_.contentTabs->setFont(font);
         this->ui_.messagesHeading->setFont(font);
         this->ui_.actions->setFont(font);
-        if (this->ui_.archivePanel)
-        {
-            this->ui_.archivePanel->setFont(getApp()->getFonts()->getFont(
-                FontStyle::ChatMedium, this->scale()));
-        }
-        this->updateMessagesHeader();
+
     }
 
     for (auto &&child : this->findChildren<QCheckBox *>())
@@ -2802,7 +2716,7 @@ bool UserInfoPopup::eventFilter(QObject *watched, QEvent *event)
                 scrollbar.getMinimum() +
                     usercardMessagePreloadDistance(scrollbar))
             {
-                this->requestArchiveHistory(true);
+                this->requestPublicHistory();
             }
         });
     }
@@ -2865,23 +2779,6 @@ void UserInfoPopup::updateResponsiveLayout()
     this->updateProfileBanner();
 }
 
-void UserInfoPopup::setArchivePanel(QWidget *panel)
-{
-    if (!panel || this->ui_.archivePanel == panel)
-    {
-        return;
-    }
-    if (this->ui_.archivePanel)
-    {
-        this->ui_.contentTabs->removeTab(
-            this->ui_.contentTabs->indexOf(this->ui_.archivePanel));
-        this->ui_.archivePanel->deleteLater();
-    }
-    this->ui_.archivePanel = panel;
-    this->ui_.contentTabs->addTab(panel, tr("Архив"));
-    this->updateMessagesHeader();
-}
-
 void UserInfoPopup::setMessagesHeading(const QString &channel)
 {
     this->headingChannel_ = channel;
@@ -2894,61 +2791,21 @@ void UserInfoPopup::updateMessagesHeader()
     {
         return;
     }
-    const bool onArchive =
-        this->ui_.archivePanel &&
-        this->ui_.contentTabs->currentWidget() == this->ui_.archivePanel;
     const bool light = this->theme && this->theme->isLightTheme();
     const QString muted = light ? "#6b6577" : "#a19dad";
     const QString channel = light ? "#3d2a6b" : "#ddd3f7";
-    if (onArchive)
+    auto text = QStringLiteral("<span style='color:%1'>%2</span>")
+                    .arg(muted, tr("Сообщения в чате"));
+    if (!this->headingChannel_.isEmpty())
     {
-        this->ui_.messagesHeading->setText(
-            uiText(QStringLiteral("<span style='color:%1'>%2</span>"))
-                .arg(muted, tr("Сохранено в Архиве")));
+        text += QStringLiteral(" <span style='color:%1'>#%2</span>")
+                    .arg(channel, this->headingChannel_.toHtmlEscaped());
     }
-    else
-    {
-        auto text = QStringLiteral("<span style='color:%1'>%2</span>")
-                        .arg(muted, tr("Сообщения в чате"));
-        if (!this->headingChannel_.isEmpty())
-        {
-            text += QStringLiteral(" <span style='color:%1'>#%2</span>")
-                        .arg(channel, this->headingChannel_.toHtmlEscaped());
-        }
-        this->ui_.messagesHeading->setText(text);
-    }
-    if (this->ui_.archiveToggle && this->ui_.messagesToggle)
-    {
-        this->ui_.archiveToggle->setVisible(this->ui_.archivePanel &&
-                                            !onArchive);
-        this->ui_.messagesToggle->setVisible(onArchive);
-    }
-    if (this->ui_.historyButton)
-    {
-        this->ui_.historyButton->setVisible(!onArchive);
-    }
+    this->ui_.messagesHeading->setText(text);
 }
 
 void UserInfoPopup::showActionsMenu()
 {
-    if (this->offlinePreview_)
-    {
-        // Exercise the actual read-only local actions in the synthetic fixture.
-        // No Twitch/profile/browser/moderation actions exist in this branch.
-        auto *menu = new QMenu(this);
-        menu->setAttribute(Qt::WA_DeleteOnClose);
-        addArchiveActions(menu, this, this->userId_, this->userName_,
-                          this->underlyingChannel_
-                              ? this->underlyingChannel_->getName()
-                              : QString{});
-        auto *archive = menu->addAction(tr("Сохранённые данные в карточке"));
-        QObject::connect(archive, &QAction::triggered, this, [this] {
-            this->ui_.contentTabs->setCurrentWidget(this->ui_.archivePanel);
-        });
-        menu->popup(this->ui_.actions->mapToGlobal(
-            QPoint(0, this->ui_.actions->height())));
-        return;
-    }
     auto *menu = new QMenu(this);
     menu->setAttribute(Qt::WA_DeleteOnClose);
     this->showProfileDetails(menu);
@@ -3040,13 +2897,6 @@ void UserInfoPopup::showActionsMenu()
     }
     menu->addSeparator();
     this->appendCommonProfileActions(menu);
-    if (this->ui_.archivePanel)
-    {
-        auto *archive = menu->addAction(tr("Сохранённые данные в карточке"));
-        QObject::connect(archive, &QAction::triggered, this, [this] {
-            this->ui_.contentTabs->setCurrentWidget(this->ui_.archivePanel);
-        });
-    }
     menu->popup(
         this->ui_.actions->mapToGlobal(QPoint(0, this->ui_.actions->height())));
 }
@@ -3116,16 +2966,14 @@ void UserInfoPopup::setOfflinePreviewData(const UserInfoPreviewData &data)
     this->earnedBadgesError_.clear();
     this->userId_ = data.userId;
     this->userName_ = data.login;
-    this->archiveLoginHint_ = data.login;
+    this->loginHint_ = data.login;
     if (this->ui_.userColorRow)
     {
         this->ui_.userColorRow->setProperty(
             "swatch-color",
             data.chatColor.isEmpty() ? QVariant() : QVariant(data.chatColor));
     }
-    this->offlinePublicHistoryAllowed_ =
-        data.allowPublicHistory && this->archiveHistorySyntheticEndpoint_;
-    this->resetArchiveHistory();
+    this->resetPublicHistory();
     this->underlyingChannel_ = data.messages;
     this->channel_ = data.messages;
     this->ui_.nameLabel->setText(data.displayName.isEmpty() ? data.login
@@ -3186,8 +3034,8 @@ void UserInfoPopup::setOfflinePreviewData(const UserInfoPreviewData &data)
         data.messages ? data.messages->getName() : QString();
     this->setMessagesHeading(channelName);
     this->setWindowTitle(tr("%1 — offline usercard preview").arg(data.login));
-    Q_EMIT this->archiveIdentityChanged(data.userId, data.login, channelName);
-    this->updateArchiveHistoryButton();
+
+    this->updatePublicHistoryButton();
 }
 
 void UserInfoPopup::loadProfileBanner(const QString &url)
@@ -3377,7 +3225,7 @@ void UserInfoPopup::requestEarnedBadges()
 void UserInfoPopup::windowDeactivationEvent()
 {
     // Opening this card's compact menu must not destroy the card (and its
-    // asynchronous local Archive client) before an action can be selected.
+    // asynchronous history request) before an action can be selected.
     for (auto *popup = QApplication::activePopupWidget(); popup;
          popup = popup->parentWidget())
     {
@@ -3896,7 +3744,7 @@ void UserInfoPopup::setData(const QString &name,
     }
     const QStringView idPrefix = u"id:";
     bool isId = name.startsWith(idPrefix);
-    this->archiveLoginHint_ = isId ? QString{} : name;
+    this->loginHint_ = isId ? QString{} : name;
     if (isId)
     {
         this->userId_ = name.mid(idPrefix.size());
@@ -3906,8 +3754,7 @@ void UserInfoPopup::setData(const QString &name,
     else if (!expectedUserId.isEmpty())
     {
         // Resolve by this exact ID, never by the current owner of a saved nick.
-        // Keep Twitch actions disabled until the canonical login is resolved;
-        // the independent Archive lookup can use the saved login immediately.
+        // Keep Twitch actions disabled until the canonical login is resolved.
         this->userId_ = expectedUserId;
         this->userName_.clear();
     }
@@ -3973,10 +3820,9 @@ void UserInfoPopup::setData(const QString &name,
     this->earnedBadgesReady_ = false;
     this->earnedBadgesError_.clear();
     this->updateProfileBanner();
-    const auto archiveChannel = this->underlyingChannel_->getName();
-    this->setMessagesHeading(archiveChannel);
-    Q_EMIT this->archiveIdentityChanged(this->userId_, this->archiveLoginHint_,
-                                        archiveChannel);
+    const auto channelName = this->underlyingChannel_->getName();
+    this->setMessagesHeading(channelName);
+
     if (this->isKick_)
     {
         this->ui_.timeoutWidget->setMinTimeout(60);
@@ -4075,7 +3921,6 @@ void UserInfoPopup::setData(const QString &name,
 
     this->updateBadgesButton();
     this->updateObservedBadges();
-    this->requestArchiveHistory(false);
 }
 
 void UserInfoPopup::setYouTubeContext()
@@ -4311,9 +4156,9 @@ void UserInfoPopup::updateLatestMessages()
         this->underlyingChannel_);
     this->ui_.latestMessages->setChannel(this->usercardMessagesChannel_);
     this->ui_.latestMessages->setSourceChannel(this->underlyingChannel_);
-    if (!this->archiveHistoryMessages_.empty())
+    if (!this->publicHistoryMessages_.empty())
     {
-        this->rebuildArchiveHistoryView(true);
+        this->rebuildPublicHistoryView(true);
     }
 
     this->updateUsercardMessagesVisibility();
@@ -4364,17 +4209,17 @@ void UserInfoPopup::updateUsercardMessagesVisibility()
                                    this->ui_.loadMoreMessages->isVisible();
     const auto previousNoMessagesText = this->ui_.noMessagesLabel->getText();
     const auto noMessagesText =
-        this->usercardMessagesLoading_ || this->archiveHistoryLoading_
+        this->usercardMessagesLoading_ || this->publicHistoryLoading_
             ? tr("Загрузка сообщений…")
-        : this->archiveHistoryStatus_.isEmpty()
+        : this->publicHistoryStatus_.isEmpty()
             ? tr("В загруженном буфере сообщений нет")
-            : this->archiveHistoryStatus_;
+            : this->publicHistoryStatus_;
 
     this->ui_.latestMessages->setVisible(hasMessages);
     this->ui_.noMessagesLabel->setText(noMessagesText);
     this->ui_.noMessagesLabel->setVisible(!hasMessages);
     this->updateLoadMoreMessagesButton();
-    this->updateArchiveHistoryButton();
+    this->updatePublicHistoryButton();
 
     const bool hasLoadMoreButton = this->ui_.loadMoreMessages != nullptr &&
                                    this->ui_.loadMoreMessages->isVisible();
@@ -4388,43 +4233,27 @@ void UserInfoPopup::updateUsercardMessagesVisibility()
     }
 }
 
-bool UserInfoPopup::archiveConfigured() const
+bool UserInfoPopup::canUsePublicHistory() const
 {
-    return this->archiveHistoryClient_ &&
-           this->archiveHistoryClient_->configured();
-}
-
-bool UserInfoPopup::canUseArchiveHistory() const
-{
-    return (this->archiveConfigured() ||
-            (getSettings()->usercardPublicLogs && !this->offlinePreview_)) &&
+    return getSettings()->usercardPublicLogs && !this->offlinePreview_ &&
            !this->isKick_ &&
            !this->isYouTube_ && !this->userId_.isEmpty() &&
            this->underlyingChannel_ &&
            !this->underlyingChannel_->getName().isEmpty();
 }
 
-void UserInfoPopup::resetArchiveHistory()
+void UserInfoPopup::resetPublicHistory()
 {
-    if (this->archiveHistoryClient_)
-    {
-        this->archiveHistoryClient_->cancel();
-    }
-    this->archiveLocalCursor_ = {};
-    this->archivePublicCursor_ = {};
-    this->archiveHistoryMessages_.clear();
-    this->archiveHistoryUncolored_.clear();
-    this->archiveHistoryColor_.clear();
-    this->archiveHistoryRowMetadata_.clear();
-    this->archiveHistoryStatus_.clear();
-    this->archiveHistoryStarted_ = false;
-    this->archiveHistoryLoading_ = false;
-    this->archiveHistoryPublic_ = false;
-    this->archiveLocalComplete_ = false;
-    this->archivePublicComplete_ = false;
-    this->archiveLocalDrainRemaining_ = 0;
-    this->archiveHistoryWindowLimited_ = false;
-    this->updateArchiveHistoryButton();
+    this->publicHistoryCursor_ = {};
+    this->publicHistoryMessages_.clear();
+    this->publicHistoryUncolored_.clear();
+    this->publicHistoryColor_.clear();
+    this->publicHistoryTimestamps_.clear();
+    this->publicHistoryStatus_.clear();
+    this->publicHistoryLoading_ = false;
+    this->publicHistoryComplete_ = false;
+    this->publicHistoryWindowLimited_ = false;
+    this->updatePublicHistoryButton();
 }
 
 bool UserInfoPopup::hasCachedOlderHistory() const
@@ -4443,8 +4272,8 @@ bool UserInfoPopup::hasCachedOlderHistory() const
             break;
         }
     }
-    return oldest && std::any_of(this->archiveHistoryMessages_.begin(),
-                                 this->archiveHistoryMessages_.end(),
+    return oldest && std::any_of(this->publicHistoryMessages_.begin(),
+                                 this->publicHistoryMessages_.end(),
                                  [&](const auto &message) {
                                      return message->serverReceivedTime <
                                                 oldest->serverReceivedTime ||
@@ -4454,90 +4283,43 @@ bool UserInfoPopup::hasCachedOlderHistory() const
                                  });
 }
 
-void UserInfoPopup::requestArchiveHistory(bool userInitiated,
-                                          bool localContinuation)
+void UserInfoPopup::requestPublicHistory()
 {
     const auto login =
-        this->userName_.isEmpty() ? this->archiveLoginHint_ : this->userName_;
-    if (!this->canUseArchiveHistory() || this->archiveHistoryLoading_ ||
-        login.isEmpty() ||
-        (!userInitiated && !localContinuation &&
-         (this->offlinePreview_ || this->archiveHistoryStarted_)))
+        this->userName_.isEmpty() ? this->loginHint_ : this->userName_;
+    if (!this->canUsePublicHistory() || this->publicHistoryLoading_ ||
+        login.isEmpty())
     {
         return;
     }
-    if (userInitiated && this->hasCachedOlderHistory())
+    if (this->hasCachedOlderHistory())
     {
-        this->rebuildArchiveHistoryView(true);
+        this->rebuildPublicHistoryView(true);
         this->updateUsercardMessagesVisibility();
         return;
     }
-    if (!this->archiveConfigured())
-    {
-        // Without the Archive there is no saved history: public logs only.
-        this->archiveLocalComplete_ = true;
-    }
-    const bool publicLogs = this->archiveLocalComplete_;
-    if (publicLogs &&
-        (!userInitiated ||
-         (this->offlinePreview_ && !this->offlinePublicHistoryAllowed_) ||
-         this->archivePublicComplete_))
+    if (this->publicHistoryComplete_)
     {
         return;
     }
-    const bool directPublicLogs = publicLogs && !this->offlinePreview_;
-    if (directPublicLogs && !getSettings()->usercardPublicLogs)
-    {
-        this->archiveHistoryStatus_ =
-            tr("Публичные логи выключены в настройках");
-        this->updateArchiveHistoryButton();
-        this->updateUsercardMessagesVisibility();
-        return;
-    }
-    this->archiveHistoryStarted_ = true;
-    if (!publicLogs && !localContinuation)
-    {
-        this->archiveLocalDrainRemaining_ = 32;
-        this->archiveLocalDrainDeadline_ =
-            std::chrono::steady_clock::now() + std::chrono::seconds(1);
-    }
-    if (!publicLogs)
-    {
-        --this->archiveLocalDrainRemaining_;
-    }
-    this->archiveHistoryLoading_ = true;
-    this->archiveHistoryPublic_ = publicLogs;
-    if (!localContinuation)
-    {
-        this->archiveHistoryPreserveAnchor_ = userInitiated;
-    }
-    this->archiveHistoryStatus_ = publicLogs ? tr("Поиск в публичных логах…")
-                                             : tr("Чтение локальной истории…");
-    this->updateArchiveHistoryButton();
+    this->publicHistoryLoading_ = true;
+    this->publicHistoryStatus_ = tr("Поиск в публичных логах…");
+    this->updatePublicHistoryButton();
     this->updateUsercardMessagesVisibility();
-    if (directPublicLogs)
-    {
-        // Straight from the public mirrors: the Archive is not needed for them.
-        const auto generation = this->usercardMessagesRequestGeneration_;
-        publiclogs::requestPage(
-            this->userId_, login, this->underlyingChannel_->getName(),
-            this->archivePublicCursor_, this,
-            [this, generation](const QJsonObject &page) {
-                if (generation == this->usercardMessagesRequestGeneration_ &&
-                    this->archiveHistoryLoading_ && this->archiveHistoryPublic_)
-                {
-                    this->applyArchiveHistory(page);
-                }
-            });
-        return;
-    }
-    this->archiveHistoryClient_->requestHistory(
+    const auto generation = this->usercardMessagesRequestGeneration_;
+    publiclogs::requestPage(
         this->userId_, login, this->underlyingChannel_->getName(),
-        publicLogs ? this->archivePublicCursor_ : this->archiveLocalCursor_,
-        publicLogs);
+        this->publicHistoryCursor_, this,
+        [this, generation](const QJsonObject &page) {
+            if (generation == this->usercardMessagesRequestGeneration_ &&
+                this->publicHistoryLoading_)
+            {
+                this->applyPublicHistory(page);
+            }
+        });
 }
 
-void UserInfoPopup::applyArchiveHistory(const QJsonObject &data)
+void UserInfoPopup::applyPublicHistory(const QJsonObject &data)
 {
     if (!this->underlyingChannel_ ||
         data.value("identity").toObject().value("user_id").toString() !=
@@ -4547,7 +4329,7 @@ void UserInfoPopup::applyArchiveHistory(const QJsonObject &data)
     {
         return;
     }
-    this->archiveHistoryLoading_ = false;
+    this->publicHistoryLoading_ = false;
     const auto status = data.value("status").toString();
     const bool successful =
         status == u"found" || status == u"empty" || status == u"end";
@@ -4564,7 +4346,7 @@ void UserInfoPopup::applyArchiveHistory(const QJsonObject &data)
                 ids.insert(message->id);
             }
         }
-        for (const auto &message : this->archiveHistoryMessages_)
+        for (const auto &message : this->publicHistoryMessages_)
         {
             ids.insert(message->id);
         }
@@ -4580,15 +4362,7 @@ void UserInfoPopup::applyArchiveHistory(const QJsonObject &data)
             {
                 continue;
             }
-            auto metadata = this->archiveHistoryRowMetadata_.value(id);
-            metadata.insert(
-                this->archiveHistoryPublic_ ? "public_time" : "local_time",
-                row.value("time_utc"));
-            metadata.insert("id", id);
-            metadata.insert("sources",
-                            metadata.value("sources").toInt() |
-                                (this->archiveHistoryPublic_ ? 2 : 1));
-            this->archiveHistoryRowMetadata_.insert(id, metadata);
+            this->publicHistoryTimestamps_.insert(id, row.value("time_utc").toString());
             if (!id.isEmpty() && ids.contains(id))
             {
                 continue;
@@ -4616,91 +4390,48 @@ void UserInfoPopup::applyArchiveHistory(const QJsonObject &data)
             }
             if (message.senderColor.isEmpty())
             {
-                this->archiveHistoryUncolored_.insert(id, message);
-                this->archiveHistoryColor_ = this->knownChatColor();
-                message.senderColor = this->archiveHistoryColor_;
+                this->publicHistoryUncolored_.insert(id, message);
+                this->publicHistoryColor_ = this->knownChatColor();
+                message.senderColor = this->publicHistoryColor_;
             }
-            this->archiveHistoryMessages_.push_back(makeUsercardModLogMessage(
+            this->publicHistoryMessages_.push_back(makeUsercardModLogMessage(
                 message, renderChannel, this->underlyingChannel_->getName(),
                 this->userId_));
             ids.insert(id);
             ++added;
         }
-        auto &cursor = this->archiveHistoryPublic_ ? this->archivePublicCursor_
-                                                   : this->archiveLocalCursor_;
         const bool partial =
             data.value("error").toString() == u"partial_source";
-        if (this->archiveHistoryPublic_ && partial &&
-            !this->archivePublicPartialRetried_)
+        if (partial && !this->publicHistoryPartialRetried_)
         {
-            // keep the cursor: the next request covers this range again and
-            // picks up what the late mirror holds (rows already shown are
-            // skipped)
-            this->archivePublicPartialRetried_ = true;
+            // Repeat the cursor once to include rows from a temporarily unavailable mirror.
+            this->publicHistoryPartialRetried_ = true;
         }
         else
         {
-            cursor = data.value("next_cursor").toObject();
-            if (this->archiveHistoryPublic_)
-            {
-                this->archivePublicPartialRetried_ = false;
-            }
+            this->publicHistoryCursor_ = data.value("next_cursor").toObject();
+            this->publicHistoryPartialRetried_ = false;
         }
-        // A duplicate-only page still advances its own cursor. It is never
-        // mistaken for the end of the other source's history.
-        const bool complete =
-            !data.value("more").toBool() &&
-            data.value("error").toString() != u"partial_source";
-        if (this->archiveHistoryPublic_)
-        {
-            this->archivePublicComplete_ = complete;
-        }
-        else
-        {
-            this->archiveLocalComplete_ = complete;
-        }
+        this->publicHistoryComplete_ = !data.value("more").toBool() && !partial;
         const auto rows = data.value("rows").toArray().size();
-        this->archiveHistoryStatus_ =
-            data.value("error").toString() == u"partial_source"
-                ? tr("История частичная: один из источников недоступен")
-            : this->archiveHistoryPublic_
-                ? tr("Публичные логи: получено %1 сообщений").arg(rows)
-            : rows ? tr("Локальная история: получено %1 сообщений").arg(rows)
-                   : tr("Локальных сообщений нет; нажмите «История» "
-                        "для проверки публичных логов");
+        this->publicHistoryStatus_ =
+            partial ? tr("История частичная: один из источников недоступен")
+                    : tr("Публичные логи: получено %1 сообщений").arg(rows);
         if (added)
         {
-            this->rebuildArchiveHistoryView(
-                this->archiveHistoryPreserveAnchor_);
-        }
-        if (!this->archiveHistoryPublic_ && !this->archiveLocalComplete_ &&
-            !added && this->archiveLocalDrainRemaining_ > 0 &&
-            std::chrono::steady_clock::now() < this->archiveLocalDrainDeadline_)
-        {
-            const auto generation = this->usercardMessagesRequestGeneration_;
-            QTimer::singleShot(0, this, [this, generation] {
-                if (generation == this->usercardMessagesRequestGeneration_)
-                {
-                    this->requestArchiveHistory(false, true);
-                }
-            });
+            this->rebuildPublicHistoryView(true);
         }
     }
     else
     {
-        this->archiveHistoryStatus_ =
+        this->publicHistoryStatus_ =
             status == u"refused" ? tr("Публичные логи закрыты для пользователя")
             : status == u"disabled"
                 ? tr("Публичные логи сейчас отключены")
                 : tr("История недоступна; повторите запрос кнопкой «История»");
-        // Unknown coverage and a failed source do not prove a global end.
-        if (!this->archiveHistoryPublic_ &&
-            (status == u"unavailable" || status == u"unsupported_uid"))
-        {
-            this->archiveLocalComplete_ = true;
-        }
+
     }
-    this->updateArchiveHistoryButton();
+    this->updatePublicHistoryButton();
     this->updateUsercardMessagesVisibility();
 }
 
@@ -4740,24 +4471,24 @@ QString UserInfoPopup::knownChatColor() const
     return {};
 }
 
-void UserInfoPopup::refreshArchiveHistoryColors()
+void UserInfoPopup::refreshPublicHistoryColors()
 {
-    if (this->archiveHistoryUncolored_.isEmpty() || !this->underlyingChannel_)
+    if (this->publicHistoryUncolored_.isEmpty() || !this->underlyingChannel_)
     {
         return;
     }
     const auto color = this->knownChatColor();
-    if (color.isEmpty() || color == this->archiveHistoryColor_)
+    if (color.isEmpty() || color == this->publicHistoryColor_)
     {
         return;
     }
-    this->archiveHistoryColor_ = color;
+    this->publicHistoryColor_ = color;
     auto *renderChannel =
         dynamic_cast<TwitchChannel *>(this->underlyingChannel_.get());
-    for (auto &message : this->archiveHistoryMessages_)
+    for (auto &message : this->publicHistoryMessages_)
     {
-        auto source = this->archiveHistoryUncolored_.find(message->id);
-        if (source == this->archiveHistoryUncolored_.end())
+        auto source = this->publicHistoryUncolored_.find(message->id);
+        if (source == this->publicHistoryUncolored_.end())
         {
             continue;
         }
@@ -4767,10 +4498,10 @@ void UserInfoPopup::refreshArchiveHistoryColors()
                                             this->underlyingChannel_->getName(),
                                             this->userId_);
     }
-    this->rebuildArchiveHistoryView(true);
+    this->rebuildPublicHistoryView(true);
 }
 
-void UserInfoPopup::rebuildArchiveHistoryView(bool preserveAnchor)
+void UserInfoPopup::rebuildPublicHistoryView(bool preserveAnchor)
 {
     if (!this->underlyingChannel_ || this->userId_.isEmpty())
     {
@@ -4799,7 +4530,7 @@ void UserInfoPopup::rebuildArchiveHistoryView(bool preserveAnchor)
     const auto channelName = this->underlyingChannel_->getName();
     auto add = [&](const MessagePtr &message, bool live) {
         // Live rows also include bans/timeouts/deletions about this person
-        // (same rule as the plain list); Archive pages are their own messages.
+        // (same rule as the plain list); Public log pages are their own messages.
         if (live ? !checkMessageUserName(this->userName_, message,
                                          this->userId_, channelName)
                  : message->userID != this->userId_)
@@ -4813,12 +4544,12 @@ void UserInfoPopup::rebuildArchiveHistoryView(bool preserveAnchor)
                 : message->id;
         byId.insert(key, message);
     };
-    for (const auto &message : this->archiveHistoryMessages_)
+    for (const auto &message : this->publicHistoryMessages_)
     {
         add(message, false);
     }
     // Keep the full original message (emotes/replies/badges) whenever it is
-    // already present in the live buffer; normalized archive text cannot
+    // already present in the live buffer; normalized public log text cannot
     // replace that richer object.
     for (const auto &message : this->underlyingChannel_->getMessageSnapshot())
     {
@@ -4863,8 +4594,8 @@ void UserInfoPopup::rebuildArchiveHistoryView(bool preserveAnchor)
         }
         rendered.push_back(message);
     }
-    this->archiveHistoryWindowLimited_ = rendered.size() > capacity;
-    if (this->archiveHistoryWindowLimited_)
+    this->publicHistoryWindowLimited_ = rendered.size() > capacity;
+    if (this->publicHistoryWindowLimited_)
     {
         size_t start = rendered.size() - capacity;
         if (preserveAnchor && !anchor.isEmpty())
@@ -4916,10 +4647,10 @@ void UserInfoPopup::rebuildArchiveHistoryView(bool preserveAnchor)
     }
     // Keep memory bounded independently of remote history length. Cursors
     // remain per-source and are never derived from this visible window.
-    if (this->archiveHistoryMessages_.size() > capacity * 4)
+    if (this->publicHistoryMessages_.size() > capacity * 4)
     {
-        std::sort(this->archiveHistoryMessages_.begin(),
-                  this->archiveHistoryMessages_.end(),
+        std::sort(this->publicHistoryMessages_.begin(),
+                  this->publicHistoryMessages_.end(),
                   [](const auto &a, const auto &b) {
                       return a->serverReceivedTime < b->serverReceivedTime;
                   });
@@ -4927,103 +4658,64 @@ void UserInfoPopup::rebuildArchiveHistoryView(bool preserveAnchor)
                                ? QDateTime{}
                                : rendered.front()->serverReceivedTime;
         const auto firstVisible =
-            std::lower_bound(this->archiveHistoryMessages_.begin(),
-                             this->archiveHistoryMessages_.end(), visibleTime,
+            std::lower_bound(this->publicHistoryMessages_.begin(),
+                             this->publicHistoryMessages_.end(), visibleTime,
                              [](const auto &message, const auto &time) {
                                  return message->serverReceivedTime < time;
                              });
         const auto visibleIndex =
-            size_t(firstVisible - this->archiveHistoryMessages_.begin());
+            size_t(firstVisible - this->publicHistoryMessages_.begin());
         const auto start =
             std::min(visibleIndex > capacity ? visibleIndex - capacity : 0,
-                     this->archiveHistoryMessages_.size() - capacity * 4);
-        int droppedOlderSources = 0;
-        for (size_t i = 0; i < start; ++i)
+                     this->publicHistoryMessages_.size() - capacity * 4);
+        this->publicHistoryMessages_ = std::vector<MessagePtr>(
+            this->publicHistoryMessages_.begin() + start,
+            this->publicHistoryMessages_.begin() + start + capacity * 4);
+        if (start != 0)
         {
-            droppedOlderSources |=
-                this->archiveHistoryRowMetadata_
-                    .value(this->archiveHistoryMessages_[i]->id)
-                    .value("sources")
-                    .toInt();
-        }
-        this->archiveHistoryMessages_ = std::vector<MessagePtr>(
-            this->archiveHistoryMessages_.begin() + start,
-            this->archiveHistoryMessages_.begin() + start + capacity * 4);
-        for (int source : {1, 2})
-        {
-            if (!(droppedOlderSources & source))
-            {
-                continue;
-            }
-            QJsonObject rewind;
-            for (const auto &message : this->archiveHistoryMessages_)
-            {
-                const auto metadata =
-                    this->archiveHistoryRowMetadata_.value(message->id);
-                if (metadata.value("sources").toInt() & source)
-                {
-                    const auto time =
-                        metadata
-                            .value(source == 1 ? "local_time" : "public_time")
-                            .toString();
-                    if (rewind.isEmpty() ||
-                        time < rewind.value("time_utc").toString() ||
-                        (time == rewind.value("time_utc").toString() &&
-                         metadata.value("id").toString() <
-                             rewind.value("id").toString()))
-                    {
-                        rewind = {{"time_utc", time},
-                                  {"id", metadata.value("id")}};
-                    }
-                }
-            }
-            (source == 1 ? this->archiveLocalCursor_
-                         : this->archivePublicCursor_) = rewind;
-            (source == 1 ? this->archiveLocalComplete_
-                         : this->archivePublicComplete_) = false;
+            const auto &oldest = this->publicHistoryMessages_.front();
+            this->publicHistoryCursor_ = {
+                {"time_utc", this->publicHistoryTimestamps_.value(oldest->id)},
+                {"id", oldest->id},
+            };
+            this->publicHistoryComplete_ = false;
         }
         QSet<QString> retained;
-        for (const auto &message : this->archiveHistoryMessages_)
+        for (const auto &message : this->publicHistoryMessages_)
             retained.insert(message->id);
         for (const auto &message :
              this->underlyingChannel_->getMessageSnapshot())
             retained.insert(message->id);
-        for (auto it = this->archiveHistoryRowMetadata_.begin();
-             it != this->archiveHistoryRowMetadata_.end();)
+        for (auto it = this->publicHistoryTimestamps_.begin();
+             it != this->publicHistoryTimestamps_.end();)
         {
             if (!retained.contains(it.key()))
-                it = this->archiveHistoryRowMetadata_.erase(it);
+                it = this->publicHistoryTimestamps_.erase(it);
             else
                 ++it;
         }
     }
 }
 
-void UserInfoPopup::updateArchiveHistoryButton()
+void UserInfoPopup::updatePublicHistoryButton()
 {
     if (!this->ui_.historyButton)
     {
         return;
     }
-    const bool available = this->canUseArchiveHistory();
+    const bool available = this->canUsePublicHistory();
     this->ui_.historyButton->setEnabled(
-        !this->archiveHistoryLoading_ &&
+        !this->publicHistoryLoading_ &&
         (available ||
          (!this->offlinePreview_ && this->canLoadMoreUsercardMessages())));
     this->ui_.historyButton->setText(
-        this->archiveHistoryLoading_ ? tr("Загрузка…") : tr("История"));
+        this->publicHistoryLoading_ ? tr("Загрузка…") : tr("История"));
     this->ui_.historyButton->setToolTip(
-        (!this->archiveHistoryStatus_.isEmpty() ? this->archiveHistoryStatus_
-         : available && this->archiveConfigured()
-             ? tr("Сохранённая история; затем публичные логи. "
-                  "Прокрутите вверх, чтобы загрузить ещё")
-         : available ? tr("Публичные логи чата. Прокрутите вверх, чтобы "
-                          "загрузить ещё")
-                     : this->archiveConfigured()
-                         ? tr("Включите публичные логи в настройках или "
-                              "запустите Архив")
+        (!this->publicHistoryStatus_.isEmpty()
+             ? this->publicHistoryStatus_
+             : available ? tr("Публичные логи чата. Прокрутите вверх, чтобы загрузить ещё")
                          : tr("Включите публичные логи в настройках")) +
-        (this->archiveHistoryWindowLimited_
+        (this->publicHistoryWindowLimited_
              ? tr(" · Буфер карточки ограничен; старые строки доступны "
                   "прокруткой")
              : QString{}));
@@ -5031,7 +4723,7 @@ void UserInfoPopup::updateArchiveHistoryButton()
 
 void UserInfoPopup::resetUsercardMessageLoader()
 {
-    this->resetArchiveHistory();
+    this->resetPublicHistory();
     ++this->usercardMessagesRequestGeneration_;
     this->usercardMessagesCursor_.clear();
     this->usercardMessagesError_.clear();
@@ -5317,7 +5009,7 @@ void UserInfoPopup::updateUserData()
         }
 
         this->ui_.nameLabel->setText(this->userName_.isEmpty()
-                                         ? this->archiveLoginHint_
+                                         ? this->loginHint_
                                          : this->userName_);
 
         this->ui_.userIDLabel->setText(uiText(TEXT_USER_ID) %
@@ -5325,10 +5017,6 @@ void UserInfoPopup::updateUserData()
                                             ? uiText(TEXT_UNAVAILABLE)
                                             : this->userId_));
         this->ui_.userIDLabel->setProperty("copy-text", this->userId_);
-        if (this->userId_.isEmpty())
-        {
-            Q_EMIT this->archiveIdentityUnavailable();
-        }
 
         if (getSettings()->showUsercardFollowage)
         {
@@ -5458,9 +5146,8 @@ void UserInfoPopup::updateUserData()
         this->loadProfileBanner(user.offlineImageUrl);
         this->updateObservedBadges();
         this->requestEarnedBadges();
-        this->requestArchiveHistory(false);
-        Q_EMIT this->archiveIdentityChanged(
-            user.id, user.login, this->underlyingChannel_->getName());
+        this->updatePublicHistoryButton();
+
 
         if (getSettings()->showUsercardFollowerCount)
         {
@@ -5828,7 +5515,7 @@ void UserInfoPopup::updateUserData()
                     this->ui_.userColorLabel->setText(
                         uiText(TEXT_COLOR).arg(userInfo.chatColor));
                     this->updateUsercardStatusIcons();
-                    this->refreshArchiveHistoryColors();
+                    this->refreshPublicHistoryColors();
                 }
                 else
                 {
@@ -6936,7 +6623,7 @@ void UserInfoPopup::applyIvrUserProfile(const IvrUserProfile &profile)
             this->ui_.userColorRow->setProperty("swatch-color", colorHex);
             this->ui_.userColorLabel->setText(uiText("Color: ") + colorHex);
             this->updateUsercardStatusIcons();
-            this->refreshArchiveHistoryColors();
+            this->refreshPublicHistoryColors();
             this->ui_.userColorRow->setVisible(true);
             this->updateSeventvPaintPixmap();
         }
@@ -7291,15 +6978,6 @@ QStringView UserInfoPopup::platformName() const
 
 void UserInfoPopup::appendCommonProfileActions(QMenu *menu)
 {
-    if (!this->isKick_ && !this->isYouTube_)
-    {
-        addArchiveActions(menu, this, this->userId_,
-                          this->userName_.isEmpty() ? this->archiveLoginHint_
-                                                    : this->userName_,
-                          this->underlyingChannel_
-                              ? this->underlyingChannel_->getName()
-                              : QString{});
-    }
     if (!this->isKick_ && !this->userName_.isEmpty())
     {
         menu->addAction(uiText("Open profile in &ChatVault"), this,

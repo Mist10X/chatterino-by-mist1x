@@ -349,10 +349,6 @@ public:
     float getClampedUiScale() const;
     void setClampedUiScale(float value);
 
-    // Local Archive bridge. Empty by default: never discover a production
-    // dataset or borrow another client's session implicitly.
-    QStringSetting archiveSocketName = {"/archive/socketName", ""};
-    QStringSetting archiveDatasetId = {"/archive/datasetId", ""};
 
     /// Appearance
     BoolSetting showTimestamps = {"/appearance/messages/showTimestamps", true};
@@ -774,8 +770,8 @@ public:
     BoolSetting showImagePreviews = {"/links/showImagePreviews", true};
     /// Image sites whose page links get a picture too (direct image files
     /// get one on any site). Separated by spaces or commas.
-    QStringSetting imagePreviewSites = {"/links/imagePreviewSites",
-                                        "kappa.lol segs.lol eblo.id kappalol.fun"};
+    QStringSetting imagePreviewSites = {
+        "/links/imagePreviewSites", "kappa.lol segs.lol eblo.id kappalol.fun"};
     IntSetting thumbnailSize = {"/appearance/thumbnailSize", 0};
     IntSetting thumbnailSizeStream = {"/appearance/thumbnailSizeStream", 2};
     BoolSetting unshortLinks = {"/links/unshortLinks", false};
@@ -1431,8 +1427,8 @@ public:
     BoolSetting showSlowModeInInput{"/moltorino/input/slowModeTimer", true};
     /// Slow mode: a message sent too early waits and goes by itself.
     BoolSetting queueSlowModeMessages{"/moltorino/input/slowModeQueue", true};
-    /// No chat line for community sub gifts ("X is gifting 5 subs…") and their
-    /// per-recipient lines; the corner banner for big gifts stays.
+    /// Replace community gifts and their recipient notices with the corner
+    /// banner only when the banner is enabled and its threshold is met.
     BoolSetting hideCommunityGiftMessages{"/moltorino/chat/hideCommunityGifts",
                                           true};
     /// No chat line for an incoming raid ("N raiders from X have joined!");
@@ -1444,8 +1440,7 @@ public:
         "/moltorino/banners/incomingRaidSeconds", 40};
     BoolSetting showMassGiftBanner{"/moltorino/banners/massGifts", true};
     IntSetting massGiftBannerMinimum{"/moltorino/banners/massGiftsMinimum", 5};
-    IntSetting massGiftBannerSeconds{"/moltorino/banners/massGiftsSeconds",
-                                     40};
+    IntSetting massGiftBannerSeconds{"/moltorino/banners/massGiftsSeconds", 40};
 
     /// Client
     BoolSetting showTranslateMessageContextAction{

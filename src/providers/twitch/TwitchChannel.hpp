@@ -22,6 +22,7 @@
 #include <boost/signals2.hpp>
 #include <IrcMessage>
 #include <pajlada/signals/signalholder.hpp>
+#include <QCache>
 #include <QColor>
 #include <QDateTime>
 #include <QElapsedTimer>
@@ -577,6 +578,10 @@ public:
     /// number of subs.
     pajlada::Signals::Signal<const QString &, const QString &, int>
         massGiftSubs;
+
+    /// Parent USERNOTICE id -> whether its recipient notices use the banner.
+    /// Bounded and channel-local; unknown parents must not hide chat messages.
+    QCache<QString, bool> communityGiftBanners{128};
 
     pajlada::Signals::Signal<const std::vector<HelixMinimalUser> &>
         sharedChatStatusChanged;

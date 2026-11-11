@@ -257,7 +257,9 @@ StreamerModePrivate::StreamerModePrivate(StreamerMode *parent)
                 this->settingChanged(static_cast<StreamerModeSetting>(value));
             });
         },
-        this->settingConnections_);
+        // The initial value is applied by QThread::started below. Before
+        // start(), there is no event dispatcher to receive this callback.
+        this->settingConnections_, false);
 
     QObject::connect(&this->thread_, &QThread::started, [this] {
         this->settingChanged(getSettings()->enableStreamerMode.getEnum());

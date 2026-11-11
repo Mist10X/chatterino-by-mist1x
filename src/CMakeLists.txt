@@ -16,19 +16,11 @@ set(SOURCE_FILES
         RunGui.cpp
         RunGui.hpp
 
-        providers/archive/ArchiveClient.cpp
-        providers/archive/ArchiveClient.hpp
-        widgets/helper/ArchiveActions.cpp
-        widgets/helper/ArchiveActions.hpp
-        widgets/helper/ArchiveUserCard.cpp
-        widgets/helper/ArchiveUserCard.hpp
 
         common/Args.cpp
         common/Args.hpp
         common/ChannelChatters.cpp
         common/ChannelChatters.hpp
-        common/ArchiveChatPolicy.cpp
-        common/ArchiveChatPolicy.hpp
         common/Channel.cpp
         common/Channel.hpp
         common/ChatterinoSetting.cpp

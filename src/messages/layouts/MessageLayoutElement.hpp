@@ -249,6 +249,7 @@ public:
         EmoteOnly,
         UniqueChat,
         Mail,
+        Gift,
     };
 
     NoticeIconLayoutElement(MessageElement &creator, Icon icon, QColor color,

@@ -65,7 +65,6 @@ class LiveIndicator;
 class Paint;
 class PixmapButton;
 class SvgButton;
-class ArchiveClient;
 
 /// Synthetic, already-resolved data used by the standalone offline UI preview.
 struct UserInfoPreviewData {
@@ -83,7 +82,6 @@ struct UserInfoPreviewData {
     QPixmap avatar;
     QPixmap banner;
     std::vector<std::shared_ptr<const Emote>> earnedBadges;
-    bool allowPublicHistory = false;
 };
 
 class UserInfoPopup final : public DraggablePopup
@@ -106,20 +104,10 @@ public:
 
     void setYouTubeContext();
 
-    /// Installs a read-only local Archive view. Ownership transfers to this card.
-    void setArchivePanel(QWidget *panel);
     void setOfflinePreviewData(const UserInfoPreviewData &data);
     /// Offline preview only: show the moderation strip as for a moderator.
     void previewModerationStrip();
 
-Q_SIGNALS:
-    /// Emitted immediately on a new target and again after its Twitch UID resolves.
-    /// An empty UID must never be interpreted as proof of a login's identity.
-    void archiveIdentityChanged(const QString &userId, const QString &login,
-                                const QString &channelName);
-    void archiveIdentityUnavailable();
-
-public:
     static void openUserChannelAction(const QString &userName,
                                       MessagePlatform platform,
                                       const QString &channelName,
@@ -176,7 +164,7 @@ private:
     void applyIvrUserProfile(const IvrUserProfile &profile);
     void updateLiveIndicatorDisplay();
     void updateResponsiveLayout();
-    /// Header line above messages/Archive: "Сообщения в чате #channel",
+    /// Header line above messages: "Сообщения в чате #channel",
     /// page switch and history (one line, like Chatterino+).
     void updateMessagesHeader();
     void setMessagesHeading(const QString &channel);
@@ -187,19 +175,17 @@ private:
     void requestEarnedBadges();
     void updateNamePresentation();
     void showProfileDetails(QMenu *menu);
-    bool canUseArchiveHistory() const;
-    void resetArchiveHistory();
-    void requestArchiveHistory(bool userInitiated,
-                               bool localContinuation = false);
-    void applyArchiveHistory(const QJsonObject &data);
-    bool archiveConfigured() const;
-    void rebuildArchiveHistoryView(bool preserveAnchor);
+    bool canUsePublicHistory() const;
+    void resetPublicHistory();
+    void requestPublicHistory();
+    void applyPublicHistory(const QJsonObject &data);
+    void rebuildPublicHistoryView(bool preserveAnchor);
     /// The person's chat colour: the card's own (from Twitch), else the one
     /// seen in this channel's chat; empty if unknown.
     QString knownChatColor() const;
     /// Recolour history rows that came without a colour once it is known.
-    void refreshArchiveHistoryColors();
-    void updateArchiveHistoryButton();
+    void refreshPublicHistoryColors();
+    void updatePublicHistoryButton();
     bool hasCachedOlderHistory() const;
 
     bool isFollowing() const;
@@ -268,7 +254,7 @@ private:
 
     QString userName_;
     QString userId_;
-    QString archiveLoginHint_;
+    QString loginHint_;
     uint64_t userDataRequestGeneration_ = 0;
     QString avatarUrl_;
     QString helixAvatarUrl_;
@@ -291,30 +277,18 @@ private:
     bool usercardMessagesLoading_ = false;
     bool usercardMessagesHasNextPage_ = true;
     bool usercardMessagesLazyLoadEnabled_ = false;
-    ArchiveClient *archiveHistoryClient_ = nullptr;
-    QJsonObject archiveLocalCursor_;
-    QJsonObject archivePublicCursor_;
-    std::vector<MessagePtr> archiveHistoryMessages_;
-    // Saved Archive rows carry no colour: what they were built from, by ID,
-    // and the colour they were given (Chatterino would pick one by user ID).
-    QHash<QString, GqlUsercardMessage> archiveHistoryUncolored_;
-    QString archiveHistoryColor_;
-    QHash<QString, QJsonObject> archiveHistoryRowMetadata_;
-    QString archiveHistoryStatus_;
-    bool archiveHistoryStarted_ = false;
-    bool archiveHistoryLoading_ = false;
-    bool archiveHistoryPublic_ = false;
-    bool archiveLocalComplete_ = false;
-    bool archivePublicComplete_ = false;
+    QJsonObject publicHistoryCursor_;
+    std::vector<MessagePtr> publicHistoryMessages_;
+    QHash<QString, GqlUsercardMessage> publicHistoryUncolored_;
+    QString publicHistoryColor_;
+    QHash<QString, QString> publicHistoryTimestamps_;
+    QString publicHistoryStatus_;
+    bool publicHistoryLoading_ = false;
+    bool publicHistoryComplete_ = false;
     /// A partial public page (a mirror answered late or not at all) is asked
     /// once more before going further back, so its range is not skipped.
-    bool archivePublicPartialRetried_ = false;
-    bool archiveHistoryPreserveAnchor_ = false;
-    bool archiveHistorySyntheticEndpoint_ = false;
-    bool offlinePublicHistoryAllowed_ = false;
-    int archiveLocalDrainRemaining_ = 0;
-    bool archiveHistoryWindowLimited_ = false;
-    std::chrono::steady_clock::time_point archiveLocalDrainDeadline_;
+    bool publicHistoryPartialRetried_ = false;
+    bool publicHistoryWindowLimited_ = false;
 
     QString kickUserSlug_;
     QPointer<QWidget> moderationReasonPopup_;
@@ -369,11 +343,8 @@ private:
         QToolButton *actions = nullptr;
         QWidget *actionControls = nullptr;
         QWidget *rightColumn = nullptr;
-        LabelButton *archiveToggle = nullptr;
-        LabelButton *messagesToggle = nullptr;
         QTabWidget *contentTabs = nullptr;
         QWidget *messagesPage = nullptr;
-        QWidget *archivePanel = nullptr;
         QLabel *messagesHeading = nullptr;
         LabelButton *historyButton = nullptr;
         PixmapButton *avatarButton = nullptr;

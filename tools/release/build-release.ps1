@@ -26,6 +26,24 @@ if (Test-Path $Out) { throw "Output folder already exists: $Out" }
 $versionHeader = Join-Path $PSScriptRoot '..\..\src\common\Mist1XVersion.hpp'
 $inSource = [regex]::Match((Get-Content $versionHeader -Raw), 'MIST1X_VERSION "([^"]+)"').Groups[1].Value
 if ($inSource -ne $Version) { throw "MIST1X_VERSION in src/common/Mist1XVersion.hpp is '$inSource', not '$Version'. Change it and rebuild first." }
+
+# Check the compiled EXE as well as the source version. A locally installed
+# personal build can share the version number and must never be packaged.
+$binaryEncoding = [Text.Encoding]::GetEncoding(28591)
+$binary = $binaryEncoding.GetString([IO.File]::ReadAllBytes((Resolve-Path -LiteralPath $Exe).Path))
+function Test-BinaryMarker([string] $Marker) {
+    $utf16 = $binaryEncoding.GetString([Text.Encoding]::Unicode.GetBytes($Marker))
+    return $binary.Contains($Marker) -or $binary.Contains($utf16)
+}
+if (-not (Test-BinaryMarker "ChatterinoByMist1X/$Version")) {
+    throw "The executable does not report version $Version to the update service."
+}
+foreach ($marker in @('archive-bridge.json', 'archive-card', '/archive/socketName',
+                     'ArchiveBanPopup', 'UsercardArchiveToggle', 'panel-control.txt')) {
+    if (Test-BinaryMarker $marker) {
+        throw "Personal integration marker in public executable: $marker"
+    }
+}
 New-Item -ItemType Directory -Force $staging, $dist | Out-Null
 
 # 1. Program: the built exe and the runtime it needs (allowlist).

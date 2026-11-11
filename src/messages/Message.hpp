@@ -122,6 +122,8 @@ struct Message {
         UniqueChat,
     };
     RoomMode roomMode = RoomMode::None;
+    /// A quiet event notice, not a highlighted subscription header.
+    bool giftNotice = false;
 
     ScrollbarHighlight getScrollBarHighlight() const;
     /// True when this message should hide the reward chrome and show the enlarged emote.

@@ -5,6 +5,7 @@
 #include "messages/layouts/MessageLayoutElement.hpp"
 
 #include "Application.hpp"
+#include "common/UiLanguage.hpp"
 #include "controllers/emotes/EmoteController.hpp"
 #include "messages/Emote.hpp"
 #include "messages/Image.hpp"
@@ -14,7 +15,6 @@
 #include "providers/seventv/SeventvPaints.hpp"
 #include "providers/twitch/ClipPreview.hpp"
 #include "providers/twitch/TwitchEmotes.hpp"
-#include "common/UiLanguage.hpp"
 #include "singletons/Fonts.hpp"
 #include "singletons/helper/GifTimer.hpp"
 #include "singletons/Settings.hpp"
@@ -1687,14 +1687,10 @@ void NoticeIconLayoutElement::paintIcon(QPainter &painter, Icon icon,
             break;
         case Icon::Deletion: {
             painter.drawLine(QPointF(2.8, 4.4), QPointF(13.2, 4.4));
-            painter.drawPolyline(QPolygonF{{6.3, 4.4},
-                                           {6.3, 2.6},
-                                           {9.7, 2.6},
-                                           {9.7, 4.4}});
-            painter.drawPolyline(QPolygonF{{4.3, 4.4},
-                                           {5.1, 13.6},
-                                           {10.9, 13.6},
-                                           {11.7, 4.4}});
+            painter.drawPolyline(
+                QPolygonF{{6.3, 4.4}, {6.3, 2.6}, {9.7, 2.6}, {9.7, 4.4}});
+            painter.drawPolyline(
+                QPolygonF{{4.3, 4.4}, {5.1, 13.6}, {10.9, 13.6}, {11.7, 4.4}});
             painter.drawLine(QPointF(7, 7), QPointF(7, 11.2));
             painter.drawLine(QPointF(9, 7), QPointF(9, 11.2));
             break;
@@ -1704,7 +1700,8 @@ void NoticeIconLayoutElement::paintIcon(QPainter &painter, Icon icon,
             for (int i = 0; i < 10; ++i)
             {
                 const qreal radius = i % 2 == 0 ? 6.6 : 2.8;
-                const qreal angle = std::numbers::pi / 5 * i - std::numbers::pi / 2;
+                const qreal angle =
+                    std::numbers::pi / 5 * i - std::numbers::pi / 2;
                 star << QPointF(8 + radius * std::cos(angle),
                                 8.6 + radius * std::sin(angle));
             }
@@ -1714,10 +1711,8 @@ void NoticeIconLayoutElement::paintIcon(QPainter &painter, Icon icon,
         case Icon::Slow:
             painter.drawLine(QPointF(4, 2.4), QPointF(12, 2.4));
             painter.drawLine(QPointF(4, 13.6), QPointF(12, 13.6));
-            painter.drawPolyline(
-                QPolygonF{{5.2, 2.4}, {8, 8}, {5.2, 13.6}});
-            painter.drawPolyline(
-                QPolygonF{{10.8, 2.4}, {8, 8}, {10.8, 13.6}});
+            painter.drawPolyline(QPolygonF{{5.2, 2.4}, {8, 8}, {5.2, 13.6}});
+            painter.drawPolyline(QPolygonF{{10.8, 2.4}, {8, 8}, {10.8, 13.6}});
             break;
         case Icon::Followers: {
             QPainterPath heart;
@@ -1748,6 +1743,13 @@ void NoticeIconLayoutElement::paintIcon(QPainter &painter, Icon icon,
         case Icon::Mail:
             painter.drawRoundedRect(QRectF(2.2, 3.8, 11.6, 8.6), 1.6, 1.6);
             painter.drawPolyline(QPolygonF{{2.8, 4.6}, {8, 8.6}, {13.2, 4.6}});
+            break;
+        case Icon::Gift:
+            painter.drawRoundedRect(QRectF(3, 7, 10, 7), 0.7, 0.7);
+            painter.drawRect(QRectF(2, 5, 12, 3));
+            painter.drawLine(QPointF(8, 5), QPointF(8, 14));
+            painter.drawEllipse(QRectF(4, 1.5, 4, 3.5));
+            painter.drawEllipse(QRectF(8, 1.5, 4, 3.5));
             break;
     }
     painter.restore();
@@ -1811,8 +1813,8 @@ void WhisperReplyLayoutElement::paint(QPainter &painter,
     painter.drawRoundedRect(button.adjusted(0.5, 0.5, -0.5, -0.5),
                             5 * this->scale_, 5 * this->scale_);
     painter.setPen(accent.lighter(115));
-    painter.setFont(
-        getApp()->getFonts()->getFont(FontStyle::ChatMediumSmall, this->scale_));
+    painter.setFont(getApp()->getFonts()->getFont(FontStyle::ChatMediumSmall,
+                                                  this->scale_));
     painter.drawText(button, Qt::AlignCenter, this->text_);
     painter.restore();
 }

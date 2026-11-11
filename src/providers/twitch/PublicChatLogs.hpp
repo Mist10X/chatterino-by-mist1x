@@ -18,15 +18,14 @@ namespace chatterino::publiclogs {
 
 /// A person's older messages in one channel, read straight from the public
 /// rustlog mirrors (logs.zonian.dev, logs.twitchmetrics.xyz, logs.spanix.team)
-/// by Twitch user ID, so the usercard needs no Archive for them.
+/// by Twitch user ID.
 ///
-/// Politeness, as in the Archive: one request at a time per service and 1.5 s
+/// Requests run one at a time per service with 1.5 s
 /// between two of them; a 429/503 holds that service back; a person or channel
 /// that opted out of logging (HTTP 403) is not asked again this session, on any
 /// mirror.
 ///
-/// The answer has the shape of the Archive's "history" page, so the usercard
-/// reads both alike: {identity:{user_id,user}, channel, source:"public_logs",
+/// The page has fields {identity:{user_id,user}, channel, source:"public_logs",
 /// status: found|empty|refused|error, rows:[{id,user,user_id,channel,time_utc,
 /// text,display_name,color,badges,first_msg}], more, next_cursor, error}.
 using PageCallback = std::function<void(const QJsonObject &page)>;

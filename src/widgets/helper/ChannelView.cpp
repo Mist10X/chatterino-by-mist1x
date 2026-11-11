@@ -57,7 +57,6 @@
 #include "widgets/dialogs/ReplyThreadPopup.hpp"
 #include "widgets/dialogs/SettingsDialog.hpp"
 #include "widgets/dialogs/UserInfoPopup.hpp"
-#include "widgets/helper/ArchiveActions.hpp"
 #include "widgets/helper/ScrollbarHighlight.hpp"
 #include "widgets/helper/SearchPopup.hpp"
 #include "widgets/Notebook.hpp"
@@ -2073,27 +2072,8 @@ void ChannelView::setChannel(const ChannelPtr &underlyingChannel)
     this->channel_ = std::make_unique<Channel>(underlyingChannel->getName(),
                                                underlyingChannel->getType());
 
-    if (this->context_ == Context::None && underlyingChannel->archiveHistoryManaged())
-    {
-        const auto limit = underlyingChannel->messageLimit();
-        this->messages_.setLimit(limit);
-        this->scrollBar_->setMessageLimit(limit);
-        this->channel_->setMessageLimit(limit);
-        this->channelConnections_.managedConnect(underlyingChannel->messageLimitChanged,
-            [this, weak = std::weak_ptr<Channel>(underlyingChannel)] {
-                if (auto source = weak.lock())
-                {
-                    this->clearSelection();
-                    this->setChannel(source);
-                }
-            });
-    }
-
-    else
-    {
-        this->messages_.setLimit(this->defaultMessageLimit_);
-        this->scrollBar_->setMessageLimit(this->defaultMessageLimit_);
-    }
+    this->messages_.setLimit(this->defaultMessageLimit_);
+    this->scrollBar_->setMessageLimit(this->defaultMessageLimit_);
 
     //
     // Proxy channel connections
@@ -4077,13 +4057,6 @@ void ChannelView::addMessageContextMenuItems(QMenu *menu,
     });
 
     auto contextMessage = layout->getMessagePtr();
-    if (contextMessage->platform == MessagePlatform::AnyOrTwitch &&
-        !contextMessage->loginName.isEmpty())
-    {
-        addArchiveActions(menu, this, contextMessage->userID,
-                          contextMessage->loginName,
-                          contextMessage->channelName, contextMessage->id);
-    }
     if (contextMessage->translatedFrom != nullptr)
     {
         menu->addAction(uiText("Show &original"), [this, contextMessage] {

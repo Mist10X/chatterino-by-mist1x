@@ -139,9 +139,6 @@ public:
     // A zero limit preserves this session's full chat in memory.
     void setMessageLimit(size_t limit);
     size_t messageLimit() const;
-    bool archiveHistoryManaged() const;
-    void followMessageLimit(pajlada::Signals::NoArgSignal &changed,
-                            std::function<size_t()> policy);
     pajlada::Signals::NoArgSignal messageLimitChanged;
 
     MessagePtr findMessageByID(QStringView messageID) final;
@@ -202,8 +199,6 @@ private:
     /// intended to prevent all infinite recursion. That will still crash the
     /// program.
     uint8_t recursionCount_ = 0;
-    bool archiveHistoryManaged_ = false;
-    pajlada::Signals::SignalHolder historyPolicyConnections_;
 
     QTimer clearCompletionModelTimer_;
     bool watching_;

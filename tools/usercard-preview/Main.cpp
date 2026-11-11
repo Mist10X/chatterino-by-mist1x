@@ -43,7 +43,6 @@
 #ifdef LEAFYRINO_BASELINE_USERCARD_PREVIEW
 #    include "BaselineUserInfoPopup.hpp"
 #else
-#    include "HistoryChecks.hpp"
 #    include "widgets/dialogs/UserInfoPopup.hpp"
 #endif
 #include "widgets/helper/ChannelView.hpp"
@@ -493,12 +492,6 @@ QJsonObject nativeHitTests(PreviewPopup &popup)
                                       MAKELPARAM(nativePoint.x, nativePoint.y));
         result[name] = int(hit);
     };
-    if (auto *toggle =
-            popup.findChild<QWidget *>(QStringLiteral("UsercardArchiveToggle")))
-    {
-        checkPoint(QStringLiteral("archive-link"), toggle,
-                   toggle->rect().center());
-    }
     checkPoint(QStringLiteral("content-page"), tabs->currentWidget(),
                tabs->currentWidget()->rect().center());
     checkPoint(QStringLiteral("profile-viewport"), profile->viewport(),
@@ -598,12 +591,6 @@ int main(int argc, char **argv)
          QStringLiteral("a, b, empty, or long"),
          QStringLiteral("case"),
          QStringLiteral("a")},
-        {{QStringLiteral("archive-socket")},
-         QStringLiteral("Explicit synthetic local socket"),
-         QStringLiteral("socket")},
-        {{QStringLiteral("archive-dataset")},
-         QStringLiteral("Expected synthetic dataset"),
-         QStringLiteral("dataset")},
         {{QStringLiteral("width")},
          QStringLiteral("Card width in logical pixels"),
          QStringLiteral("width"),
@@ -656,14 +643,9 @@ int main(int argc, char **argv)
         {{QStringLiteral("viewer-counts-live")},
          QStringLiteral("Real viewer counts for logins a,b,c (network!)"),
          QStringLiteral("logins")},
-        {{QStringLiteral("show-archive")},
-         QStringLiteral("Open the Archive page before the screenshot")},
         {{QStringLiteral("render-hidden")},
          QStringLiteral("Render with the native platform without showing "
                         "fixture windows")},
-        {{QStringLiteral("history-checks")},
-         QStringLiteral("Exercise actual history widgets against a "
-                        "process-owned synthetic local server")},
         {{QStringLiteral("scripted-checks")},
          QStringLiteral(
              "Exercise A-B-A, empty/long and responsive actual widgets")},
@@ -671,9 +653,6 @@ int main(int argc, char **argv)
          QStringLiteral("Use the actual auto-closing frameless popup variant")},
         {{QStringLiteral("native-hit-test-checks")},
          QStringLiteral("Query only this synthetic popup's Windows hit tests")},
-        {{QStringLiteral("pending-shutdown")},
-         QStringLiteral("Use a private silent local fixture to test shutdown "
-                        "during a pending request")},
         {{QStringLiteral("quit-after")},
          QStringLiteral("Exit the test copy after milliseconds"),
          QStringLiteral("milliseconds")},
@@ -871,68 +850,6 @@ int main(int argc, char **argv)
         }
         return pages.isEmpty() ? 34 : 0;
     }
-    auto socket = parser.value(QStringLiteral("archive-socket"));
-    const auto dataset = parser.value(QStringLiteral("archive-dataset"));
-    const bool historyChecks = parser.isSet(QStringLiteral("history-checks"));
-#ifndef LEAFYRINO_BASELINE_USERCARD_PREVIEW
-    std::unique_ptr<preview::HistoryFixtureServer> historyServer;
-    if (historyChecks)
-    {
-        if (parser.isSet(QStringLiteral("pending-shutdown")))
-        {
-            return 26;
-        }
-        historyServer = std::make_unique<preview::HistoryFixtureServer>();
-        if (!historyServer->listening())
-        {
-            return 27;
-        }
-        socket = historyServer->socketName();
-    }
-#else
-    if (historyChecks)
-    {
-        return 26;
-    }
-#endif
-    std::unique_ptr<QLocalServer> pendingServer;
-    if (parser.isSet(QStringLiteral("pending-shutdown")))
-    {
-        socket = QStringLiteral("LeafyrinoArchive-test-pending-%1")
-                     .arg(QCoreApplication::applicationPid());
-        pendingServer = std::make_unique<QLocalServer>();
-        pendingServer->setSocketOptions(QLocalServer::UserAccessOption);
-        if (!pendingServer->listen(socket))
-        {
-            return 25;
-        }
-        QObject::connect(
-            pendingServer.get(), &QLocalServer::newConnection,
-            pendingServer.get(), [server = pendingServer.get()] {
-                while (auto *connection = server->nextPendingConnection())
-                {
-                    // An intentionally silent, process-owned local endpoint. No
-                    // real Archive service or TCP connection is involved.
-                    connection->setParent(server);
-                    QObject::connect(connection, &QLocalSocket::disconnected,
-                                     connection, &QObject::deleteLater);
-                }
-            });
-    }
-    if (!socket.isEmpty() &&
-        (!socket.startsWith(QStringLiteral("LeafyrinoArchive-test-")) ||
-         (!dataset.isEmpty() &&
-          dataset != QStringLiteral("leafyrino-card-demo-v1"))))
-    {
-        return 24;
-    }
-    // Empty endpoint means unavailable; it must never default to the real
-    // Archive service in this fixture executable.
-    QStringSetting("/archive/socketName") =
-        socket.isEmpty() ? QStringLiteral("LeafyrinoArchive-test-unavailable")
-                         : socket;
-    QStringSetting("/archive/datasetId") =
-        dataset.isEmpty() ? QStringLiteral("leafyrino-card-demo-v1") : dataset;
     auto splitOwner = std::make_unique<Split>(nullptr);
     auto &split = *splitOwner;
     if (parser.isSet(QStringLiteral("toast-demo")))
@@ -1012,37 +929,6 @@ int main(int argc, char **argv)
     // still supplies the real ChannelView context, but cannot own a visible
     // transient window reliably on Windows.
     popup.setParent(&controls, popup.windowFlags());
-#ifndef LEAFYRINO_BASELINE_USERCARD_PREVIEW
-    if (auto *messagesView = popup.findChild<ChannelView *>())
-    {
-        // Exercise the production message-menu builder, but the preview may
-        // only navigate to its explicit synthetic local Archive endpoint.
-        messagesView->setContextMenuPolicy(Qt::DefaultContextMenu);
-        std::ignore = messagesView->messageMenuCreated.connect(
-            [](QMenu *menu, const MessageLayoutElement *) {
-                auto restrictToArchive = [menu] {
-                    for (auto *action : menu->actions())
-                    {
-                        const bool archive =
-                            action->menu() &&
-                            action->menu()->title() == uiText(QStringLiteral("Архив"));
-                        if (!archive)
-                        {
-                            action->setEnabled(false);
-                        }
-                    }
-                };
-                restrictToArchive();
-                // The normal WindowManager hook runs after this signal. Apply
-                // the same restriction after all builder hooks have finished.
-                QObject::connect(menu, &QMenu::aboutToShow, menu,
-                                 restrictToArchive);
-                std::fputs("offline preview: production message menu built; "
-                           "only Archive enabled\n",
-                           stderr);
-            });
-    }
-#endif
     // The popup normally owns itself after close. This fixture owns it on the
     // stack so that the mock application always outlives all of its widgets.
     popup.setAttribute(Qt::WA_DeleteOnClose, false);
@@ -1090,7 +976,7 @@ int main(int argc, char **argv)
     const auto report = parser.value(QStringLiteral("report"));
     QJsonArray checks;
     bool checksPassed = true;
-    if (parser.isSet(QStringLiteral("scripted-checks")) && !historyChecks)
+    if (parser.isSet(QStringLiteral("scripted-checks")))
     {
         QTimer::singleShot(400, &popup, [&] {
             auto check = [&](const QString &name, bool ok) {
@@ -1410,28 +1296,7 @@ int main(int argc, char **argv)
                     tabs && profile && tabs->hasMouseTracking() &&
                         profile->hasMouseTracking() &&
                         popup.windowFlags().testFlag(Qt::FramelessWindowHint));
-                bool selected = false;
-                auto *toggle = popup.findChild<QWidget *>(
-                    QStringLiteral("UsercardArchiveToggle"));
-                if (tabs && tabs->count() > 1 && toggle)
-                {
-                    const auto point = toggle->rect().center();
-                    const auto global = toggle->mapToGlobal(point);
-                    QMouseEvent press(QEvent::MouseButtonPress, QPointF(point),
-                                      QPointF(global), Qt::LeftButton,
-                                      Qt::LeftButton, Qt::NoModifier);
-                    QMouseEvent release(QEvent::MouseButtonRelease,
-                                        QPointF(point), QPointF(global),
-                                        Qt::LeftButton, Qt::NoButton,
-                                        Qt::NoModifier);
-                    QCoreApplication::sendEvent(toggle, &press);
-                    QCoreApplication::sendEvent(toggle, &release);
-                    selected = tabs->currentIndex() == 1;
-                    tabs->setCurrentIndex(0);
-                }
-                check(QStringLiteral(
-                          "header Archive link mouse events select Archive"),
-                      selected);
+
             }
             check(QStringLiteral("no external network manager thread"),
                   NetworkManager::workerThread == nullptr);
@@ -1480,16 +1345,6 @@ int main(int argc, char **argv)
                 }
             });
         }
-        if (parser.isSet(QStringLiteral("show-archive")))
-        {
-            QTimer::singleShot(450, &popup, [&] {
-                if (auto *tabs = popup.findChild<QTabWidget *>(
-                        QStringLiteral("UsercardContent")))
-                {
-                    tabs->setCurrentIndex(tabs->count() - 1);
-                }
-            });
-        }
         QTimer::singleShot(650, &popup, [&, screenshot] {
             const bool saved = popup.grab().save(screenshot, "PNG");
             checksPassed &= saved;
@@ -1499,47 +1354,13 @@ int main(int argc, char **argv)
                             {QStringLiteral("ok"), saved}});
         });
     }
-#ifndef LEAFYRINO_BASELINE_USERCARD_PREVIEW
-    if (historyChecks)
-    {
-        QTimer::singleShot(400, &popup, [&] {
-            preview::runHistoryChecks(
-                popup, split, *historyServer, fixture,
-                [&](const QString &name, bool ok) {
-                    checksPassed &= ok;
-                    checks.append(QJsonObject{{QStringLiteral("name"), name},
-                                              {QStringLiteral("ok"), ok}});
-                },
-                [&] {
-                    if (!report.isEmpty())
-                    {
-                        checksPassed &=
-                            writeReport(report, app, current, popup, checks);
-                    }
-                    qapp.exit(checksPassed ? 0 : 30);
-                });
-        });
-        QTimer::singleShot(20000, &qapp, [&] {
-            checksPassed = false;
-            checks.append(
-                QJsonObject{{QStringLiteral("name"),
-                             QStringLiteral("history checks watchdog")},
-                            {QStringLiteral("ok"), false}});
-            if (!report.isEmpty())
-            {
-                writeReport(report, app, current, popup, checks);
-            }
-            qapp.exit(31);
-        });
-    }
-#endif
-    if (!report.isEmpty() && !historyChecks)
+    if (!report.isEmpty())
     {
         QTimer::singleShot(650, &popup, [&] {
             writeReport(report, app, current, popup, checks);
         });
     }
-    if (parser.isSet(QStringLiteral("quit-after")) && !historyChecks)
+    if (parser.isSet(QStringLiteral("quit-after")))
     {
         QTimer::singleShot(
             std::clamp(parser.value(QStringLiteral("quit-after")).toInt(), 1000,
@@ -1567,10 +1388,6 @@ int main(int argc, char **argv)
     std::fputs("offline preview: controls released\n", stderr);
     splitOwner.reset();
     std::fputs("offline preview: split released\n", stderr);
-    pendingServer.reset();
-#ifndef LEAFYRINO_BASELINE_USERCARD_PREVIEW
-    historyServer.reset();
-#endif
     // The real app uses the same final deferred-delete drain. Keep the mock
     // controllers alive until all of the preview widgets have been released.
     for (int i = 0; i < 16; ++i)

@@ -6,7 +6,6 @@
 #include "widgets/settingspages/GeneralPage.hpp"
 #include "RunGui.hpp"
 #include "widgets/dialogs/WelcomeDialog.hpp"
-#include "widgets/helper/ArchiveActions.hpp"
 #include "widgets/helper/UpdateBanner.hpp"
 #include "singletons/Updates.hpp"
 
@@ -1813,9 +1812,7 @@ void GeneralPage::initLayout(GeneralPageView &layout)
                                 .max = 100000,
                                 .singleStep = 100,
                             })
-        ->setTooltip(archiveConnected()
-                         ? uiText("When automatic chat cleanup is enabled in Archive, all chats grow until its hourly cleanup. Selected channels are exempt. Saved Archive data is not deleted.")
-                         : uiText("How many messages a chat keeps; older ones are removed from the chat."))
+        ->setTooltip(uiText("How many messages a chat keeps; older ones are removed from the chat."))
         ->addTo(layout);
 
     SettingWidget::intInput(uiText("Usercard scrollback limit (requires restart)"),

@@ -2,8 +2,6 @@
 #include "widgets/Window.hpp"
 
 #include "widgets/buttons/InitUpdateButton.hpp"
-#include "singletons/InstallCounter.hpp"
-#include "widgets/helper/ArchiveActions.hpp"
 #include "widgets/dialogs/WelcomeDialog.hpp"
 #include "widgets/helper/UpdateBanner.hpp"
 
@@ -31,10 +29,7 @@
 #include "widgets/buttons/TitlebarButton.hpp"
 #include "widgets/dialogs/SettingsDialog.hpp"
 #include "widgets/dialogs/switcher/QuickSwitcherPopup.hpp"
-#include "widgets/dialogs/Mist1XUsersDialog.hpp"
 #include "widgets/dialogs/UpdateDialog.hpp"
-#include "singletons/InstallCounter.hpp"
-#include "widgets/helper/ArchiveActions.hpp"
 #include "widgets/dialogs/WelcomeDialog.hpp"
 #include "widgets/dialogs/WhatsNewDialog.hpp"
 #include "widgets/helper/NotebookTab.hpp"
@@ -53,7 +48,6 @@
 
 #include <QApplication>
 #include <QTimer>
-#include <QPointer>
 #include <QCloseEvent>
 #include <QDesktopServices>
 #include <QHeaderView>
@@ -75,6 +69,10 @@ Window::Window(WindowType type, QWidget *parent)
     this->addCustomTitlebarButtons();
     this->addShortcuts();
     this->addLayout();
+    if (this->type_ == WindowType::Main)
+    {
+        initUpdateBanner(this, this->signalHolder_);
+    }
 
 #ifdef Q_OS_MACOS
     this->addMenuBar();
@@ -246,7 +244,6 @@ void Window::addCustomTitlebarButtons()
     // shown only while a newer Chatterino by Mist1X is out
     auto *update = this->addTitleBarButton<PixmapButton>([] {});
     initUpdateButton(*update, [] {}, this->signalHolder_);
-    initUpdateBanner(this, this->signalHolder_);
     if (!getApp()->getArgs().uiSnapshot && !getApp()->getArgs().dontSaveSettings)
     {
         QTimer::singleShot(1200, this, [this] {
@@ -263,38 +260,6 @@ void Window::addCustomTitlebarButtons()
     });
     this->userLabel_->setMinimumWidth(20 * this->scale());
 
-    // the owner's copy (the one with the Archive) shows how many people have
-    // installed this build
-    if (archiveConnected())
-    {
-        // a click lists who uses it (with the admin key), else the releases
-        auto *installs = this->addTitleBarLabel([this] {
-            if (Mist1XUsersDialog::available())
-            {
-                auto *dialog = new Mist1XUsersDialog(this);
-                dialog->setAttribute(Qt::WA_DeleteOnClose);
-                dialog->show();
-                return;
-            }
-            QDesktopServices::openUrl(QUrl(QStringLiteral(
-                "https://github.com/Mist10X/chatterino-by-mist1x/releases")));
-        });
-        installs->setToolTip(uiText("Installations of your build"));
-        QPointer<LabelButton> target = installs;
-        const auto refresh = [target] {
-            fetchInstallCount([target](int count) {
-                if (target && count >= 0)
-                {
-                    target->setText(QStringLiteral("👥 %1").arg(count));
-                }
-            });
-        };
-        installs->setText(QStringLiteral("👥 …"));
-        refresh();
-        auto *timer = new QTimer(this);
-        QObject::connect(timer, &QTimer::timeout, this, refresh);
-        timer->start(std::chrono::minutes(10));
-    }
     this->streamerModeTitlebarIcon_ =
         this->addTitleBarButton<PixmapButton>([this] {
             getApp()->getWindows()->showSettingsDialog(

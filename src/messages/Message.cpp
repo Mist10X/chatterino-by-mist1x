@@ -157,6 +157,7 @@ std::shared_ptr<Message> Message::clone() const
     cloned->platform = this->platform;
     cloned->clientDetection = this->clientDetection;
     cloned->roomMode = this->roomMode;
+    cloned->giftNotice = this->giftNotice;
     std::ranges::transform(this->elements, std::back_inserter(cloned->elements),
                            [](const auto &element) {
                                return element->clone();

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Offline real-widget verification. Never loads accounts or starts providers.
 #include "common/UiLanguage.hpp"
-#include "common/ArchiveChatPolicy.hpp"
 #include "messages/LimitedQueue.hpp"
 #include "messages/MessageBuilder.hpp"
 #include "widgets/helper/ChannelView.hpp"
@@ -184,24 +183,6 @@ int main(int argc, char **argv)
     progress("mock application");
     OfflineApp app(fontStartup);
     progress("chat retention checks");
-    const QByteArray retentionConfig("HT2\nrevision\ttest\nauto_trim\ton\nauto_trim_keep\t1000\ntrim_preserve_count\t2\ntrim_preserve\tmorphe_ya\ntrim_preserve\tdangerlyoha\nEND\n");
-    auto retention = ArchiveChatPolicy::parse(retentionConfig);
-    check(retention.has_value(), "retention complete Archive policy parsed");
-    check(retention && retention->limitFor("MORPHE_YA", 500)==0 && retention->limitFor("other", 500)==0, "retention all chats grow between scheduled cleanups");
-    auto disabledConfig = retentionConfig; disabledConfig.replace("auto_trim\ton", "auto_trim\toff");
-    auto disabled = ArchiveChatPolicy::parse(disabledConfig);
-    check(disabled && disabled->limitFor("morphe_ya", 500)==500, "retention disabled restores client setting");
-    for (const auto &broken : {QByteArray("HT2\nauto_trim\ton\nEND\n"), retentionConfig.left(retentionConfig.size()-3), retentionConfig+"junk", QByteArray(150001, 'x')})
-        check(!ArchiveChatPolicy::parse(broken), "retention rejects incomplete or oversized configuration");
-    for (const auto &replacement : {QByteArray("0"), QByteArray("1000001"), QByteArray("-1"), QByteArray("bad")})
-    {
-        auto invalid = retentionConfig; invalid.replace("auto_trim_keep\t1000", "auto_trim_keep\t"+replacement);
-        check(!ArchiveChatPolicy::parse(invalid), "retention rejects invalid count "+replacement);
-    }
-    auto mismatch=retentionConfig; mismatch.replace("trim_preserve_count\t2", "trim_preserve_count\t1");
-    check(!ArchiveChatPolicy::parse(mismatch), "retention rejects incomplete exception list");
-    auto empty=retentionConfig; empty.replace("trim_preserve_count\t2\ntrim_preserve\tmorphe_ya\ntrim_preserve\tdangerlyoha", "trim_preserve_count\t0");
-    check(ArchiveChatPolicy::parse(empty)->preserved.empty(), "retention accepts explicitly empty exceptions");
     LimitedQueue<int> bounded(1000);
     for (int i=0;i<5010;++i) bounded.pushBack(i);
     check(bounded.size()==1000 && bounded.first()==4010 && bounded.last()==5009, "retention ordinary queue retains newest 1000");
@@ -220,52 +201,6 @@ int main(int argc, char **argv)
     LimitedQueue<int> front(0); int remaining=3000;
     front.pushFrontWhile([&]() { return remaining ? remaining-- : 0; });
     check(front.size()==3000 && front.first()==1 && front.last()==3000, "retention preserved merge grows on demand");
-    {
-        auto channel=std::make_shared<Channel>("morphe_ya", Channel::Type::Twitch);
-        pajlada::Signals::NoArgSignal changed;
-        size_t limit=0;
-        channel->followMessageLimit(changed, [&] { return limit; });
-        ChannelView view(nullptr, ChannelView::Context::None, 1000);
-        ChannelView second(nullptr, ChannelView::Context::None, 1000);
-        view.setChannel(channel); second.setChannel(channel);
-        for(int i=0;i<3200;++i)channel->addMessage(makeSystemMessage(QString::number(i)),MessageContext::Repost);
-        check(channel->countMessages()==3200 && view.getMessagesSnapshot().size()==3200 && second.getMessagesSnapshot().size()==3200,"retention source, two views and proxy buffers preserve all 3200");
-        check(view.getScrollBar().getHighlights().size()==3200,"retention scrollbar markers grow with preserved messages");
-        limit=1000; changed.invoke();
-        check(channel->countMessages()==1000 && view.getMessagesSnapshot().size()==1000 && second.getMessagesSnapshot().size()==1000,"retention live policy reduction updates all views");
-        check(view.getScrollBar().getHighlights().size()==1000,"retention scrollbar shrinks with views");
-        check(channel->getMessageSnapshot().front()->messageText=="2200","retention live reduction drops oldest only");
-        limit=0; changed.invoke();
-        for(int i=3200;i<4400;++i)channel->addMessage(makeSystemMessage(QString::number(i)),MessageContext::Repost);
-        check(channel->countMessages()==2200 && view.getMessagesSnapshot().size()==2200,"retention adding exception takes effect without restart");
-        view.setChannel(std::make_shared<Channel>("special",Channel::Type::Misc));
-        check(view.getMessagesSnapshot().empty(),"retention switching away clears prior channel view");
-        channel->clearMessages();
-        check(second.getMessagesSnapshot().empty() && channel->countMessages()==0,"retention explicit chat clear remains functional");
-        second.setChannel(std::make_shared<Channel>("other",Channel::Type::Misc));
-        channel.reset(); changed.invoke();
-        check(true,"retention destroyed channel disconnects policy callback");
-    }
-    {
-        const auto originalPlugins = app.paths_.pluginsDirectory;
-        app.paths_.pluginsDirectory = output + "/retention-reader-fixture";
-        QDir().mkpath(app.paths_.pluginsDirectory + "/history-tools/data");
-        const auto path=app.paths_.pluginsDirectory+"/history-tools/data/panel-control.txt";
-        auto writePolicy=[&](const QByteArray &data) { QFile file(path);check(file.open(QIODevice::WriteOnly|QIODevice::Truncate),"retention synthetic policy file opened");file.write(data); };
-        auto poll=[&] { QEventLoop loop;QTimer::singleShot(2400,&loop,&QEventLoop::quit);loop.exec(); };
-        writePolicy(retentionConfig);
-        auto actual=std::make_shared<Channel>("ordinary",Channel::Type::Twitch);
-        followArchiveChatPolicy(*actual);
-        check(actual->messageLimit()==0,"retention real reader starts unbounded on ordinary channel");
-        writePolicy(retentionConfig.left(24)); poll();
-        check(actual->messageLimit()==0,"retention reader keeps last valid policy during partial write");
-        writePolicy(disabledConfig); poll();
-        check(actual->messageLimit()==size_t(app.settings.scrollbackSplitLimit.getValue()),"retention reader applies disabling from local file");
-        writePolicy(retentionConfig); poll();
-        check(actual->messageLimit()==0,"retention reader applies enabling without application restart");
-        actual.reset();
-        app.paths_.pluginsDirectory=originalPlugins;
-    }
     progress("font state");
     const auto originalFont=qt.font();
     const auto originalChatFont=app.settings.chatFontFamily.getValue();
@@ -409,7 +344,6 @@ int main(int argc, char **argv)
         }
         progress("basic checks "+language);
         check(uiText("Settings")==(language=="ru"?QString::fromUtf8("Настройки"):QString("Settings")),language+" settings");
-        check(uiText(QString::fromUtf8("Архив"))==(language=="ru"?QString::fromUtf8("Архив"):QString("Archive")),language+" existing usercard strings");
         check(qt.font()==originalFont,language+" application font unchanged");
         check(QLocale().name()==originalLocale,language+" data locale unchanged");
         const auto nickname=QStringLiteral("General");

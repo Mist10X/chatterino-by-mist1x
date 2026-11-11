@@ -14,8 +14,8 @@
 #include "providers/colors/ColorProvider.hpp"
 #include "singletons/Resources.hpp"
 #include "singletons/Settings.hpp"
-#include "singletons/Theme.hpp"
 #include "singletons/StreamerMode.hpp"
+#include "singletons/Theme.hpp"
 #include "singletons/WindowManager.hpp"
 #include "util/DebugCount.hpp"
 
@@ -44,11 +44,16 @@ enum class PunishmentKind {
     Followers,
     EmoteOnly,
     UniqueChat,
+    Gift,
 };
 
 /// Punishments and chat mode changes: a soft box and an icon.
 PunishmentKind punishmentKind(const Message &message)
 {
+    if (message.giftNotice)
+    {
+        return PunishmentKind::Gift;
+    }
     switch (message.roomMode)
     {
         case Message::RoomMode::Subscribers:
@@ -106,6 +111,8 @@ QColor punishmentColor(PunishmentKind kind)
         case PunishmentKind::UniqueChat:
             // chat modes: a muted purple
             return {157, 118, 230};
+        case PunishmentKind::Gift:
+            return {145, 132, 168};
         case PunishmentKind::None:
             break;
     }
@@ -114,13 +121,17 @@ QColor punishmentColor(PunishmentKind kind)
 
 /// The icon in front of a notice; none in front of the deleted chat
 /// message itself (AutoMod), only in front of notices.
-std::optional<NoticeIconLayoutElement::Icon> noticeIcon(
-    const Message &message, PunishmentKind kind)
+std::optional<NoticeIconLayoutElement::Icon> noticeIcon(const Message &message,
+                                                        PunishmentKind kind)
 {
     if (kind == PunishmentKind::None ||
         message.flags.has(MessageFlag::AutoModOffendingMessage))
     {
         return std::nullopt;
+    }
+    if (kind == PunishmentKind::Gift)
+    {
+        return NoticeIconLayoutElement::Icon::Gift;
     }
     return NoticeIconLayoutElement::Icon(int(kind) - 1);
 }
@@ -371,6 +382,7 @@ void MessageLayout::actuallyLayout(const MessageLayoutContext &ctx)
         }
 
         element->addToContainer(this->container_, ctx);
+
     }
 
     if (this->height_ != this->container_.getHeight())
@@ -380,7 +392,6 @@ void MessageLayout::actuallyLayout(const MessageLayoutContext &ctx)
 
     this->container_.endLayout();
     this->height_ = this->container_.getHeight();
-
     this->flags.unset(MessageLayoutFlag::Collapsed);
     if (this->container_.isCollapsed())
     {
@@ -577,6 +588,7 @@ void MessageLayout::updateBuffer(QPixmap *buffer,
                 ctx.preferences.enableColoredAnnouncementHighlight)));
     }
     else if (this->message_->flags.has(MessageFlag::Subscription) &&
+             !this->message_->giftNotice &&
              ctx.preferences.enableSubHighlight)
     {
         backgroundColor = blendColors(
@@ -631,7 +643,8 @@ void MessageLayout::updateBuffer(QPixmap *buffer,
     {
         backgroundColor = blendColors(backgroundColor, *clientColor);
     }
-    else if (this->message_->flags.has(MessageFlag::UncategorizedNotification))
+    else if (this->message_->flags.has(MessageFlag::UncategorizedNotification) &&
+             !this->message_->giftNotice)
     {
         // TODO: Give this a better/its own color :-)
         backgroundColor = blendColors(
@@ -680,11 +693,11 @@ void MessageLayout::updateBuffer(QPixmap *buffer,
 
     if (getSettings()->clientDetectionIcon && clientDetectionIcon.has_value())
     {
-        float size = 16 * this->scale_;
-        float right =
-            float(buffer->rect().right()) - (SCROLLBAR_PADDING * this->scale_);
-        int left = int(right - size);
-        int top = int((float(buffer->height()) - size * this->scale_) / 2);
+        const float size = 16 * this->scale_;
+        const float right = float(buffer->rect().right()) -
+                            (SCROLLBAR_PADDING * this->scale_);
+        const int left = int(right - size);
+        const int top = int((float(buffer->height()) - size * this->scale_) / 2);
 
         painter.drawPixmap(QRect(left, top, int(size), int(size)),
                            clientDetectionIcon.value());
@@ -698,8 +711,8 @@ void MessageLayout::updateBuffer(QPixmap *buffer,
         auto box = this->container_.getContentBounds().adjusted(-5 * s, -2 * s,
                                                                 5 * s, 2 * s);
         box.setLeft(std::max(box.left(), qreal(s)));
-        box.setRight(std::max(box.right(),
-                              this->container_.getWidth() - 4 * s));
+        box.setRight(
+            std::max(box.right(), this->container_.getWidth() - 4 * s));
         box.setTop(std::max(box.top(), qreal(0.5)));
         box.setBottom(
             std::min(box.bottom(), this->container_.getHeight() - 0.5));
@@ -707,8 +720,8 @@ void MessageLayout::updateBuffer(QPixmap *buffer,
                            getApp()->getThemes()->isLightTheme();
         painter.save();
         painter.setRenderHint(QPainter::Antialiasing);
-        painter.setPen(QPen(light ? QColor(0, 0, 0, 40) : QColor(255, 255, 255, 26),
-                            1.0));
+        painter.setPen(
+            QPen(light ? QColor(0, 0, 0, 40) : QColor(255, 255, 255, 26), 1.0));
         painter.setBrush(light ? QColor(120, 90, 200, 14)
                                : QColor(168, 132, 242, 16));
         painter.drawRoundedRect(box, 7 * s, 7 * s);
@@ -731,8 +744,8 @@ void MessageLayout::updateBuffer(QPixmap *buffer,
         {
             auto fill = punishmentColor(kind);
             auto edge = fill;
-            fill.setAlpha(26);
-            edge.setAlpha(90);
+            fill.setAlpha(kind == PunishmentKind::Gift ? 10 : 26);
+            edge.setAlpha(kind == PunishmentKind::Gift ? 35 : 90);
             const qreal radius = 4.0 * this->scale_;
             painter.save();
             painter.setRenderHint(QPainter::Antialiasing);

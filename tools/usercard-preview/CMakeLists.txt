@@ -38,16 +38,3 @@ if(EXISTS "${LEAFYRINO_USERCARD_BASELINE_DIR}/BaselineUserInfoPopup.cpp" AND
         RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin"
         RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/bin")
 endif()
-
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ArchiveWidgetTests.cpp")
-    add_executable(Leafyrino-archive-widget-tests ArchiveWidgetTests.cpp)
-    if(WIN32)
-        set_target_properties(Leafyrino-archive-widget-tests PROPERTIES WIN32_EXECUTABLE TRUE)
-    endif()
-    target_link_libraries(Leafyrino-archive-widget-tests PRIVATE chatterino-lib)
-    set_target_properties(Leafyrino-archive-widget-tests PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-        RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin"
-        RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin"
-        RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/bin")
-endif()

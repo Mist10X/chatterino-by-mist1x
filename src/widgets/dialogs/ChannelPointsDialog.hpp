@@ -49,6 +49,7 @@ protected:
     void showEvent(QShowEvent *event) override;
 
 private:
+    friend class ChannelPointsDialogTestAccess;
     enum class View {
         Rewards,
         RewardDetail,
@@ -97,6 +98,7 @@ private:
 
     QVBoxLayout *mainLayout_{};
     QWidget *headerWidget_{};
+    QPushButton *refreshRewardsButton_{};
     QPushButton *backButton_{};
     QLabel *headerTitleLabel_{};
     QLabel *headerSubtitleLabel_{};

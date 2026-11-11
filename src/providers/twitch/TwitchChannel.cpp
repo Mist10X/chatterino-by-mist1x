@@ -6,7 +6,6 @@
 #include "providers/twitch/TwitchChannel.hpp"
 
 #include "Application.hpp"
-#include "common/ArchiveChatPolicy.hpp"
 #include "common/Common.hpp"
 #include "common/network/NetworkRequest.hpp"
 #include "common/network/NetworkResult.hpp"  // IWYU pragma: keep
@@ -665,7 +664,6 @@ TwitchChannel::TwitchChannel(const QString &name, bool anonymous)
     , mod_(getApp()->getTwitch()->isModeratorIn(name))
     , nextSharedChatSessionProbe_(QDateTime::currentDateTime())
 {
-    followArchiveChatPolicy(*this);
     qCDebug(chatterinoTwitch) << "[TwitchChannel" << name << "] Opened";
 
     auto clearPersonalAuthState = [this](bool clearFollowingStatus) {

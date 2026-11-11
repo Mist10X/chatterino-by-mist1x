@@ -1,5 +1,6 @@
-#include "common/UiLanguage.hpp"
 #include "widgets/dialogs/ChannelPointsDialog.hpp"
+
+#include "common/UiLanguage.hpp"
 
 #if MOLTORINO_ENABLE_CHANNEL_POINT_REWARDS
 
@@ -49,7 +50,7 @@ namespace chatterino {
 
 namespace {
 
-constexpr QSize DEFAULT_DIALOG_SIZE(326, 402);
+constexpr QSize DEFAULT_DIALOG_SIZE(390, 510);
 constexpr int HEADER_SEPARATOR_HEIGHT = 8;
 constexpr float CONTENT_SCALE_MULTIPLIER = 1.08F;
 constexpr int REWARD_GRID_COLUMNS = 3;
@@ -179,7 +180,8 @@ QString rewardCostLabel(const GqlChannelPointReward &reward, bool compact)
 {
     const auto amount =
         compact ? compactPoints(reward.cost) : fullPoints(reward.cost);
-    return isBitsReward(reward) ? amount + uiText(QStringLiteral(" Bits")) : amount;
+    return isBitsReward(reward) ? amount + uiText(QStringLiteral(" Bits"))
+                                : amount;
 }
 
 QString friendlyGigantifyError(const QString &error)
@@ -600,6 +602,14 @@ public:
                 ? reward.title
                 : QStringLiteral("%1\n%2").arg(reward.title, reward.prompt));
         this->setFlat(true);
+        this->setAccessibleName(reward.title + QStringLiteral(" — ") +
+                                rewardCostLabel(reward, false));
+        if (!isBitsReward(reward) && balance >= 0 && balance < reward.cost)
+        {
+            this->setToolTip(this->toolTip() + '\n' +
+                             uiText("Need %1 more points")
+                                 .arg(fullPoints(reward.cost - balance)));
+        }
     }
 
     void setScale(float scale)
@@ -650,7 +660,12 @@ protected:
         QRect square(rect.left() + (rect.width() - squareSize) / 2, rect.top(),
                      squareSize, squareSize);
 
+        auto surface = getApp()->getThemes()->splits.input.background;
+        painter.setPen(QPen(getApp()->getThemes()->splits.header.border, 1));
+        painter.setBrush(surface);
+        painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), 7, 7);
         auto base = rewardColor(this->reward_);
+        base.setAlpha(unavailable ? 28 : 55);
         if (this->underMouse() && this->isEnabled())
         {
             base = base.lighter(108);
@@ -662,7 +677,7 @@ protected:
 
         painter.setPen(Qt::NoPen);
         painter.setBrush(base);
-        painter.drawRoundedRect(square.adjusted(0, 0, -1, -1), 2, 2);
+        painter.drawRoundedRect(square.adjusted(5, 5, -5, -1), 6, 6);
 
         const auto imageSize = squareSize * rewardImageSizeRatio(this->reward_);
         const QRectF imageRect(square.center().x() - imageSize / 2.0,
@@ -681,8 +696,8 @@ protected:
 
         if (unavailable)
         {
-            painter.setBrush(QColor(0, 0, 0, 120));
-            painter.drawRoundedRect(square.adjusted(0, 0, -1, -1), 2, 2);
+            painter.setBrush(QColor(0, 0, 0, 35));
+            painter.drawRoundedRect(square.adjusted(5, 5, -5, -1), 6, 6);
         }
 
         auto costFont = this->font();
@@ -710,7 +725,7 @@ protected:
         auto titleFont = this->font();
         titleFont.setBold(true);
         painter.setFont(titleFont);
-        auto titleColor = this->palette().color(QPalette::WindowText);
+        auto titleColor = getApp()->getThemes()->window.text;
         titleColor.setAlpha(unavailable ? 150 : 245);
         painter.setPen(titleColor);
 
@@ -986,13 +1001,22 @@ ChannelPointsDialog::ChannelPointsDialog(TwitchChannel *channel,
     headerTextLayout->addWidget(this->headerSubtitleLabel_);
     headerLayout->addLayout(headerTextLayout);
     headerLayout->addStretch(1);
+    this->refreshRewardsButton_ =
+        new QPushButton(uiText("Refresh"), this->headerWidget_);
+    this->refreshRewardsButton_->setObjectName("ChannelPointsUtilityButton");
+    QObject::connect(this->refreshRewardsButton_, &QPushButton::clicked, this,
+                     [this] {
+                         this->reloadRewards(false);
+                     });
+    headerLayout->addWidget(this->refreshRewardsButton_);
 
     if (this->channel_->hasModRights())
     {
-        auto *queueButton =
-            new QPushButton(uiText(QStringLiteral("Queue")), this->headerWidget_);
+        auto *queueButton = new QPushButton(uiText(QStringLiteral("Queue")),
+                                            this->headerWidget_);
         queueButton->setObjectName("ChannelPointsUtilityButton");
-        queueButton->setToolTip(uiText(QStringLiteral("Open the reward queue")));
+        queueButton->setToolTip(
+            uiText(QStringLiteral("Open the reward queue")));
         queueButton->setCursor(Qt::PointingHandCursor);
         QObject::connect(queueButton, &QPushButton::clicked, this, [this] {
             RewardQueueDialog::showDialog(this->channel_, this);
@@ -1056,6 +1080,10 @@ ChannelPointsDialog::ChannelPointsDialog(TwitchChannel *channel,
     this->channelPointsConnection_ =
         this->channel_->channelPointsChanged.connect([this] {
             this->refreshHeader();
+            if (this->view_ == View::Rewards)
+            {
+                this->rebuildContent();
+            }
         });
     getSettings()->enableGigantifyEmotes.connect(
         [this](bool enabled, auto) {
@@ -1182,6 +1210,9 @@ void ChannelPointsDialog::refreshHeader()
     this->headerSubtitleLabel_->setText(
         uiText(QStringLiteral("Bal: %1")).arg(fullPoints(balance)));
     this->backButton_->setVisible(this->view_ != View::Rewards);
+    this->refreshRewardsButton_->setVisible(this->view_ == View::Rewards);
+    this->refreshRewardsButton_->setEnabled(!this->rewardsLoading_ &&
+                                            !this->actionInFlight_);
 }
 
 void ChannelPointsDialog::refreshStyle()
@@ -1707,6 +1738,11 @@ void ChannelPointsDialog::rebuildRewards()
     }
     std::sort(visibleRewards.begin(), visibleRewards.end(),
               [](const auto &left, const auto &right) {
+                  // Bits and channel points are different currencies.
+                  if (isBitsReward(left) != isBitsReward(right))
+                  {
+                      return !isBitsReward(left);
+                  }
                   if (left.cost != right.cost)
                   {
                       return left.cost < right.cost;
@@ -1724,7 +1760,8 @@ void ChannelPointsDialog::rebuildRewards()
                     ? uiText(QStringLiteral("No rewards loaded yet."))
                     : uiText(QStringLiteral("No supported rewards found.")));
         }
-        auto *refresh = new QPushButton(uiText("Refresh"), this->contentWidget_);
+        auto *refresh =
+            new QPushButton(uiText("Refresh"), this->contentWidget_);
         refresh->setObjectName("ChannelPointsUtilityButton");
         refresh->setCursor(Qt::PointingHandCursor);
         QObject::connect(refresh, &QPushButton::clicked, this, [this] {
@@ -2213,8 +2250,8 @@ void ChannelPointsDialog::selectReward(const GqlChannelPointReward &reward)
         {
             if (!this->input_)
             {
-                this->setStatus(uiText("Open a chat input to redeem this reward."),
-                                true);
+                this->setStatus(
+                    uiText("Open a chat input to redeem this reward."), true);
                 return;
             }
             const auto token = this->authTokenOrMessage();
@@ -2227,8 +2264,9 @@ void ChannelPointsDialog::selectReward(const GqlChannelPointReward &reward)
             const auto weak = channel->weak_from_this();
             this->input_->showChannelPointRewardPrompt(
                 QStringLiteral("Redeem %1").arg(reward.title),
-                reward.prompt.isEmpty() ? uiText(QStringLiteral("Add a message"))
-                                        : reward.prompt,
+                reward.prompt.isEmpty()
+                    ? uiText(QStringLiteral("Add a message"))
+                    : reward.prompt,
                 true, [weak, channelId, reward, token](const QString &text) {
                     TwitchGql::redeemCustomReward(
                         channelId, reward, text, token,
@@ -2236,7 +2274,8 @@ void ChannelPointsDialog::selectReward(const GqlChannelPointReward &reward)
                          reward](const GqlChannelPointRedeemResult &result) {
                             applyChannelPointRedeemResult(
                                 weak, result,
-                                uiText(QStringLiteral("Redeemed %1")).arg(reward.title),
+                                uiText(QStringLiteral("Redeemed %1"))
+                                    .arg(reward.title),
                                 reward.cost);
                         },
                         [weak](const QString &error) {
@@ -2256,7 +2295,8 @@ void ChannelPointsDialog::selectReward(const GqlChannelPointReward &reward)
     {
         if (!this->input_)
         {
-            this->setStatus(uiText("Open a chat input to redeem this reward."), true);
+            this->setStatus(uiText("Open a chat input to redeem this reward."),
+                            true);
             return;
         }
         const auto token = this->authTokenOrMessage();
@@ -2268,7 +2308,8 @@ void ChannelPointsDialog::selectReward(const GqlChannelPointReward &reward)
         const auto channelId = this->redeemChannelId();
         const auto weak = channel->weak_from_this();
         const auto cost = reward.cost;
-        const auto successMessage = uiText(QStringLiteral("Sub-only message sent"));
+        const auto successMessage =
+            uiText(QStringLiteral("Sub-only message sent"));
         this->input_->showChannelPointRewardPrompt(
             reward.title, uiText(QStringLiteral("Send a message")), true,
             [weak, channelId, cost, token,
@@ -2293,7 +2334,8 @@ void ChannelPointsDialog::selectReward(const GqlChannelPointReward &reward)
     {
         if (!this->input_)
         {
-            this->setStatus(uiText("Open a chat input to redeem this reward."), true);
+            this->setStatus(uiText("Open a chat input to redeem this reward."),
+                            true);
             return;
         }
         const auto token = this->authTokenOrMessage();
@@ -2305,9 +2347,11 @@ void ChannelPointsDialog::selectReward(const GqlChannelPointReward &reward)
         const auto channelId = this->redeemChannelId();
         const auto weak = channel->weak_from_this();
         const auto cost = reward.cost;
-        const auto successMessage = uiText(QStringLiteral("Highlighted message sent"));
+        const auto successMessage =
+            uiText(QStringLiteral("Highlighted message sent"));
         this->input_->showChannelPointRewardPrompt(
-            reward.title, uiText(QStringLiteral("Send a highlighted message")), true,
+            reward.title, uiText(QStringLiteral("Send a highlighted message")),
+            true,
             [weak, channelId, cost, token,
              successMessage](const QString &text) {
                 auto success = [weak, successMessage](
@@ -2355,7 +2399,8 @@ void ChannelPointsDialog::selectReward(const GqlChannelPointReward &reward)
         return;
     }
 
-    this->setStatus(uiText("This power-up is not supported by Leafyrino yet."), true);
+    this->setStatus(uiText("This power-up is not supported by Leafyrino yet."),
+                    true);
 }
 
 void ChannelPointsDialog::redeemCustomReward(
@@ -2378,7 +2423,8 @@ void ChannelPointsDialog::redeemCustomReward(
                 return;
             }
             self->applyRedeemResult(
-                result, uiText(QStringLiteral("Redeemed %1")).arg(reward.title));
+                result,
+                uiText(QStringLiteral("Redeemed %1")).arg(reward.title));
         },
         [self](const QString &error) {
             if (!self)
@@ -2414,7 +2460,8 @@ void ChannelPointsDialog::unlockRandomEmote(const GqlChannelPointReward &reward)
             const auto message =
                 result.emoteToken.isEmpty()
                     ? uiText(QStringLiteral("Unlocked a random emote"))
-                    : uiText(QStringLiteral("Unlocked %1")).arg(result.emoteToken);
+                    : uiText(QStringLiteral("Unlocked %1"))
+                          .arg(result.emoteToken);
             self->applyRedeemResult(result, message);
         },
         [self](const QString &error) {
@@ -2550,7 +2597,8 @@ void ChannelPointsDialog::loadEmotePickerData()
 
                 if (self->modifiers_.isEmpty())
                 {
-                    finish(uiText(QStringLiteral("No emote modifiers found.")), true);
+                    finish(uiText(QStringLiteral("No emote modifiers found.")),
+                           true);
                     return;
                 }
                 finish({}, false);
@@ -2652,7 +2700,8 @@ void ChannelPointsDialog::unlockSelectedEmote(const GqlChannelPointEmote &emote)
             return;
         }
         self->applyRedeemResult(
-            result, uiText(QStringLiteral("Unlocked %1")).arg(emoteLabel(emote)));
+            result,
+            uiText(QStringLiteral("Unlocked %1")).arg(emoteLabel(emote)));
     };
     auto failure = [self](const QString &error) {
         if (!self)
@@ -2680,8 +2729,8 @@ void ChannelPointsDialog::unlockSelectedEmote(const GqlChannelPointEmote &emote)
         if (modification == nullptr)
         {
             this->actionInFlight_ = false;
-            this->setStatus(uiText("That modifier is not available for this emote."),
-                            true);
+            this->setStatus(
+                uiText("That modifier is not available for this emote."), true);
             this->rebuildContent();
             return;
         }
@@ -2695,7 +2744,8 @@ void ChannelPointsDialog::unlockSelectedEmote(const GqlChannelPointEmote &emote)
                     return;
                 }
                 self->applyRedeemResult(
-                    result, uiText(QStringLiteral("Unlocked %1")).arg(modifiedLabel));
+                    result,
+                    uiText(QStringLiteral("Unlocked %1")).arg(modifiedLabel));
             };
         TwitchGql::unlockModifiedSubscriberEmote(
             this->redeemChannelId(), modification->emoteId, cost, token,
@@ -2739,7 +2789,8 @@ void ChannelPointsDialog::sendSelectedGigantifiedEmote()
     if (!isGigantifyReward(this->selectedReward_) ||
         this->selectedReward_.cost <= 0)
     {
-        this->setStatus(uiText("Twitch returned an invalid Gigantify price."), true);
+        this->setStatus(uiText("Twitch returned an invalid Gigantify price."),
+                        true);
         return;
     }
     if (!this->canRedeem(this->selectedReward_))
@@ -2954,7 +3005,8 @@ bool ChannelPointsDialog::canRedeem(const GqlChannelPointReward &reward)
     }
     if (!reward.isInStock)
     {
-        this->setStatus(uiText("That reward is out of stock or on cooldown."), true);
+        this->setStatus(uiText("That reward is out of stock or on cooldown."),
+                        true);
         return false;
     }
     const auto balance = this->channel_->channelPointBalance();
@@ -2967,7 +3019,8 @@ bool ChannelPointsDialog::canRedeem(const GqlChannelPointReward &reward)
     }
     if (this->redeemChannelId().isEmpty())
     {
-        this->setStatus(uiText("Channel point rewards are not ready yet."), true);
+        this->setStatus(uiText("Channel point rewards are not ready yet."),
+                        true);
         return false;
     }
     return true;

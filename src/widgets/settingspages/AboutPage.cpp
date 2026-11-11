@@ -4,8 +4,6 @@
 
 #include "common/UiLanguage.hpp"
 #include "widgets/settingspages/AboutPage.hpp"
-#include "widgets/helper/ArchiveActions.hpp"
-#include "singletons/InstallCounter.hpp"
 
 #include "Application.hpp"
 #include "common/Common.hpp"
@@ -22,7 +20,6 @@
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QLabel>
-#include <QPointer>
 #include <QStringBuilder>
 #include <QTextEdit>
 #include <QTextStream>
@@ -64,19 +61,6 @@ AboutPage::AboutPage()
         attribution->setWordWrap(true);
         attribution->setTextFormat(Qt::RichText);
         attribution->setOpenExternalLinks(true);
-        if (archiveConnected())
-        {
-            auto installs = layout.emplace<QLabel>(uiText("Installations: …"));
-            QPointer<QLabel> target = installs.getElement();
-            fetchInstallCount([target](int count) {
-                if (target)
-                {
-                    target->setText(count < 0
-                                        ? uiText("Installations: unknown")
-                                        : uiText("Installations: %1").arg(count));
-                }
-            });
-        }
         attribution->setObjectName("BrandAttribution");
 
         auto versionInfo = layout.emplace<QGroupBox>(uiText("Version"));

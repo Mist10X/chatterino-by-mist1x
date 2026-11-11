@@ -852,8 +852,9 @@ MoltorinoPage::MoltorinoPage()
                  QStringLiteral("Hidden messages"));
     SettingWidget::checkbox(uiText("Hide community sub gift messages"),
                             s.hideCommunityGiftMessages)
-        ->setTooltip(uiText("No chat lines for \"X is gifting N subs to the "
-                     "community\" and for each gifted sub that belongs to it."))
+        ->setTooltip(uiText("Hide community gift messages only when the gift "
+                     "meets the enabled banner's minimum. Smaller gifts "
+                     "remain visible in chat."))
         ->addTo(*view);
 
     SettingWidget::checkbox(uiText("Hide raid messages"), s.hideRaidMessages)

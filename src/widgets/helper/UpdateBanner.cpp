@@ -242,7 +242,9 @@ void initUpdateBanner(QWidget *window, pajlada::Signals::SignalHolder &holder)
             banner->hide();
         }
     };
-    holder.managedConnect(getApp()->getUpdates().statusUpdated, changed);
+    auto &updates = getApp()->getUpdates();
+    holder.managedConnect(updates.statusUpdated, changed);
+    changed(updates.getStatus());
 }
 
 }  // namespace chatterino

@@ -939,9 +939,7 @@ inline int runOwnTimeoutChecks(chatterino::Split &split, const QString &report,
         getSettings()->enableSmoothScrollingNewMessages = false;
         auto room = std::make_shared<TwitchChannel>(
             QStringLiteral("scroll_room_%1_%2").arg(limit).arg(extra));
-        room->followMessageLimit(room->messageLimitChanged, [limit] {
-            return limit;
-        });
+        room->setMessageLimit(limit);
         split.setChannel(IndirectChannel(std::static_pointer_cast<Channel>(room)));
         split.resize(560, 420);
         split.show();

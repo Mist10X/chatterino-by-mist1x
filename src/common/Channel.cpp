@@ -459,16 +459,6 @@ size_t Channel::messageLimit() const
     return this->messages_.limit() == std::numeric_limits<size_t>::max() ? 0 : this->messages_.limit();
 }
 
-bool Channel::archiveHistoryManaged() const { return this->archiveHistoryManaged_; }
-
-void Channel::followMessageLimit(pajlada::Signals::NoArgSignal &changed,
-                                 std::function<size_t()> policy)
-{
-    this->archiveHistoryManaged_ = true;
-    this->setMessageLimit(policy());
-    this->historyPolicyConnections_.managedConnect(changed, [this, policy] { this->setMessageLimit(policy()); });
-}
-
 void Channel::clearMessages()
 {
     this->messages_.clear();

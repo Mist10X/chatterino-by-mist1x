@@ -2,15 +2,13 @@
 //
 // SPDX-License-Identifier: MIT
 
-#include "common/UiLanguage.hpp"
 #include "providers/twitch/IrcMessageHandler.hpp"
-
-#include "providers/seventv/SeventvPersonalLookup.hpp"
 
 #include "Application.hpp"
 #include "common/Channel.hpp"
 #include "common/Common.hpp"
 #include "common/QLogging.hpp"
+#include "common/UiLanguage.hpp"
 #include "controllers/accounts/AccountController.hpp"
 #include "controllers/ignores/IgnoreController.hpp"
 #include "messages/Link.hpp"
@@ -20,13 +18,14 @@
 #include "messages/MessageElement.hpp"
 #include "messages/MessageSink.hpp"
 #include "messages/MessageThread.hpp"
+#include "providers/seventv/SeventvPersonalLookup.hpp"
 #include "providers/twitch/TwitchAccount.hpp"
 #include "providers/twitch/TwitchAccountManager.hpp"
 #include "providers/twitch/TwitchChannel.hpp"
-#include "providers/twitch/TwitchReadConnectionPool.hpp"
 #include "providers/twitch/TwitchCommon.hpp"
 #include "providers/twitch/TwitchHelpers.hpp"
 #include "providers/twitch/TwitchIrcServer.hpp"
+#include "providers/twitch/TwitchReadConnectionPool.hpp"
 #include "providers/twitch/UserColor.hpp"
 #include "singletons/Settings.hpp"
 #include "singletons/StreamerMode.hpp"
@@ -973,7 +972,7 @@ void IrcMessageHandler::handleUserNoticeMessage(Communi::IrcMessage *message,
             message->tag("msg-param-displayName").toString(),
             message->tag("msg-param-viewerCount").toInt());
     }
-    else if (msgId == u"submysterygift")
+    else if (msgId == u"submysterygift" || msgId == u"anonsubmysterygift")
     {
         channel->massGiftSubs.invoke(
             message->tag("login").toString(),
@@ -1033,12 +1032,33 @@ void IrcMessageHandler::parseUserNoticeMessageInto(Communi::IrcMessage *message,
         return;
     }
 
-    // A community gift ("X is gifting 5 subs…") and each sub it hands out:
-    // no chat lines (the corner banner for big gifts is raised separately).
-    if (getSettings()->hideCommunityGiftMessages &&
-        (msgType == "submysterygift" || msgType == "anonsubmysterygift" ||
-         ((msgType == "subgift" || msgType == "anonsubgift") &&
-          !tags.getOrEmpty("msg-param-community-gift-id").isEmpty())))
+    // Only replace gifts with a banner when they actually meet its threshold.
+    // Remember the parent decision so recipient notices follow the same rule.
+    // A missing parent (e.g. joining mid-gift) must never lose a chat notice.
+    bool hideGift = false;
+    if (msgType == "submysterygift" || msgType == "anonsubmysterygift")
+    {
+        hideGift = getSettings()->hideCommunityGiftMessages &&
+                   getSettings()->showMassGiftBanner &&
+                   tags.getOrEmpty("msg-param-mass-gift-count").toInt() >=
+                       getSettings()->massGiftBannerMinimum;
+        const auto parentID = tags.getOrEmpty("id");
+        if (!parentID.isEmpty())
+        {
+            channel->communityGiftBanners.insert(parentID, new bool(hideGift));
+        }
+    }
+    else if (getSettings()->hideCommunityGiftMessages &&
+             getSettings()->showMassGiftBanner &&
+             (msgType == "subgift" || msgType == "anonsubgift"))
+    {
+        const auto parentID = tags.getOrEmpty("msg-param-community-gift-id");
+        if (auto *decision = channel->communityGiftBanners.object(parentID))
+        {
+            hideGift = *decision;
+        }
+    }
+    if (hideGift)
     {
         return;
     }
@@ -1054,7 +1074,7 @@ void IrcMessageHandler::parseUserNoticeMessageInto(Communi::IrcMessage *message,
         // subgifts are special because they include two users
         const auto msg = MessageBuilder::makeSubgiftMessage(
             tags, calculateMessageTime(message).time(), channel);
-
+        msg->giftNotice = true;
         sink.addMessage(msg, MessageContext::Original);
         return;
     }
@@ -1176,6 +1196,10 @@ void IrcMessageHandler::parseUserNoticeMessageInto(Communi::IrcMessage *message,
         auto msg = MessageBuilder::makeSystemMessageWithUser(
             parseTagString(messageText), login, displayName, userColor,
             calculateMessageTime(message).time(), *message, channel);
+
+        msg->giftNotice = msgType == "submysterygift" ||
+                          msgType == "anonsubmysterygift" ||
+                          msgType == "anonsubgift";
 
         sink.addMessage(msg, MessageContext::Original);
     }
