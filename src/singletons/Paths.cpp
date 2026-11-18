@@ -8,6 +8,7 @@
 #include "common/Isolation.hpp"
 #include "common/Modes.hpp"
 #include "singletons/Settings.hpp"
+#include "util/BundledFile.hpp"
 #include "util/CombinePath.hpp"
 
 #include <QCoreApplication>
@@ -133,6 +134,19 @@ void Paths::initRootDirectory(const Args &args, const Modes &modes)
     (void)modes;
 
     QString root = QCoreApplication::applicationDirPath();
+#ifdef Q_OS_MACOS
+    // Inside Leafyrino.app the profile would break the code signature and be
+    // wiped by every update: it lives in its own folder under the user's
+    // Library instead (still never one that another client uses).
+    root = QDir::homePath() +
+           QStringLiteral("/Library/Application Support/Chatterino by Mist1X");
+    if (!args.portableDirectory.has_value() && !QDir().mkpath(root))
+    {
+        throw std::runtime_error(
+            "Could not create the profile directory \""s + root.toStdString() +
+            "\"");
+    }
+#endif
     if (args.portableDirectory.has_value())
     {
         root = args.portableDirectory.value();
@@ -191,6 +205,20 @@ void Paths::initSubDirectories()
         makePath(combinePath("ProfileAvatars", "twitch"));
     this->pluginsDirectory = makePath("Plugins");
     this->themesDirectory = makePath("Themes");
+#ifdef Q_OS_MACOS
+    // The profile is outside the .app, so the themes that ship with it are
+    // copied over (once: a theme the user edited stays as it is).
+    const QDir bundledThemes(bundledFilePath(QStringLiteral("Themes")));
+    for (const auto &theme :
+         bundledThemes.entryList({QStringLiteral("*.json")}, QDir::Files))
+    {
+        const auto target = combinePath(this->themesDirectory, theme);
+        if (!QFile::exists(target))
+        {
+            QFile::copy(bundledThemes.filePath(theme), target);
+        }
+    }
+#endif
     this->crashdumpDirectory = makePath("Crashes");
     this->dictionariesDirectory = makePath("Dictionaries");
 #ifdef Q_OS_WIN

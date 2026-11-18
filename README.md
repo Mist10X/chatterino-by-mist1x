@@ -1,6 +1,6 @@
 # Chatterino by Mist1X
 
-Программа для чата Twitch на Windows: несколько каналов во вкладках, смайлики 7TV, BetterTTV и FrankerFaceZ, карточки пользователей, подсветки и много удобных мелочей. Интерфейс на русском.
+Программа для чата Twitch на Windows и macOS: несколько каналов во вкладках, смайлики 7TV, BetterTTV и FrankerFaceZ, карточки пользователей, подсветки и много удобных мелочей. Интерфейс на русском.
 
 Это неофициальная сборка на основе [Chatterino 2](https://github.com/Chatterino/chatterino2), [Chatterino7](https://github.com/SevenTV/chatterino7), [Leafyrino](https://github.com/Leafyzito/leafyrino), [Technorino](https://github.com/2547techno/technorino) и [Moltorino7](https://github.com/EEVA-inc/Moltorino7). С авторами этих проектов и с Twitch она не связана. Кто что сделал и под какими лицензиями — в [CREDITS.md](CREDITS.md).
 
@@ -13,6 +13,10 @@
 Вместо установщика можно скачать `ChatterinoByMist1X-…-portable.zip`, распаковать в любую папку и запустить `Leafyrino.exe`.
 
 Нужна 64-битная Windows 10 или 11. Ничего дополнительно ставить не нужно.
+
+### macOS
+
+Нужен Mac с чипом Apple Silicon и macOS 13 или новее. Скачайте `ChatterinoByMist1X-…-macOS-arm64.dmg` с той же страницы, перетащите программу в «Программы» и запустите. Программа подписана без сертификата Apple, поэтому первый запуск нужно разрешить вручную: **Системные настройки** → **Конфиденциальность и безопасность** → **Всё равно открыть** (подробнее — в файле «Первый запуск.txt» внутри образа). Дальше программа обновляется сама. Настройки лежат в `~/Library/Application Support/Chatterino by Mist1X`.
 
 ## Как начать
 
@@ -48,6 +52,8 @@
 ```powershell
 .\tools\release\build-release.ps1 -Version 1.0.0 -Exe <собранный Leafyrino.exe> -Runtime <папка с Qt/OpenSSL/VC runtime> -Out <папка для результата>
 ```
+
+Сборка под macOS (DMG для Apple Silicon) описана в [tools/release/BUILDING-MAC.md](tools/release/BUILDING-MAC.md); образ собирает [`tools/release/build-release-mac.sh`](tools/release/build-release-mac.sh).
 
 ## Лицензия
 
